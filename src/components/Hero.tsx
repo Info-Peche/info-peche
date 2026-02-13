@@ -46,7 +46,7 @@ const Hero = () => {
             Le magazine N°1 de la pêche au coup <br className="hidden md:inline" />depuis 20 ans
           </h1>
           
-          <p className="text-xl text-white/90 mb-10 max-w-2xl mx-auto font-light drop-shadow-md md:text-xl">
+          <p className="text-xl md:text-2xl text-white/90 mb-10 max-w-2xl mx-auto font-light drop-shadow-md">
             L'expertise technique et la passion au service de votre réussite au bord de l'eau.
           </p>
           

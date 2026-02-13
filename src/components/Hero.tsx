@@ -42,8 +42,8 @@ const Hero = () => {
             </div>
           </div>
 
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-serif font-bold mb-6 leading-tight drop-shadow-lg max-w-4xl mx-auto">
-            Le magazine N°1 de la pêche<br />au coup depuis 20 ans
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold mb-6 leading-[1.15] drop-shadow-lg max-w-3xl mx-auto">
+            Le magazine N°1 de la pêche au coup <br className="hidden md:inline" />depuis 20 ans
           </h1>
           
           <p className="text-xl md:text-2xl text-white/90 mb-10 max-w-2xl mx-auto font-light drop-shadow-md">

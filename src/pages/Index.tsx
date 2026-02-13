@@ -8,6 +8,7 @@ import Storytelling from "@/components/Storytelling";
 import ContentHighlights from "@/components/ContentHighlights";
 import Testimonials from "@/components/Testimonials";
 import FinalCTA from "@/components/FinalCTA";
+import FAQ from "@/components/FAQ";
 import Footer from "@/components/Footer";
 import SideCart from "@/components/SideCart";
 
@@ -25,6 +26,7 @@ const Index = () => {
           <ContentHighlights />
           <Testimonials />
           <FinalCTA />
+          <FAQ />
         </main>
         <Footer />
         <SideCart />

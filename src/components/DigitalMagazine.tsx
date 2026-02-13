@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Smartphone, Tablet, Monitor, ShoppingCart, Eye } from "lucide-react";
+import { Smartphone, Tablet, Monitor, ShoppingCart, Eye, Lock, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
 import { useState } from "react";
@@ -46,8 +46,8 @@ const DigitalMagazine = () => {
             Lisez-le partout, tout de suite
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Recevez votre magazine instantanément en version numérique. Feuilletez-le sur votre tablette, 
-            smartphone ou ordinateur — avec le même contenu exclusif que la version papier.
+            Consultez votre magazine instantanément depuis votre espace personnel en ligne. 
+            Pas de téléchargement, pas de fichier à transférer — votre contenu reste protégé et accessible uniquement depuis votre compte.
           </p>
         </motion.div>
 
@@ -115,10 +115,12 @@ const DigitalMagazine = () => {
           >
             <div className="space-y-4">
               <div className="flex items-center gap-4 text-muted-foreground">
+                <Globe className="h-5 w-5" />
+                <Lock className="h-5 w-5" />
                 <Smartphone className="h-5 w-5" />
                 <Tablet className="h-5 w-5" />
                 <Monitor className="h-5 w-5" />
-                <span className="text-sm font-medium">Compatible tous écrans</span>
+                <span className="text-sm font-medium">Consultation en ligne sécurisée</span>
               </div>
 
               <h3 className="text-3xl font-serif font-bold text-foreground">
@@ -126,18 +128,19 @@ const DigitalMagazine = () => {
               </h3>
 
               <p className="text-muted-foreground leading-relaxed">
-                Pas besoin d'attendre la livraison. Accédez à l'intégralité du magazine — reportages, 
-                dossiers techniques, tests matériel et résultats de compétitions — directement depuis votre écran. 
-                Zoomez sur les schémas, partagez les articles, lisez hors connexion.
+                Pas de PDF, pas de téléchargement. Votre magazine est consultable en ligne depuis votre espace personnel sécurisé. 
+                Impossible à transférer ou à partager — votre contenu exclusif reste le vôtre.
+                Feuilletez les pages, zoomez sur les schémas, retrouvez vos numéros à tout moment.
               </p>
             </div>
 
             <div className="space-y-3">
               {[
-                "Accès immédiat après achat",
+                "Consultation en ligne sécurisée",
+                "Aucun téléchargement — contenu intransférable",
                 "Lisible sur smartphone, tablette et PC",
                 "Contenu identique à la version papier",
-                "Fonction zoom sur les schémas & photos",
+                "Vos numéros accessibles à vie depuis votre compte",
               ].map((item, i) => (
                 <div key={i} className="flex items-center gap-3">
                   <div className="h-2 w-2 rounded-full bg-primary shrink-0" />

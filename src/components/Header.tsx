@@ -4,6 +4,7 @@ import { ShoppingBag, Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
+import logo from "@/assets/info-peche-logo.jpg";
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -21,19 +22,18 @@ const Header = () => {
   const navLinks = [
     { name: "Accueil", href: "/" },
     { name: "Le Magazine", href: "#magazine" },
-    { name: "S'abonner", href: "#subscribe" },
     { name: "Contact", href: "#contact" },
   ];
 
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled ? "bg-white/80 backdrop-blur-md shadow-sm py-4" : "bg-transparent py-6"
+        isScrolled ? "bg-white/90 backdrop-blur-md shadow-sm py-2" : "bg-white/80 backdrop-blur-sm py-4"
       }`}
     >
       <div className="container mx-auto px-4 flex items-center justify-between">
-        <Link to="/" className="text-2xl font-serif font-bold text-primary">
-          Info-Pêche
+        <Link to="/" className="flex items-center">
+          <img src={logo} alt="Info Pêche" className="h-12 md:h-14 object-contain" />
         </Link>
 
         {/* Desktop Navigation */}
@@ -42,23 +42,29 @@ const Header = () => {
             <a
               key={link.name}
               href={link.href}
-              className="text-foreground/80 hover:text-primary transition-colors font-medium"
+              className="text-foreground/80 hover:text-primary transition-colors font-medium text-sm uppercase tracking-wide"
             >
               {link.name}
             </a>
           ))}
+          <Button 
+            className="bg-primary hover:bg-primary/90 text-white font-bold rounded-full px-6 shadow-md hover:shadow-lg transition-all"
+            onClick={() => document.getElementById('subscribe')?.scrollIntoView({ behavior: 'smooth' })}
+          >
+            S'abonner
+          </Button>
         </nav>
 
         <div className="flex items-center space-x-4">
           <Button
             variant="ghost"
             size="icon"
-            className="relative"
+            className="relative text-foreground hover:bg-primary/10 hover:text-primary"
             onClick={() => setIsOpen(true)}
           >
             <ShoppingBag className="h-6 w-6" />
             {itemCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-accent text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 bg-accent text-accent-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
                 {itemCount}
               </span>
             )}
@@ -96,6 +102,15 @@ const Header = () => {
                   {link.name}
                 </a>
               ))}
+              <Button 
+                className="w-full bg-primary text-white"
+                onClick={() => {
+                  document.getElementById('subscribe')?.scrollIntoView({ behavior: 'smooth' });
+                  setIsMobileMenuOpen(false);
+                }}
+              >
+                S'abonner
+              </Button>
             </nav>
           </motion.div>
         )}

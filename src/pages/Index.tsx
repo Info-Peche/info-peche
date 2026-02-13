@@ -3,6 +3,7 @@ import Header from "@/components/Header";
 import Hero from "@/components/Hero";
 import TrustBar from "@/components/TrustBar";
 import LatestEdition from "@/components/LatestEdition";
+import DigitalMagazine from "@/components/DigitalMagazine";
 import PricingCards from "@/components/PricingCards";
 import Storytelling from "@/components/Storytelling";
 import ContentHighlights from "@/components/ContentHighlights";
@@ -21,6 +22,7 @@ const Index = () => {
           <Hero />
           <TrustBar />
           <LatestEdition />
+          <DigitalMagazine />
           <PricingCards />
           <Storytelling />
           <ContentHighlights />

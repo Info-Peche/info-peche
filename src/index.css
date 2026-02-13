@@ -6,36 +6,42 @@
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
-    --foreground: 210 50% 10%;
+    /* Base - White & Light Greys for clean background */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 10%;
 
     --card: 0 0% 100%;
-    --card-foreground: 210 50% 10%;
+    --card-foreground: 0 0% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 210 50% 10%;
+    --popover-foreground: 0 0% 10%;
 
-    --primary: 210 65% 22%;
-    --primary-foreground: 210 20% 98%;
+    /* Primary - Vibrant Red from Info-Pêche identity */
+    --primary: 354 85% 45%; /* A strong, deep red */
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 30% 94%;
-    --secondary-foreground: 210 50% 15%;
+    /* Secondary - Light Grey/White */
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 10%;
 
-    --muted: 210 20% 95%;
-    --muted-foreground: 210 15% 45%;
+    /* Muted - Neutral greys */
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
 
-    --accent: 25 92% 55%;
-    --accent-foreground: 0 0% 100%;
+    /* Accent - Yellow/Gold from the magazine identity */
+    --accent: 48 95% 50%;
+    --accent-foreground: 0 0% 10%; /* Dark text on yellow for contrast */
 
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 210 25% 90%;
-    --input: 210 25% 90%;
-    --ring: 210 65% 22%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 354 85% 45%;
 
     --radius: 0.75rem;
 
+    /* Keeping the nature green just in case for secondary accents */
     --nature: 145 55% 42%;
     --nature-foreground: 0 0% 100%;
 
@@ -50,25 +56,35 @@
   }
 
   .dark {
-    --background: 210 50% 6%;
-    --foreground: 210 20% 95%;
-    --card: 210 45% 10%;
-    --card-foreground: 210 20% 95%;
-    --popover: 210 45% 10%;
-    --popover-foreground: 210 20% 95%;
-    --primary: 210 60% 60%;
-    --primary-foreground: 210 50% 6%;
-    --secondary: 210 30% 15%;
-    --secondary-foreground: 210 20% 90%;
-    --muted: 210 25% 15%;
-    --muted-foreground: 210 15% 60%;
-    --accent: 25 92% 55%;
-    --accent-foreground: 0 0% 100%;
+    /* Dark mode adapted for Red/Yellow identity */
+    --background: 0 0% 5%;
+    --foreground: 0 0% 95%;
+
+    --card: 0 0% 8%;
+    --card-foreground: 0 0% 95%;
+
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 95%;
+
+    --primary: 354 70% 55%; /* Slightly lighter red for dark mode */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 60%;
+
+    --accent: 48 95% 50%;
+    --accent-foreground: 0 0% 10%;
+
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 210 25% 18%;
-    --input: 210 25% 18%;
-    --ring: 210 60% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 0 0% 15%;
+    --input: 0 0% 15%;
+    --ring: 354 70% 55%;
+
     --nature: 145 55% 42%;
     --nature-foreground: 0 0% 100%;
   }
@@ -90,11 +106,11 @@
 
 @layer utilities {
   .glass {
-    @apply bg-white/70 backdrop-blur-xl border border-white/20 shadow-lg;
+    @apply bg-white/80 backdrop-blur-xl border border-white/20 shadow-lg;
   }
 
   .glass-dark {
-    @apply bg-primary/80 backdrop-blur-xl border border-white/10;
+    @apply bg-black/50 backdrop-blur-xl border border-white/10;
   }
 
   .text-gradient {

@@ -11,8 +11,8 @@ const Hero = () => {
         <img
           src={heroImage}
           alt="Pêcheur au coup au bord d'une rivière paisible"
-          className="w-full h-full object-cover"
-        />
+          className="w-full h-full object-cover" />
+
         <div className="absolute inset-0 bg-black/40" />
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/20" />
       </div>
@@ -23,8 +23,8 @@ const Hero = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="max-w-5xl mx-auto"
-        >
+          className="max-w-5xl mx-auto">
+
           {/* Trust Badge */}
           <div className="flex justify-center mb-8">
             <div className="inline-flex items-center gap-2 bg-black/30 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 shadow-lg">
@@ -42,7 +42,7 @@ const Hero = () => {
             </div>
           </div>
 
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold mb-6 leading-[1.15] drop-shadow-lg max-w-3xl mx-auto">
+          <h1 className="text-4xl lg:text-6xl font-serif font-bold mb-6 leading-[1.15] drop-shadow-lg max-w-3xl mx-auto md:text-4xl">
             Le magazine N°1 de la pêche au coup <br className="hidden md:inline" />depuis 20 ans
           </h1>
           
@@ -51,27 +51,27 @@ const Hero = () => {
           </p>
           
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button 
-              size="lg" 
+            <Button
+              size="lg"
               className="bg-primary hover:bg-primary/90 text-white px-8 py-6 text-lg rounded-full w-full sm:w-auto shadow-xl hover:scale-105 transition-transform font-bold"
-              onClick={() => document.getElementById('subscribe')?.scrollIntoView({ behavior: 'smooth' })}
-            >
+              onClick={() => document.getElementById('subscribe')?.scrollIntoView({ behavior: 'smooth' })}>
+
               Je m'abonne
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
-            <Button 
-              size="lg" 
-              variant="outline" 
+            <Button
+              size="lg"
+              variant="outline"
               className="bg-white hover:bg-white/90 text-foreground border-white px-8 py-6 text-lg rounded-full w-full sm:w-auto hover:scale-105 transition-transform font-medium"
-              onClick={() => document.getElementById('magazine')?.scrollIntoView({ behavior: 'smooth' })}
-            >
+              onClick={() => document.getElementById('magazine')?.scrollIntoView({ behavior: 'smooth' })}>
+
               Découvrir le numéro
             </Button>
           </div>
         </motion.div>
       </div>
-    </section>
-  );
+    </section>);
+
 };
 
 export default Hero;

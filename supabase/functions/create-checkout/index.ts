@@ -88,6 +88,14 @@ serve(async (req) => {
       shipping_address_collection: {
         allowed_countries: ["FR", "BE", "CH", "LU", "MC"],
       },
+      custom_text: {
+        submit: {
+          message: "🎣 Merci pour votre commande ! Livraison offerte en France métropolitaine. Plus de 20 000 lecteurs nous font confiance.",
+        },
+        after_submit: {
+          message: "Votre magazine sera expédié sous 48h. L'équipe Info-Pêche vous souhaite une bonne lecture !",
+        },
+      },
     };
 
     const session = await stripe.checkout.sessions.create(sessionParams);

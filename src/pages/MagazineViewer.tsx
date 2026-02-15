@@ -334,6 +334,22 @@ const MagazineViewerContent = () => {
         </div>
       </header>
 
+      {/* Preview banner */}
+      {isPreview && (
+        <div className="bg-amber-500/90 text-white text-center py-2 px-4 text-sm font-semibold flex items-center justify-center gap-2">
+          <Eye className="w-4 h-4" />
+          <span>Aperçu gratuit — Vous consultez les {previewPages} premières pages sur {numPages > 0 ? numPages : '…'} pages</span>
+          <Button
+            size="sm"
+            variant="secondary"
+            className="ml-3 bg-white text-amber-700 hover:bg-white/90 rounded-full px-4 py-1 text-xs font-bold"
+            onClick={handleBuyDigital}
+          >
+            Acheter le numéro complet
+          </Button>
+        </div>
+      )}
+
       {/* PDF Content */}
       <div className="flex-1 overflow-auto flex items-start justify-center py-8 relative">
         <Document

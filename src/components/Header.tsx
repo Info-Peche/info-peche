@@ -10,6 +10,7 @@ const resourceLinks = [
   { name: "Blog", href: "/blog" },
   { name: "Événements", href: "/evenements" },
   { name: "Boutique Archives", href: "/boutique" },
+  { name: "Contact", href: "/contact" },
 ];
 
 const Header = () => {

@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
-import { useSearchParams, Link } from "react-router-dom";
+import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
 import "react-pdf/dist/esm/Page/TextLayer.css";
@@ -14,28 +14,67 @@ import {
   Loader2,
   ArrowLeft,
   Lock,
+  ShoppingCart,
+  Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { CartProvider, useCart } from "@/context/CartContext";
+import SideCart from "@/components/SideCart";
 
 // Configure PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
-const MagazineViewer = () => {
+const MagazineViewerContent = () => {
   const [searchParams] = useSearchParams();
   const issueId = searchParams.get("issue");
+  const isPreview = searchParams.get("mode") === "preview";
+  const navigate = useNavigate();
+  const { addItem } = useCart();
 
   const [email, setEmail] = useState(() => localStorage.getItem("reader_email") || "");
   const [verified, setVerified] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [previewPages, setPreviewPages] = useState(4);
+  const [issueInfo, setIssueInfo] = useState<{ title: string; issue_number: string; price_cents: number } | null>(null);
 
   const [numPages, setNumPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [scale, setScale] = useState(1.0);
   const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Preview mode: fetch preview URL without auth
+  const loadPreview = useCallback(async () => {
+    if (!issueId) return;
+    setVerifying(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("get-preview-url", {
+        body: { issue_id: issueId },
+      });
+      if (error) throw error;
+      if (data?.url) {
+        setPdfUrl(data.url);
+        setPreviewPages(data.preview_pages || 4);
+        setIssueInfo({
+          title: data.title,
+          issue_number: data.issue_number,
+          price_cents: data.price_cents,
+        });
+        setVerified(true);
+      }
+    } catch (err: any) {
+      toast({
+        title: "Erreur",
+        description: err.message || "Impossible de charger l'aperçu.",
+        variant: "destructive",
+      });
+    } finally {
+      setVerifying(false);
+    }
+  }, [issueId]);
 
   const verifyAccess = useCallback(async () => {
     if (!email || !issueId) return;
@@ -67,19 +106,23 @@ const MagazineViewer = () => {
     }
   }, [email, issueId]);
 
-  // Auto-verify if email is saved
   useEffect(() => {
-    if (email && issueId && !verified) {
+    if (isPreview && issueId) {
+      loadPreview();
+    } else if (email && issueId && !verified) {
       verifyAccess();
     }
-  }, [issueId]);
+  }, [issueId, isPreview]);
 
-  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
-    setNumPages(numPages);
+  const maxPages = isPreview ? previewPages : numPages;
+
+  const onDocumentLoadSuccess = ({ numPages: total }: { numPages: number }) => {
+    setNumPages(total);
   };
 
   const goToPage = (page: number) => {
-    if (page >= 1 && page <= numPages) setCurrentPage(page);
+    const limit = isPreview ? Math.min(previewPages, numPages) : numPages;
+    if (page >= 1 && page <= limit) setCurrentPage(page);
   };
 
   const toggleFullscreen = () => {
@@ -89,6 +132,17 @@ const MagazineViewer = () => {
     } else {
       document.exitFullscreen();
       setIsFullscreen(false);
+    }
+  };
+
+  const handleBuyDigital = () => {
+    if (issueInfo && issueId) {
+      addItem({
+        id: `digital-${issueId}`,
+        name: `Info Pêche ${issueInfo.issue_number} (Numérique)`,
+        price: (issueInfo.price_cents || 300) / 100,
+        description: issueInfo.title,
+      });
     }
   };
 
@@ -116,7 +170,7 @@ const MagazineViewer = () => {
     };
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
-  }, [currentPage, numPages]);
+  }, [currentPage, numPages, previewPages, isPreview]);
 
   if (!issueId) {
     return (
@@ -133,8 +187,20 @@ const MagazineViewer = () => {
     );
   }
 
-  // Access gate
-  if (!verified) {
+  // Loading state for preview
+  if (isPreview && verifying) {
+    return (
+      <div className="min-h-screen bg-foreground flex items-center justify-center">
+        <div className="text-center text-white">
+          <Loader2 className="w-10 h-10 animate-spin mx-auto mb-4" />
+          <p>Chargement de l'aperçu…</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Access gate (only for non-preview mode)
+  if (!isPreview && !verified) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-foreground via-foreground/95 to-primary/20 flex items-center justify-center px-4">
         <motion.div
@@ -191,6 +257,9 @@ const MagazineViewer = () => {
     );
   }
 
+  const displayPages = isPreview ? Math.min(previewPages, numPages || previewPages) : numPages;
+  const isOnLastPreviewPage = isPreview && currentPage >= displayPages && numPages > 0;
+
   // PDF Viewer
   return (
     <div className="min-h-screen bg-foreground/95 flex flex-col select-none" style={{ userSelect: "none" }}>
@@ -204,6 +273,11 @@ const MagazineViewer = () => {
         </Link>
 
         <div className="flex items-center gap-2 text-white">
+          {isPreview && (
+            <span className="text-xs bg-accent/20 text-accent px-2 py-1 rounded-full mr-2 flex items-center gap-1">
+              <Eye className="w-3 h-3" /> Aperçu
+            </span>
+          )}
           <Button
             variant="ghost"
             size="icon"
@@ -215,7 +289,7 @@ const MagazineViewer = () => {
           </Button>
 
           <span className="text-sm font-medium min-w-[80px] text-center">
-            {currentPage} / {numPages || "—"}
+            {currentPage} / {displayPages || "—"}
           </span>
 
           <Button
@@ -223,7 +297,7 @@ const MagazineViewer = () => {
             size="icon"
             className="text-white/70 hover:text-white hover:bg-white/10"
             onClick={() => goToPage(currentPage + 1)}
-            disabled={currentPage >= numPages}
+            disabled={currentPage >= displayPages}
           >
             <ChevronRight className="w-5 h-5" />
           </Button>
@@ -261,7 +335,7 @@ const MagazineViewer = () => {
       </header>
 
       {/* PDF Content */}
-      <div className="flex-1 overflow-auto flex items-start justify-center py-8">
+      <div className="flex-1 overflow-auto flex items-start justify-center py-8 relative">
         <Document
           file={pdfUrl}
           onLoadSuccess={onDocumentLoadSuccess}
@@ -296,12 +370,39 @@ const MagazineViewer = () => {
             </motion.div>
           </AnimatePresence>
         </Document>
+
+        {/* Preview paywall overlay on last preview page */}
+        {isOnLastPreviewPage && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-foreground via-foreground/95 to-transparent pt-32 pb-8 px-4"
+          >
+            <div className="max-w-md mx-auto text-center">
+              <Lock className="w-8 h-8 text-primary mx-auto mb-3" />
+              <h3 className="text-white text-xl font-serif font-bold mb-2">
+                Envie de lire la suite ?
+              </h3>
+              <p className="text-white/60 text-sm mb-6">
+                Vous avez consulté les {previewPages} premières pages. Achetez ce numéro pour accéder à l'intégralité du magazine.
+              </p>
+              <Button
+                size="lg"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-8 py-5 font-bold shadow-xl"
+                onClick={handleBuyDigital}
+              >
+                <ShoppingCart className="w-5 h-5 mr-2" />
+                Acheter ce numéro — {((issueInfo?.price_cents || 300) / 100).toFixed(2)}€
+              </Button>
+            </div>
+          </motion.div>
+        )}
       </div>
 
       {/* Page strip */}
-      {numPages > 0 && (
+      {displayPages > 0 && (
         <div className="bg-foreground border-t border-white/10 px-4 py-2 flex items-center justify-center gap-1 overflow-x-auto">
-          {Array.from({ length: numPages }, (_, i) => i + 1).map((page) => (
+          {Array.from({ length: displayPages }, (_, i) => i + 1).map((page) => (
             <button
               key={page}
               onClick={() => goToPage(page)}
@@ -316,7 +417,31 @@ const MagazineViewer = () => {
           ))}
         </div>
       )}
+
+      {/* Preview bottom CTA bar */}
+      {isPreview && !isOnLastPreviewPage && (
+        <div className="bg-foreground border-t border-white/10 px-4 py-3 flex items-center justify-center">
+          <Button
+            size="sm"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-6 font-bold"
+            onClick={handleBuyDigital}
+          >
+            <ShoppingCart className="w-4 h-4 mr-2" />
+            Acheter ce numéro — {((issueInfo?.price_cents || 300) / 100).toFixed(2)}€
+          </Button>
+        </div>
+      )}
+
+      <SideCart />
     </div>
+  );
+};
+
+const MagazineViewer = () => {
+  return (
+    <CartProvider>
+      <MagazineViewerContent />
+    </CartProvider>
   );
 };
 

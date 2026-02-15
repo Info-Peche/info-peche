@@ -1,4 +1,5 @@
 import { Facebook, Instagram, Twitter, Mail } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import logo from "@/assets/info-peche-logo.jpg";
@@ -29,20 +30,20 @@ const Footer = () => {
           <div>
             <h4 className="font-bold text-lg mb-6">Navigation</h4>
             <ul className="space-y-4">
-              <li><a href="#" className="text-white/70 hover:text-white transition-colors">Accueil</a></li>
-              <li><a href="#magazine" className="text-white/70 hover:text-white transition-colors">Le Magazine</a></li>
-              <li><a href="#subscribe" className="text-white/70 hover:text-white transition-colors">Abonnements</a></li>
-              <li><a href="#" className="text-white/70 hover:text-white transition-colors">Blog & Conseils</a></li>
+              <li><Link to="/" className="text-white/70 hover:text-white transition-colors">Accueil</Link></li>
+              <li><a href="/#magazine" className="text-white/70 hover:text-white transition-colors">Le Magazine</a></li>
+              <li><a href="/#subscribe" className="text-white/70 hover:text-white transition-colors">Abonnements</a></li>
+              <li><Link to="/blog" className="text-white/70 hover:text-white transition-colors">Blog & Conseils</Link></li>
+              <li><Link to="/boutique" className="text-white/70 hover:text-white transition-colors">Boutique</Link></li>
             </ul>
           </div>
 
           <div>
             <h4 className="font-bold text-lg mb-6">Informations</h4>
             <ul className="space-y-4">
-              <li><a href="#" className="text-white/70 hover:text-white transition-colors">Contact</a></li>
-              <li><a href="#" className="text-white/70 hover:text-white transition-colors">Mentions Légales</a></li>
-              <li><a href="#" className="text-white/70 hover:text-white transition-colors">CGV</a></li>
-              <li><a href="#" className="text-white/70 hover:text-white transition-colors">Politique de Confidentialité</a></li>
+              <li><Link to="/contact" className="text-white/70 hover:text-white transition-colors">Contact</Link></li>
+              <li><Link to="/mentions-legales" className="text-white/70 hover:text-white transition-colors">Mentions Légales</Link></li>
+              <li><Link to="/cgv" className="text-white/70 hover:text-white transition-colors">CGV</Link></li>
             </ul>
           </div>
 

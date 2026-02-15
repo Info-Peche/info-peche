@@ -14,7 +14,81 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      orders: {
+        Row: {
+          address_line1: string
+          address_line2: string | null
+          city: string
+          country: string
+          created_at: string
+          currency: string
+          email: string
+          first_name: string
+          id: string
+          is_recurring: boolean
+          items: Json
+          last_name: string
+          order_type: string
+          payment_method: string
+          payment_status: string
+          phone: string | null
+          postal_code: string
+          status: string
+          stripe_checkout_session_id: string | null
+          stripe_payment_intent_id: string | null
+          stripe_subscription_id: string | null
+          total_amount: number
+        }
+        Insert: {
+          address_line1: string
+          address_line2?: string | null
+          city: string
+          country?: string
+          created_at?: string
+          currency?: string
+          email: string
+          first_name: string
+          id?: string
+          is_recurring?: boolean
+          items?: Json
+          last_name: string
+          order_type: string
+          payment_method: string
+          payment_status?: string
+          phone?: string | null
+          postal_code: string
+          status?: string
+          stripe_checkout_session_id?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_subscription_id?: string | null
+          total_amount: number
+        }
+        Update: {
+          address_line1?: string
+          address_line2?: string | null
+          city?: string
+          country?: string
+          created_at?: string
+          currency?: string
+          email?: string
+          first_name?: string
+          id?: string
+          is_recurring?: boolean
+          items?: Json
+          last_name?: string
+          order_type?: string
+          payment_method?: string
+          payment_status?: string
+          phone?: string | null
+          postal_code?: string
+          status?: string
+          stripe_checkout_session_id?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_subscription_id?: string | null
+          total_amount?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ShoppingBag, Monitor, Package, AlertCircle, BookOpen, Truck } from "lucide-react";
+import { ShoppingBag, Monitor, Package, AlertCircle, BookOpen, Truck, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +17,7 @@ type ViewMode = "online" | "physical";
 
 const ShopContent = () => {
   const { addItem } = useCart();
+  const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<ViewMode>("online");
 
   const { data: issues, isLoading } = useQuery({
@@ -49,13 +51,8 @@ const ShopContent = () => {
   };
 
   const handleAddDigital = (issue: any) => {
-    addItem({
-      id: `digital-${issue.id}`,
-      name: `Info Pêche ${issue.issue_number} (Numérique)`,
-      price: (issue.price_cents || 300) / 100,
-      image: issue.cover_image || undefined,
-      description: issue.title,
-    });
+    // Navigate to preview viewer instead of adding to cart directly
+    navigate(`/lire?issue=${issue.id}&mode=preview`);
   };
 
   return (
@@ -162,8 +159,8 @@ const ShopContent = () => {
                             className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-full"
                             onClick={() => handleAddDigital(issue)}
                           >
-                            <Monitor className="h-4 w-4 mr-2" />
-                            Lire en ligne — {digitalPrice.toFixed(2)}€
+                            <Eye className="h-4 w-4 mr-2" />
+                            Feuilleter l'aperçu
                           </Button>
                         ) : (
                           <Button

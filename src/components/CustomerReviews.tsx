@@ -153,7 +153,7 @@ const CustomerReviews = () => {
 
         {/* Reviews grid */}
         {reviews.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
             {reviews.map((review, index) => (
               <motion.div
                 key={review.id}
@@ -161,32 +161,34 @@ const CustomerReviews = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.05 }}
-                className="bg-card rounded-xl p-6 border border-border shadow-sm"
+                className="bg-card rounded-2xl overflow-hidden border border-border shadow-sm group"
               >
-                <div className="flex items-center gap-1 mb-3">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className={`w-4 h-4 ${
-                        i < review.rating
-                          ? "text-accent fill-current"
-                          : "text-border"
-                      }`}
+                {/* Large photo */}
+                {review.avatar_url && (
+                  <div className="aspect-[4/3] overflow-hidden">
+                    <img
+                      src={review.avatar_url}
+                      alt={review.author_name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
-                  ))}
-                </div>
-                <p className="text-foreground text-sm leading-relaxed mb-4 italic">
-                  "{review.review_text}"
-                </p>
-                <div className="flex items-center gap-3">
-                  <Avatar className="w-9 h-9">
-                    {review.avatar_url ? (
-                      <AvatarImage src={review.avatar_url} alt={review.author_name} />
-                    ) : null}
-                    <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
-                      {review.author_name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
+                  </div>
+                )}
+                <div className="p-6">
+                  <div className="flex items-center gap-1 mb-3">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`w-4 h-4 ${
+                          i < review.rating
+                            ? "text-accent fill-current"
+                            : "text-border"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <p className="text-foreground text-sm leading-relaxed mb-4 italic">
+                    "{review.review_text}"
+                  </p>
                   <div>
                     <p className="font-semibold text-foreground text-sm">
                       {review.author_name}

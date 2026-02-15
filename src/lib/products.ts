@@ -1,0 +1,80 @@
+// Stripe product & price mapping
+export const PRODUCTS = {
+  abo2ans: {
+    id: "abo-2-ans",
+    name: "Abonnement 2 ans — 12 numéros",
+    price: 48,
+    price_id: "price_1T11hVKbRd4yKDMHHCpMLRc3",
+    product_id: "prod_Tyzgq3QeYl52IS",
+    mode: "subscription" as const,
+    interval: "2 ans",
+    description: "12 numéros livrés chez vous, tacite reconduction",
+    features: [
+      "12 numéros sur 2 ans",
+      "Cadeau de bienvenue exclusif",
+      "Accès illimité aux archives",
+      "Invitations événements VIP",
+      "Économisez 25%",
+    ],
+  },
+  abo1an: {
+    id: "abo-1-an",
+    name: "Abonnement 1 an — 6 numéros",
+    price: 26.5,
+    price_id: "price_1T11hkKbRd4yKDMH6WlS54AH",
+    product_id: "prod_Tyzho0muIqVKsX",
+    mode: "subscription" as const,
+    interval: "1 an",
+    description: "6 numéros livrés chez vous, tacite reconduction",
+    features: [
+      "6 numéros par an",
+      "Version numérique incluse",
+      "Accès aux archives (1 an)",
+      "Newsletter exclusive",
+    ],
+  },
+  abo6mois: {
+    id: "abo-6-mois",
+    name: "Abonnement 6 mois — 3 numéros",
+    price: 14.5,
+    price_id: "price_1T11i1KbRd4yKDMHppfC8rE9",
+    product_id: "prod_Tyzh45p7SqdgGh",
+    mode: "subscription" as const,
+    interval: "6 mois",
+    description: "3 numéros livrés chez vous, tacite reconduction",
+    features: [
+      "3 numéros sur 6 mois",
+      "Livraison incluse",
+      "Accès aux articles en ligne",
+    ],
+  },
+  numeroCourant: {
+    id: "numero-courant",
+    name: "Le numéro en cours",
+    price: 6.5,
+    price_id: "price_1T11jSKbRd4yKDMHeJwcET6L",
+    product_id: "prod_TyziMCpsgR7ham",
+    mode: "payment" as const,
+    description: "L'édition actuelle livrée chez vous",
+    features: [
+      "Magazine papier haute qualité",
+      "Livraison incluse",
+      "Accès aux articles en ligne",
+    ],
+  },
+  ancienNumero: {
+    id: "ancien-numero",
+    name: "Ancien numéro",
+    price: 5,
+    price_id: "price_1T11jkKbRd4yKDMHX2rIHogS",
+    product_id: "prod_TyzjBfXTeN7CJT",
+    mode: "payment" as const,
+    description: "Ancien numéro d'Info Pêche",
+    features: [
+      "Magazine papier",
+      "Livraison incluse",
+    ],
+  },
+} as const;
+
+export type ProductKey = keyof typeof PRODUCTS;

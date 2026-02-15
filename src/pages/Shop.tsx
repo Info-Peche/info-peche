@@ -6,6 +6,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { CartProvider, useCart } from "@/context/CartContext";
 import SideCart from "@/components/SideCart";
+import { PRODUCTS } from "@/lib/products";
 
 interface BackIssue {
   id: string;
@@ -21,7 +22,7 @@ const backIssues: BackIssue[] = [
     id: "ip-120",
     title: "Spécial Compétition",
     issue: "N°120 — Janvier 2026",
-    price: 6.90,
+    price: PRODUCTS.ancienNumero.price,
     image: "https://images.unsplash.com/photo-1500375592092-40eb2168fd21?w=400&h=550&fit=crop",
     description: "Dossier complet sur les stratégies de compétition, interviews des champions et tests matériel.",
   },
@@ -29,7 +30,7 @@ const backIssues: BackIssue[] = [
     id: "ip-119",
     title: "Les canaux en hiver",
     issue: "N°119 — Décembre 2025",
-    price: 6.90,
+    price: PRODUCTS.ancienNumero.price,
     image: "https://images.unsplash.com/photo-1504309092620-4d0ec726efa4?w=400&h=550&fit=crop",
     description: "Techniques hivernales, montages fins et amorces spéciales pour les canaux en eau froide.",
   },
@@ -37,7 +38,7 @@ const backIssues: BackIssue[] = [
     id: "ip-118",
     title: "Spécial Étangs",
     issue: "N°118 — Novembre 2025",
-    price: 6.90,
+    price: PRODUCTS.ancienNumero.price,
     image: "https://images.unsplash.com/photo-1472396961693-142e6e269027?w=400&h=550&fit=crop",
     description: "Tout savoir sur la pêche en étang : choix du poste, amorçage et gestion de la partie de pêche.",
   },
@@ -45,7 +46,7 @@ const backIssues: BackIssue[] = [
     id: "ip-117",
     title: "Rivières sauvages",
     issue: "N°117 — Octobre 2025",
-    price: 6.90,
+    price: PRODUCTS.ancienNumero.price,
     image: "https://images.unsplash.com/photo-1506953823976-52e1fdc0149a?w=400&h=550&fit=crop",
     description: "Reportage exclusif sur les plus belles rivières françaises pour la pêche au coup.",
   },
@@ -53,7 +54,7 @@ const backIssues: BackIssue[] = [
     id: "ip-116",
     title: "Guide du débutant",
     issue: "N°116 — Septembre 2025",
-    price: 6.90,
+    price: PRODUCTS.ancienNumero.price,
     image: "https://images.unsplash.com/photo-1485833077787-4535e3f31b1a?w=400&h=550&fit=crop",
     description: "Le numéro idéal pour commencer : matériel, techniques de base et premiers pas au bord de l'eau.",
   },
@@ -61,7 +62,7 @@ const backIssues: BackIssue[] = [
     id: "ip-115",
     title: "Spécial été",
     issue: "N°115 — Juillet 2025",
-    price: 5.90,
+    price: PRODUCTS.ancienNumero.price,
     image: "https://images.unsplash.com/photo-1500375592092-40eb2168fd21?w=400&h=550&fit=crop",
     description: "Les meilleures techniques estivales, pêche de nuit et gros poissons de saison.",
   },

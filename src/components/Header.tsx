@@ -13,6 +13,15 @@ const resourceLinks = [
   { name: "Contact", href: "/contact" },
 ];
 
+const handleAbonnementClick = (setMobileMenuOpen?: (v: boolean) => void) => {
+  if (window.location.pathname === "/") {
+    document.getElementById("subscribe")?.scrollIntoView({ behavior: "smooth" });
+  } else {
+    window.location.href = "/#subscribe";
+  }
+  setMobileMenuOpen?.(false);
+};
+
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -66,6 +75,13 @@ const Header = () => {
           >
             Accueil
           </Link>
+
+          <button
+            onClick={() => handleAbonnementClick()}
+            className="text-foreground/80 hover:text-primary transition-colors font-medium text-sm uppercase tracking-wide"
+          >
+            Abonnement
+          </button>
 
           {isHome && (
             <a
@@ -161,6 +177,13 @@ const Header = () => {
               >
                 Accueil
               </Link>
+
+              <button
+                onClick={() => handleAbonnementClick(setIsMobileMenuOpen)}
+                className="text-foreground/80 hover:text-primary font-medium p-2 w-full text-left"
+              >
+                Abonnement
+              </button>
 
               {/* Mobile Resources Accordion */}
               <button

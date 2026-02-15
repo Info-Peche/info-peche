@@ -21,7 +21,7 @@ const LatestEdition = () => {
   const product = {
     id: "mag-current",
     name: "Info-Pêche - Édition Actuelle",
-    price: 6.90,
+    price: 6.50,
     image: COVER_IMAGE,
     description: "Le guide ultime pour réussir votre saison de pêche."
   };
@@ -43,14 +43,19 @@ const LatestEdition = () => {
           >
             {/* Video or cover */}
             {showVideo ? (
-              <div className="relative z-10 rounded-2xl overflow-hidden shadow-2xl border border-border/50 aspect-video">
-                <iframe
-                  src={`https://www.youtube.com/embed/${YOUTUBE_VIDEO_ID}?autoplay=1&rel=0`}
-                  title="Info-Pêche - Feuilletez le dernier numéro"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  className="w-full h-full"
-                />
+              <div className="space-y-3">
+                <div className="relative z-10 rounded-2xl overflow-hidden shadow-2xl border border-border/50 aspect-video">
+                  <iframe
+                    src={`https://www.youtube.com/embed/${YOUTUBE_VIDEO_ID}?autoplay=1&rel=0`}
+                    title="Info-Pêche - Feuilletez le dernier numéro"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="w-full h-full"
+                  />
+                </div>
+                <p className="text-sm text-muted-foreground text-center italic">
+                  Nicolas, rédacteur en chef, vous présente le dernier numéro d'Info Pêche
+                </p>
               </div>
             ) : (
               <div className="relative">
@@ -78,16 +83,19 @@ const LatestEdition = () => {
                     </div>
                   </div>
                 </div>
+                <p className="text-sm text-muted-foreground text-center italic mt-3">
+                  Nicolas, rédacteur en chef, vous présente le dernier numéro
+                </p>
 
                 {/* Floating badge */}
                 <motion.div
                   animate={{ rotate: [10, 14, 10], y: [0, -4, 0] }}
                   transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                  className="absolute -top-5 -right-5 z-20 bg-accent text-accent-foreground w-22 h-22 rounded-full flex items-center justify-center font-bold shadow-lg shadow-accent/30"
+                  className="absolute -top-5 -right-5 z-20 bg-accent text-accent-foreground w-24 h-24 rounded-full flex items-center justify-center font-bold shadow-lg shadow-accent/30"
                 >
-                  <div className="text-center text-sm leading-tight p-4">
-                    <Sparkles className="w-4 h-4 mx-auto mb-0.5" />
-                    NOUVEAU
+                  <div className="text-center leading-tight p-3">
+                    <span className="text-base font-extrabold block">N°100</span>
+                    <span className="text-[10px] font-medium block mt-0.5">Janvier 2026</span>
                   </div>
                 </motion.div>
               </div>
@@ -138,7 +146,7 @@ const LatestEdition = () => {
                 onClick={() => addItem(product)}
               >
                 <ShoppingCart className="mr-2 h-5 w-5" />
-                Acheter ce numéro — 6,90€
+                Acheter ce numéro — 6,50€
               </Button>
               <span className="text-sm text-muted-foreground">
                 Livraison gratuite en France

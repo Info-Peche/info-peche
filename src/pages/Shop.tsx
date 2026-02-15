@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { ShoppingBag, Monitor, Package, AlertCircle } from "lucide-react";
+import { ShoppingBag, Monitor, Package, AlertCircle, BookOpen, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,8 +12,11 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 
+type ViewMode = "online" | "physical";
+
 const ShopContent = () => {
   const { addItem } = useCart();
+  const [viewMode, setViewMode] = useState<ViewMode>("online");
 
   const { data: issues, isLoading } = useQuery({
     queryKey: ["archived-issues"],
@@ -25,6 +29,13 @@ const ShopContent = () => {
       if (error) throw error;
       return data;
     },
+  });
+
+  const filteredIssues = issues?.filter((issue) => {
+    if (viewMode === "physical") {
+      return issue.physical_stock !== null && issue.physical_stock > 0;
+    }
+    return true; // digital always available
   });
 
   const handleAddPhysical = (issue: any) => {
@@ -53,17 +64,43 @@ const ShopContent = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-16"
+          className="text-center mb-12"
         >
           <span className="inline-block py-1.5 px-4 rounded-full bg-primary/10 text-primary font-bold text-xs tracking-widest uppercase mb-5">
             Archives
           </span>
           <h1 className="text-4xl md:text-5xl font-serif font-bold text-foreground mb-4">
-            Anciens Numéros
+            Retrouvez tous les anciens numéros
           </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Retrouvez tous les anciens numéros d'Info Pêche. Chaque magazine est une mine d'informations pour progresser.
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-10">
+            Chaque magazine est une mine d'informations pour progresser. Choisissez votre format préféré.
           </p>
+
+          {/* Split toggle */}
+          <div className="inline-flex bg-secondary rounded-full p-1.5 gap-1">
+            <button
+              onClick={() => setViewMode("online")}
+              className={`flex items-center gap-2 px-6 py-3 rounded-full text-sm font-bold transition-all duration-300 ${
+                viewMode === "online"
+                  ? "bg-primary text-primary-foreground shadow-lg"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <BookOpen className="w-4 h-4" />
+              Consultez en ligne
+            </button>
+            <button
+              onClick={() => setViewMode("physical")}
+              className={`flex items-center gap-2 px-6 py-3 rounded-full text-sm font-bold transition-all duration-300 ${
+                viewMode === "physical"
+                  ? "bg-primary text-primary-foreground shadow-lg"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Truck className="w-4 h-4" />
+              Livraison à domicile
+            </button>
+          </div>
         </motion.div>
 
         {isLoading ? (
@@ -72,15 +109,19 @@ const ShopContent = () => {
               <Skeleton key={i} className="h-[420px] rounded-2xl" />
             ))}
           </div>
-        ) : !issues || issues.length === 0 ? (
+        ) : !filteredIssues || filteredIssues.length === 0 ? (
           <div className="text-center py-20">
             <AlertCircle className="w-12 h-12 text-muted-foreground/40 mx-auto mb-4" />
-            <p className="text-muted-foreground text-lg">Aucun ancien numéro disponible pour le moment.</p>
+            <p className="text-muted-foreground text-lg">
+              {viewMode === "physical"
+                ? "Aucun ancien numéro disponible en stock papier pour le moment."
+                : "Aucun ancien numéro disponible pour le moment."}
+            </p>
             <p className="text-sm text-muted-foreground mt-2">Revenez bientôt, nous ajoutons régulièrement de nouvelles archives.</p>
           </div>
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {issues.map((issue, index) => {
+            {filteredIssues.map((issue, index) => {
               const hasPhysical = issue.physical_stock !== null && issue.physical_stock > 0;
               const physicalPrice = (issue.physical_price_cents || 500) / 100;
               const digitalPrice = (issue.price_cents || 300) / 100;
@@ -99,48 +140,39 @@ const ShopContent = () => {
                         alt={issue.title}
                         className="w-full h-72 object-cover group-hover:scale-105 transition-transform duration-500"
                       />
-                      <div className="absolute top-3 left-3 flex gap-2">
+                      <div className="absolute top-3 left-3">
                         <Badge variant="secondary" className="bg-white/90 backdrop-blur-sm text-foreground text-xs font-bold shadow-sm">
-                          <Monitor className="w-3 h-3 mr-1" /> En ligne
+                          {viewMode === "online" ? (
+                            <><Monitor className="w-3 h-3 mr-1" /> En ligne</>
+                          ) : (
+                            <><Package className="w-3 h-3 mr-1" /> Papier</>
+                          )}
                         </Badge>
-                        {hasPhysical && (
-                          <Badge variant="secondary" className="bg-white/90 backdrop-blur-sm text-foreground text-xs font-bold shadow-sm">
-                            <Package className="w-3 h-3 mr-1" /> Papier
-                          </Badge>
-                        )}
                       </div>
-                      {!hasPhysical && issue.physical_stock !== null && (
-                        <div className="absolute top-3 right-3">
-                          <Badge variant="destructive" className="text-xs">Épuisé en papier</Badge>
-                        </div>
-                      )}
                     </div>
                     <CardContent className="p-5 flex flex-col flex-1">
                       <p className="text-xs text-muted-foreground font-medium mb-1">{issue.issue_number}</p>
                       <h2 className="text-lg font-serif font-bold text-foreground mb-2">{issue.title}</h2>
                       <p className="text-sm text-muted-foreground mb-5 flex-1 line-clamp-3">{issue.description}</p>
                       
-                      <div className="space-y-2.5 mt-auto">
-                        {/* Digital button - always available */}
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="w-full rounded-full border-primary/30 text-primary hover:bg-primary/5"
-                          onClick={() => handleAddDigital(issue)}
-                        >
-                          <Monitor className="h-4 w-4 mr-2" />
-                          Lire en ligne — {digitalPrice.toFixed(2)}€
-                        </Button>
-                        
-                        {/* Physical button - only if in stock */}
-                        {hasPhysical && (
+                      <div className="mt-auto">
+                        {viewMode === "online" ? (
+                          <Button
+                            size="sm"
+                            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-full"
+                            onClick={() => handleAddDigital(issue)}
+                          >
+                            <Monitor className="h-4 w-4 mr-2" />
+                            Lire en ligne — {digitalPrice.toFixed(2)}€
+                          </Button>
+                        ) : (
                           <Button
                             size="sm"
                             className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-full"
                             onClick={() => handleAddPhysical(issue)}
                           >
                             <ShoppingBag className="h-4 w-4 mr-2" />
-                            Commander en papier — {physicalPrice.toFixed(2)}€
+                            Commander — {physicalPrice.toFixed(2)}€
                           </Button>
                         )}
                       </div>

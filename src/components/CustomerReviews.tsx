@@ -1,16 +1,18 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { Star, Send, CheckCircle } from "lucide-react";
+import { Star, Send, CheckCircle, Camera, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 interface Review {
   id: string;
   author_name: string;
   author_location: string | null;
+  avatar_url: string | null;
   rating: number;
   review_text: string;
   created_at: string;
@@ -26,6 +28,9 @@ const CustomerReviews = () => {
   const [rating, setRating] = useState(5);
   const [hoverRating, setHoverRating] = useState(0);
   const [text, setText] = useState("");
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -54,11 +59,31 @@ const CustomerReviews = () => {
     if (!name.trim() || !text.trim()) return;
 
     setLoading(true);
+
+    let avatarUrl: string | null = null;
+
+    // Upload avatar if provided
+    if (avatarFile) {
+      const fileExt = avatarFile.name.split(".").pop();
+      const filePath = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage
+        .from("review-avatars")
+        .upload(filePath, avatarFile);
+
+      if (!uploadError) {
+        const { data: urlData } = supabase.storage
+          .from("review-avatars")
+          .getPublicUrl(filePath);
+        avatarUrl = urlData.publicUrl;
+      }
+    }
+
     const { error } = await supabase.from("reviews").insert({
       author_name: name.trim(),
       author_location: location.trim() || null,
       rating,
       review_text: text.trim(),
+      avatar_url: avatarUrl,
     });
     setLoading(false);
 
@@ -74,6 +99,20 @@ const CustomerReviews = () => {
       setLocation("");
       setRating(5);
       setText("");
+      setAvatarFile(null);
+      setAvatarPreview(null);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast({ title: "Fichier trop volumineux", description: "Max 5 Mo", variant: "destructive" });
+        return;
+      }
+      setAvatarFile(file);
+      setAvatarPreview(URL.createObjectURL(file));
     }
   };
 
@@ -139,15 +178,25 @@ const CustomerReviews = () => {
                 <p className="text-foreground text-sm leading-relaxed mb-4 italic">
                   "{review.review_text}"
                 </p>
-                <div>
-                  <p className="font-semibold text-foreground text-sm">
-                    {review.author_name}
-                  </p>
-                  {review.author_location && (
-                    <p className="text-muted-foreground text-xs">
-                      {review.author_location}
+                <div className="flex items-center gap-3">
+                  <Avatar className="w-9 h-9">
+                    {review.avatar_url ? (
+                      <AvatarImage src={review.avatar_url} alt={review.author_name} />
+                    ) : null}
+                    <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
+                      {review.author_name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-semibold text-foreground text-sm">
+                      {review.author_name}
                     </p>
-                  )}
+                    {review.author_location && (
+                      <p className="text-muted-foreground text-xs">
+                        {review.author_location}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </motion.div>
             ))}
@@ -205,6 +254,46 @@ const CustomerReviews = () => {
                     onChange={(e) => setLocation(e.target.value)}
                     placeholder="Loire-Atlantique (44)"
                   />
+                </div>
+              </div>
+
+              {/* Photo upload */}
+              <div>
+                <label className="text-sm font-medium text-foreground mb-1 block">
+                  Votre photo (optionnel)
+                </label>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+                <div className="flex items-center gap-3">
+                  <Avatar className="w-12 h-12 cursor-pointer border-2 border-dashed border-border hover:border-primary transition-colors" onClick={() => fileInputRef.current?.click()}>
+                    {avatarPreview ? (
+                      <AvatarImage src={avatarPreview} alt="Aperçu" />
+                    ) : null}
+                    <AvatarFallback className="bg-muted">
+                      <Camera className="w-5 h-5 text-muted-foreground" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="text-sm text-primary hover:underline"
+                  >
+                    {avatarPreview ? "Changer la photo" : "Ajouter une photo"}
+                  </button>
+                  {avatarPreview && (
+                    <button
+                      type="button"
+                      onClick={() => { setAvatarFile(null); setAvatarPreview(null); }}
+                      className="text-sm text-muted-foreground hover:text-destructive"
+                    >
+                      Supprimer
+                    </button>
+                  )}
                 </div>
               </div>
 

@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Check, ShoppingCart } from "lucide-react";
+import { Check, ShoppingCart, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
 import magazineCover from "@/assets/magazine-cover-new.jpg";
@@ -23,46 +23,56 @@ const LatestEdition = () => {
   };
 
   return (
-    <section id="magazine" className="py-24 bg-white relative overflow-hidden">
-      {/* Background Decorative Element */}
-      <div className="absolute top-0 right-0 w-1/3 h-full bg-secondary/30 -skew-x-12 transform translate-x-1/2" />
+    <section id="magazine" className="py-28 bg-background relative overflow-hidden">
+      {/* Decorative background */}
+      <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-secondary/60 to-transparent" />
+      <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl" />
 
       <div className="container px-4 mx-auto relative z-10">
-        <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-24">
-          <motion.div 
-            initial={{ opacity: 0, x: -50 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6 }}
+        <div className="flex flex-col lg:flex-row items-center gap-16 lg:gap-24">
+          <motion.div
+            initial={{ opacity: 0, x: -50, rotate: -2 }}
+            whileInView={{ opacity: 1, x: 0, rotate: 0 }}
+            transition={{ duration: 0.7 }}
             viewport={{ once: true }}
             className="flex-1 relative group w-full max-w-md"
           >
-            <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full transform rotate-6 group-hover:rotate-12 transition-all duration-700" />
-            <div className="relative z-10 p-4 bg-white rounded-xl shadow-2xl border border-border/50">
-               <img 
-                src={magazineCover} 
-                alt="Couverture du magazine Info-Pêche" 
-                className="w-full h-auto rounded-lg shadow-sm"
+            {/* Glow behind cover */}
+            <div className="absolute inset-4 bg-primary/15 blur-[60px] rounded-full group-hover:bg-primary/25 transition-all duration-700" />
+
+            <div className="relative z-10 p-3 bg-card rounded-2xl shadow-2xl border border-border/50 group-hover:shadow-glow-primary transition-all duration-500">
+              <img
+                src={magazineCover}
+                alt="Couverture du magazine Info-Pêche"
+                className="w-full h-auto rounded-xl"
               />
             </div>
-            
-            {/* Sticker effect */}
-            <div className="absolute -top-6 -right-6 z-20 bg-accent text-accent-foreground w-20 h-20 rounded-full flex items-center justify-center font-bold shadow-lg rotate-12">
-              <span className="text-center text-sm leading-tight">NOUVEAU<br/>NUMÉRO</span>
-            </div>
+
+            {/* Floating badge */}
+            <motion.div
+              animate={{ rotate: [10, 14, 10], y: [0, -4, 0] }}
+              transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+              className="absolute -top-5 -right-5 z-20 bg-accent text-accent-foreground w-22 h-22 rounded-full flex items-center justify-center font-bold shadow-lg shadow-accent/30"
+            >
+              <div className="text-center text-sm leading-tight p-4">
+                <Sparkles className="w-4 h-4 mx-auto mb-0.5" />
+                NOUVEAU
+              </div>
+            </motion.div>
           </motion.div>
 
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: 50 }}
             whileInView={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
             viewport={{ once: true }}
             className="flex-1 space-y-8"
           >
             <div>
-              <span className="inline-block py-1 px-3 rounded-md bg-red-100 text-primary font-bold text-sm tracking-wide mb-4">
-                ACTUELLEMENT EN KIOSQUE
+              <span className="inline-block py-1.5 px-4 rounded-full bg-primary/10 text-primary font-bold text-xs tracking-widest uppercase mb-5">
+                Actuellement en kiosque
               </span>
-              <h2 className="text-4xl md:text-5xl font-serif font-bold mb-4 text-foreground">
+              <h2 className="text-4xl md:text-5xl font-serif font-bold mb-5 text-foreground leading-tight">
                 L'Édition du Mois
               </h2>
               <p className="text-lg text-muted-foreground leading-relaxed">
@@ -70,28 +80,35 @@ const LatestEdition = () => {
               </p>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3">
               {features.map((feature, index) => (
-                <div key={index} className="flex items-center space-x-3 p-3 bg-secondary/50 rounded-lg hover:bg-secondary transition-colors">
-                  <div className="bg-primary text-white p-1 rounded-full shrink-0">
-                    <Check className="h-4 w-4" />
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, x: 20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.4, delay: 0.2 + index * 0.08 }}
+                  viewport={{ once: true }}
+                  className="flex items-center space-x-3 p-3.5 bg-secondary/70 rounded-xl hover:bg-secondary transition-colors group/item"
+                >
+                  <div className="bg-primary text-primary-foreground p-1.5 rounded-full shrink-0 group-hover/item:scale-110 transition-transform">
+                    <Check className="h-3.5 w-3.5" />
                   </div>
                   <span className="text-foreground font-medium">{feature}</span>
-                </div>
+                </motion.div>
               ))}
             </div>
 
             <div className="pt-4 flex flex-col sm:flex-row items-start sm:items-center gap-4">
-              <Button 
-                size="lg" 
-                className="bg-foreground text-white hover:bg-foreground/90 rounded-full px-8 py-6 text-lg shadow-lg"
+              <Button
+                size="lg"
+                className="bg-foreground text-background hover:bg-foreground/90 rounded-full px-10 py-6 text-lg shadow-xl hover:scale-105 transition-all duration-300"
                 onClick={() => addItem(product)}
               >
                 <ShoppingCart className="mr-2 h-5 w-5" />
-                Acheter ce numéro (6.90€)
+                Acheter ce numéro — 6,90€
               </Button>
               <span className="text-sm text-muted-foreground">
-                Livraison gratuite en France métropolitaine
+                Livraison gratuite en France
               </span>
             </div>
           </motion.div>

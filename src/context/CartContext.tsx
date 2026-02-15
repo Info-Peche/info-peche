@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useToast } from "@/components/ui/use-toast";
+import React, { createContext, useContext, useState } from 'react';
+import { toast } from "sonner";
 
 type Product = {
   id: string;
@@ -29,8 +29,6 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const [items, setItems] = useState<CartItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
-  const { toast } = useToast();
-
   const addItem = (product: Product) => {
     setItems(currentItems => {
       const existingItem = currentItems.find(item => item.id === product.id);
@@ -44,9 +42,9 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
       return [...currentItems, { ...product, quantity: 1 }];
     });
     setIsOpen(true);
-    toast({
-      title: "Produit ajouté",
-      description: `${product.name} a été ajouté à votre panier.`,
+    toast.success(`${product.name} ajouté au panier`, {
+      duration: 2000,
+      position: "bottom-center",
     });
   };
 

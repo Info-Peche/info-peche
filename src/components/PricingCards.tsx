@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
 import { PRODUCTS } from "@/lib/products";
 
+const COVER_IMAGE = "https://fokaikipfikcokjwyeka.supabase.co/storage/v1/object/public/magazine-covers/ip100-cover.png";
+
 const PricingCards = () => {
   const { addItem } = useCart();
 
@@ -93,7 +95,7 @@ const PricingCards = () => {
                       ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20 hover:scale-[1.02]"
                       : "bg-foreground text-background hover:bg-foreground/90"
                   }`}
-                  onClick={() => addItem({ id: product.id, name: product.name, price: product.price })}
+                  onClick={() => addItem({ id: product.id, name: product.name, price: product.price, image: COVER_IMAGE })}
                 >
                   Je choisis cette offre
                 </Button>

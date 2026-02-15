@@ -4,7 +4,7 @@ import { ArrowLeft, Loader2, ShoppingBag, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CartProvider, useCart } from "@/context/CartContext";
+import { useCart } from "@/context/CartContext";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -212,10 +212,10 @@ const CheckoutContent = () => {
 };
 
 const Checkout = () => (
-  <CartProvider>
+  <>
     <CheckoutContent />
     <SideCart />
-  </CartProvider>
+  </>
 );
 
 export default Checkout;

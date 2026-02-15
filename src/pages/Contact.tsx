@@ -9,7 +9,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { CartProvider } from "@/context/CartContext";
+
 import SideCart from "@/components/SideCart";
 
 const Contact = () => {
@@ -48,7 +48,7 @@ const Contact = () => {
   };
 
   return (
-    <CartProvider>
+    <>
     <div className="min-h-screen bg-background">
       <Header />
       <SideCart />
@@ -156,7 +156,7 @@ const Contact = () => {
       </main>
       <Footer />
     </div>
-    </CartProvider>
+    </>
   );
 };
 

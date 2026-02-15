@@ -4,7 +4,7 @@ import { ArrowRight, Lock } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { CartProvider } from "@/context/CartContext";
+
 import SideCart from "@/components/SideCart";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -33,7 +33,7 @@ const Blog = () => {
   });
 
   return (
-    <CartProvider>
+    <>
       <div className="min-h-screen bg-background">
         <Header />
         <SideCart />
@@ -124,7 +124,7 @@ const Blog = () => {
 
         <Footer />
       </div>
-    </CartProvider>
+    </>
   );
 };
 

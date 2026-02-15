@@ -79,9 +79,7 @@ serve(async (req) => {
       line_items: lineItems,
       mode,
       metadata,
-      payment_method_types: mode === "subscription"
-        ? ["card", "sepa_debit"]
-        : ["card", "paypal", "sepa_debit"],
+      payment_method_types: ["card", "sepa_debit"],
       success_url: `${origin}/commande-confirmee?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/boutique`,
       locale: "fr",

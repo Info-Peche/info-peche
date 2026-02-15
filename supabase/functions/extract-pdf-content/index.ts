@@ -31,35 +31,13 @@ serve(async (req) => {
       throw new Error("Could not generate signed URL for PDF");
     }
 
-    // Download the PDF
-    const pdfResponse = await fetch(signedData.signedUrl);
-    if (!pdfResponse.ok) throw new Error("Failed to download PDF");
-
-    const pdfBuffer = await pdfResponse.arrayBuffer();
-    const pdfBase64 = btoa(
-      new Uint8Array(pdfBuffer).reduce((data, byte) => data + String.fromCharCode(byte), "")
-    );
-
-    console.log(`PDF downloaded, size: ${pdfBuffer.byteLength} bytes`);
-
+    // Pass signed URL directly to AI (avoids downloading large PDFs in memory)
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
-    const defaultPrompt = `Analyse ce magazine de pêche PDF. Extrais:
-1. Une description détaillée de la couverture (couleurs, images, texte visible)
-2. Le sommaire / table des matières si visible
-3. Tout article ou section concernant "l'asticot rouge" ou les appâts naturels - extrais le contenu complet de cet article avec tous les détails techniques.
+    console.log(`Using signed URL for PDF analysis`);
 
-Réponds en JSON avec cette structure:
-{
-  "cover_description": "description détaillée de la couverture",
-  "table_of_contents": ["liste des articles"],
-  "target_article": {
-    "title": "titre de l'article",
-    "content": "contenu complet de l'article en markdown",
-    "key_points": ["points clés"]
-  }
-}`;
+    const defaultPrompt = `Analyse ce magazine de pêche PDF. Extrais le contenu principal.`;
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -77,7 +55,7 @@ Réponds en JSON avec cette structure:
               {
                 type: "image_url",
                 image_url: {
-                  url: `data:application/pdf;base64,${pdfBase64}`,
+                  url: signedData.signedUrl,
                 },
               },
             ],

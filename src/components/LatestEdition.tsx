@@ -1,11 +1,15 @@
 import { motion } from "framer-motion";
-import { Check, ShoppingCart, Sparkles } from "lucide-react";
+import { Check, ShoppingCart, Sparkles, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
 import magazineCover from "@/assets/magazine-cover-new.jpg";
+import { useState } from "react";
+
+const YOUTUBE_VIDEO_ID = "gwYLuVXP-Ik";
 
 const LatestEdition = () => {
   const { addItem } = useCart();
+  const [showVideo, setShowVideo] = useState(false);
 
   const features = [
     "Dossier spécial : Les amorces d'hiver",
@@ -35,30 +39,59 @@ const LatestEdition = () => {
             whileInView={{ opacity: 1, x: 0, rotate: 0 }}
             transition={{ duration: 0.7 }}
             viewport={{ once: true }}
-            className="flex-1 relative group w-full max-w-md"
+            className="flex-1 relative group w-full max-w-xl space-y-6"
           >
-            {/* Glow behind cover */}
-            <div className="absolute inset-4 bg-primary/15 blur-[60px] rounded-full group-hover:bg-primary/25 transition-all duration-700" />
-
-            <div className="relative z-10 p-3 bg-card rounded-2xl shadow-2xl border border-border/50 group-hover:shadow-glow-primary transition-all duration-500">
-              <img
-                src={magazineCover}
-                alt="Couverture du magazine Info-Pêche"
-                className="w-full h-auto rounded-xl"
-              />
-            </div>
-
-            {/* Floating badge */}
-            <motion.div
-              animate={{ rotate: [10, 14, 10], y: [0, -4, 0] }}
-              transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute -top-5 -right-5 z-20 bg-accent text-accent-foreground w-22 h-22 rounded-full flex items-center justify-center font-bold shadow-lg shadow-accent/30"
-            >
-              <div className="text-center text-sm leading-tight p-4">
-                <Sparkles className="w-4 h-4 mx-auto mb-0.5" />
-                NOUVEAU
+            {/* Video or cover */}
+            {showVideo ? (
+              <div className="relative z-10 rounded-2xl overflow-hidden shadow-2xl border border-border/50 aspect-video">
+                <iframe
+                  src={`https://www.youtube.com/embed/${YOUTUBE_VIDEO_ID}?autoplay=1&rel=0`}
+                  title="Info-Pêche - Feuilletez le dernier numéro"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  className="w-full h-full"
+                />
               </div>
-            </motion.div>
+            ) : (
+              <div className="relative">
+                {/* Glow behind cover */}
+                <div className="absolute inset-4 bg-primary/15 blur-[60px] rounded-full group-hover:bg-primary/25 transition-all duration-700" />
+
+                <div 
+                  className="relative z-10 p-3 bg-card rounded-2xl shadow-2xl border border-border/50 group-hover:shadow-glow-primary transition-all duration-500 cursor-pointer"
+                  onClick={() => setShowVideo(true)}
+                >
+                  <div className="relative">
+                    <img
+                      src={`https://img.youtube.com/vi/${YOUTUBE_VIDEO_ID}/maxresdefault.jpg`}
+                      alt="Vidéo de présentation du magazine Info-Pêche"
+                      className="w-full h-auto rounded-xl aspect-video object-cover"
+                    />
+                    {/* Play button overlay */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-20 h-20 bg-primary/90 rounded-full flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform duration-300">
+                        <Play className="w-8 h-8 text-primary-foreground ml-1" fill="currentColor" />
+                      </div>
+                    </div>
+                    <div className="absolute bottom-4 left-4 bg-black/60 backdrop-blur-sm text-white text-sm px-3 py-1.5 rounded-lg font-medium">
+                      ▶ Feuilletez le numéro en vidéo
+                    </div>
+                  </div>
+                </div>
+
+                {/* Floating badge */}
+                <motion.div
+                  animate={{ rotate: [10, 14, 10], y: [0, -4, 0] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                  className="absolute -top-5 -right-5 z-20 bg-accent text-accent-foreground w-22 h-22 rounded-full flex items-center justify-center font-bold shadow-lg shadow-accent/30"
+                >
+                  <div className="text-center text-sm leading-tight p-4">
+                    <Sparkles className="w-4 h-4 mx-auto mb-0.5" />
+                    NOUVEAU
+                  </div>
+                </motion.div>
+              </div>
+            )}
           </motion.div>
 
           <motion.div

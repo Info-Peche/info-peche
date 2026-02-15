@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Plus, Minus, ShoppingBag, Trash2 } from "lucide-react";
+import { X, Plus, Minus, ShoppingBag, Trash2, Truck, Star, Shield, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -28,7 +28,7 @@ const SideCart = () => {
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="fixed top-0 right-0 h-full w-full sm:w-[400px] bg-white shadow-2xl z-50 flex flex-col"
+            className="fixed top-0 right-0 h-full w-full sm:w-[420px] bg-white shadow-2xl z-50 flex flex-col"
           >
             <div className="p-6 border-b flex items-center justify-between bg-secondary/20">
               <h2 className="text-xl font-serif font-bold text-primary flex items-center gap-2">
@@ -38,6 +38,12 @@ const SideCart = () => {
               <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="hover:bg-black/5">
                 <X className="w-5 h-5" />
               </Button>
+            </div>
+
+            {/* Trust banner */}
+            <div className="px-6 py-3 bg-primary/5 border-b border-primary/10 flex items-center gap-3">
+              <Truck className="w-4 h-4 text-primary shrink-0" />
+              <span className="text-xs font-semibold text-primary">Livraison OFFERTE en France métropolitaine</span>
             </div>
 
             <ScrollArea className="flex-1 p-6">
@@ -97,8 +103,26 @@ const SideCart = () => {
               )}
             </ScrollArea>
 
-            <div className="p-6 border-t bg-secondary/10">
-              <div className="flex justify-between items-center mb-6">
+            <div className="p-6 border-t bg-secondary/10 space-y-4">
+              {/* Trust indicators */}
+              {items.length > 0 && (
+                <div className="space-y-2.5">
+                  <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
+                    <Star className="w-3.5 h-3.5 text-accent fill-accent shrink-0" />
+                    <span><strong className="text-foreground">4.8/5</strong> — Noté par plus de 20 000 lecteurs</span>
+                  </div>
+                  <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
+                    <Shield className="w-3.5 h-3.5 text-primary shrink-0" />
+                    <span>Satisfait ou remboursé — Annulation à tout moment</span>
+                  </div>
+                  <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
+                    <CreditCard className="w-3.5 h-3.5 text-primary shrink-0" />
+                    <span>Paiement 100% sécurisé par Stripe</span>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-between items-center pt-2">
                 <span className="text-muted-foreground">Total</span>
                 <span className="text-2xl font-serif font-bold text-primary">
                   {total.toFixed(2)}€

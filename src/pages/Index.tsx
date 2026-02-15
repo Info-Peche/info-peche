@@ -8,15 +8,18 @@ import PricingCards from "@/components/PricingCards";
 import Storytelling from "@/components/Storytelling";
 import ContentHighlights from "@/components/ContentHighlights";
 import Testimonials from "@/components/Testimonials";
+import CustomerReviews from "@/components/CustomerReviews";
 import FinalCTA from "@/components/FinalCTA";
 import FAQ from "@/components/FAQ";
 import Footer from "@/components/Footer";
 import SideCart from "@/components/SideCart";
+import JsonLd from "@/components/JsonLd";
 
 const Index = () => {
   return (
     <CartProvider>
       <div className="min-h-screen bg-background font-sans selection:bg-accent/30">
+        <JsonLd />
         <Header />
         <main>
           <Hero />
@@ -27,6 +30,7 @@ const Index = () => {
           <Storytelling />
           <ContentHighlights />
           <Testimonials />
+          <CustomerReviews />
           <FinalCTA />
           <FAQ />
         </main>

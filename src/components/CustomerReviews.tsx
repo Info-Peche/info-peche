@@ -151,9 +151,9 @@ const CustomerReviews = () => {
           )}
         </div>
 
-        {/* Reviews grid */}
+        {/* Reviews masonry grid — Loox-style */}
         {reviews.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+          <div className="columns-2 lg:columns-3 gap-4 space-y-4 mb-12">
             {reviews.map((review, index) => (
               <motion.div
                 key={review.id}
@@ -161,24 +161,25 @@ const CustomerReviews = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.05 }}
-                className="bg-card rounded-2xl overflow-hidden border border-border shadow-sm group"
+                className="break-inside-avoid bg-card rounded-2xl overflow-hidden border border-border shadow-sm group"
               >
-                {/* Large photo */}
+                {/* Vertical selfie photo */}
                 {review.avatar_url && (
-                  <div className="aspect-[4/3] overflow-hidden">
+                  <div className="overflow-hidden">
                     <img
                       src={review.avatar_url}
                       alt={review.author_name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      className="w-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      loading="lazy"
                     />
                   </div>
                 )}
-                <div className="p-6">
-                  <div className="flex items-center gap-1 mb-3">
+                <div className="p-4">
+                  <div className="flex items-center gap-1 mb-2">
                     {[...Array(5)].map((_, i) => (
                       <Star
                         key={i}
-                        className={`w-4 h-4 ${
+                        className={`w-3.5 h-3.5 ${
                           i < review.rating
                             ? "text-accent fill-current"
                             : "text-border"
@@ -186,18 +187,23 @@ const CustomerReviews = () => {
                       />
                     ))}
                   </div>
-                  <p className="text-foreground text-sm leading-relaxed mb-4 italic">
+                  <p className="text-foreground text-sm leading-relaxed mb-3 line-clamp-4">
                     "{review.review_text}"
                   </p>
-                  <div>
-                    <p className="font-semibold text-foreground text-sm">
-                      {review.author_name}
-                    </p>
-                    {review.author_location && (
-                      <p className="text-muted-foreground text-xs">
-                        {review.author_location}
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold shrink-0">
+                      {review.author_name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-foreground text-xs truncate">
+                        {review.author_name}
                       </p>
-                    )}
+                      {review.author_location && (
+                        <p className="text-muted-foreground text-[11px] truncate">
+                          {review.author_location}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </motion.div>

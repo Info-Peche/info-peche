@@ -16,6 +16,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import Contact from "./pages/Contact";
 import MentionsLegales from "./pages/MentionsLegales";
 import CGV from "./pages/CGV";
+import MagazineViewer from "./pages/MagazineViewer";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +37,7 @@ const App = () => (
           <Route path="/contact" element={<Contact />} />
           <Route path="/mentions-legales" element={<MentionsLegales />} />
           <Route path="/cgv" element={<CGV />} />
+          <Route path="/lire" element={<MagazineViewer />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="*" element={<NotFound />} />

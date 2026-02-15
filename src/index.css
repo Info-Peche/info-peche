@@ -120,4 +120,16 @@
   .section-padding {
     @apply px-4 sm:px-6 lg:px-8 py-16 md:py-24;
   }
+
+  .shadow-glow-primary {
+    box-shadow: 0 0 40px -10px hsl(354 85% 45% / 0.35);
+  }
+
+  .shadow-glow-accent {
+    box-shadow: 0 0 40px -10px hsl(48 95% 50% / 0.4);
+  }
+
+  .card-hover {
+    @apply hover:shadow-xl hover:-translate-y-1 transition-all duration-300;
+  }
 }

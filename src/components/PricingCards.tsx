@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Check, Trophy, Sparkles } from "lucide-react";
+import { Check, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
 import { PRODUCTS } from "@/lib/products";
@@ -18,7 +18,6 @@ const PricingCards = () => {
 
   return (
     <section id="subscribe" className="py-28 bg-gradient-to-b from-secondary/50 via-background to-background relative overflow-hidden">
-      {/* Decorative */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px]" />
 
       <div className="container px-4 mx-auto relative z-10">
@@ -61,7 +60,16 @@ const PricingCards = () => {
                 </div>
               )}
 
-              <div className="p-6">
+              {/* Cover image */}
+              <div className="px-6 pt-5 pb-2">
+                <img
+                  src={COVER_IMAGE}
+                  alt="Couverture Info Pêche N°100"
+                  className="w-full h-36 object-contain rounded-lg"
+                />
+              </div>
+
+              <div className="px-6 pb-6">
                 <div className="mb-4">
                   <h3 className="text-lg font-bold mb-1 text-foreground">{product.name}</h3>
                   <p className="text-xs text-muted-foreground">{product.description}</p>

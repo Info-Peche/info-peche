@@ -6,7 +6,7 @@ import LatestEdition from "@/components/LatestEdition";
 import PricingCards from "@/components/PricingCards";
 import Storytelling from "@/components/Storytelling";
 import ContentHighlights from "@/components/ContentHighlights";
-import Testimonials from "@/components/Testimonials";
+
 import CustomerReviews from "@/components/CustomerReviews";
 import FinalCTA from "@/components/FinalCTA";
 import FAQ from "@/components/FAQ";
@@ -27,7 +27,6 @@ const Index = () => {
         <PricingCards />
         <Storytelling />
         <ContentHighlights />
-        <Testimonials />
         <CustomerReviews />
         <FinalCTA />
         <FAQ />

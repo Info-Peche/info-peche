@@ -14,6 +14,140 @@ export type Database = {
   }
   public: {
     Tables: {
+      blog_articles: {
+        Row: {
+          author: string | null
+          category: string | null
+          content: string
+          cover_image: string | null
+          created_at: string | null
+          excerpt: string
+          id: string
+          is_free: boolean
+          paywall_preview_length: number | null
+          published_at: string | null
+          related_issue_id: string | null
+          slug: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          author?: string | null
+          category?: string | null
+          content: string
+          cover_image?: string | null
+          created_at?: string | null
+          excerpt: string
+          id?: string
+          is_free?: boolean
+          paywall_preview_length?: number | null
+          published_at?: string | null
+          related_issue_id?: string | null
+          slug: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          author?: string | null
+          category?: string | null
+          content?: string
+          cover_image?: string | null
+          created_at?: string | null
+          excerpt?: string
+          id?: string
+          is_free?: boolean
+          paywall_preview_length?: number | null
+          published_at?: string | null
+          related_issue_id?: string | null
+          slug?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      digital_access: {
+        Row: {
+          access_type: string
+          created_at: string | null
+          email: string
+          expires_at: string
+          id: string
+          issue_id: string | null
+          stripe_checkout_session_id: string | null
+        }
+        Insert: {
+          access_type: string
+          created_at?: string | null
+          email: string
+          expires_at: string
+          id?: string
+          issue_id?: string | null
+          stripe_checkout_session_id?: string | null
+        }
+        Update: {
+          access_type?: string
+          created_at?: string | null
+          email?: string
+          expires_at?: string
+          id?: string
+          issue_id?: string | null
+          stripe_checkout_session_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "digital_access_issue_id_fkey"
+            columns: ["issue_id"]
+            isOneToOne: false
+            referencedRelation: "digital_issues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      digital_issues: {
+        Row: {
+          cover_image: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          is_current: boolean | null
+          issue_number: string
+          pdf_url: string | null
+          preview_pages: number | null
+          price_cents: number | null
+          published_at: string | null
+          title: string
+          youtube_video_url: string | null
+        }
+        Insert: {
+          cover_image?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_current?: boolean | null
+          issue_number: string
+          pdf_url?: string | null
+          preview_pages?: number | null
+          price_cents?: number | null
+          published_at?: string | null
+          title: string
+          youtube_video_url?: string | null
+        }
+        Update: {
+          cover_image?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_current?: boolean | null
+          issue_number?: string
+          pdf_url?: string | null
+          preview_pages?: number | null
+          price_cents?: number | null
+          published_at?: string | null
+          title?: string
+          youtube_video_url?: string | null
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           address_line1: string

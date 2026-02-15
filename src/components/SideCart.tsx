@@ -2,19 +2,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Plus, Minus, ShoppingBag, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
-import { useToast } from "@/components/ui/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 const SideCart = () => {
   const { isOpen, setIsOpen, items, removeItem, updateQuantity, total } = useCart();
-  const { toast } = useToast();
 
-  const handleCheckout = async () => {
-    toast({
-      title: "Redirection vers le paiement...",
-      description: "Cette fonctionnalité sera bientôt disponible avec Stripe.",
-    });
-    // Integration logic for Stripe would go here
+  const handleCheckout = () => {
+    setIsOpen(false);
+    window.location.href = "/commande";
   };
 
   return (

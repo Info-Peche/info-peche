@@ -2,10 +2,10 @@ import { motion } from "framer-motion";
 import { Check, ShoppingCart, Sparkles, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
-import magazineCover from "@/assets/magazine-cover-new.jpg";
 import { useState } from "react";
 
 const YOUTUBE_VIDEO_ID = "gwYLuVXP-Ik";
+const COVER_IMAGE = "https://fokaikipfikcokjwyeka.supabase.co/storage/v1/object/public/magazine-covers/ip100-cover.png";
 
 const LatestEdition = () => {
   const { addItem } = useCart();
@@ -22,7 +22,7 @@ const LatestEdition = () => {
     id: "mag-current",
     name: "Info-Pêche - Édition Actuelle",
     price: 6.90,
-    image: magazineCover,
+    image: COVER_IMAGE,
     description: "Le guide ultime pour réussir votre saison de pêche."
   };
 

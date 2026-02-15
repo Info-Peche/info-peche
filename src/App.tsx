@@ -11,6 +11,11 @@ import Shop from "./pages/Shop";
 import NotFound from "./pages/NotFound";
 import Checkout from "./pages/Checkout";
 import OrderConfirmation from "./pages/OrderConfirmation";
+import AdminLogin from "./pages/AdminLogin";
+import AdminDashboard from "./pages/AdminDashboard";
+import Contact from "./pages/Contact";
+import MentionsLegales from "./pages/MentionsLegales";
+import CGV from "./pages/CGV";
 
 const queryClient = new QueryClient();
 
@@ -28,7 +33,11 @@ const App = () => (
           <Route path="/boutique" element={<Shop />} />
           <Route path="/commande" element={<Checkout />} />
           <Route path="/commande-confirmee" element={<OrderConfirmation />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/mentions-legales" element={<MentionsLegales />} />
+          <Route path="/cgv" element={<CGV />} />
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin" element={<AdminDashboard />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

@@ -1,4 +1,3 @@
-import { CartProvider } from "@/context/CartContext";
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
 import TrustBar from "@/components/TrustBar";
@@ -17,27 +16,25 @@ import JsonLd from "@/components/JsonLd";
 
 const Index = () => {
   return (
-    <CartProvider>
-      <div className="min-h-screen bg-background font-sans selection:bg-accent/30">
-        <JsonLd />
-        <Header />
-        <main>
-          <Hero />
-          <TrustBar />
-          <LatestEdition />
-          
-          <PricingCards />
-          <Storytelling />
-          <ContentHighlights />
-          <Testimonials />
-          <CustomerReviews />
-          <FinalCTA />
-          <FAQ />
-        </main>
-        <Footer />
-        <SideCart />
-      </div>
-    </CartProvider>
+    <div className="min-h-screen bg-background font-sans selection:bg-accent/30">
+      <JsonLd />
+      <Header />
+      <main>
+        <Hero />
+        <TrustBar />
+        <LatestEdition />
+        
+        <PricingCards />
+        <Storytelling />
+        <ContentHighlights />
+        <Testimonials />
+        <CustomerReviews />
+        <FinalCTA />
+        <FAQ />
+      </main>
+      <Footer />
+      <SideCart />
+    </div>
   );
 };
 

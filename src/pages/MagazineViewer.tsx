@@ -21,7 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { CartProvider, useCart } from "@/context/CartContext";
+import { useCart } from "@/context/CartContext";
 import SideCart from "@/components/SideCart";
 
 // Configure PDF.js worker
@@ -454,11 +454,7 @@ const MagazineViewerContent = () => {
 };
 
 const MagazineViewer = () => {
-  return (
-    <CartProvider>
-      <MagazineViewerContent />
-    </CartProvider>
-  );
+  return <MagazineViewerContent />;
 };
 
 export default MagazineViewer;

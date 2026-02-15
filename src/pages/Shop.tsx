@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { CartProvider, useCart } from "@/context/CartContext";
+import { useCart } from "@/context/CartContext";
 import SideCart from "@/components/SideCart";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -187,14 +187,12 @@ const ShopContent = () => {
 
 const Shop = () => {
   return (
-    <CartProvider>
-      <div className="min-h-screen bg-background">
-        <Header />
-        <SideCart />
-        <ShopContent />
-        <Footer />
-      </div>
-    </CartProvider>
+    <div className="min-h-screen bg-background">
+      <Header />
+      <SideCart />
+      <ShopContent />
+      <Footer />
+    </div>
   );
 };
 

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { CartProvider } from "@/context/CartContext";
+
 import SideCart from "@/components/SideCart";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -92,7 +92,7 @@ const BlogArticle = () => {
   };
 
   return (
-    <CartProvider>
+    <>
       <div className="min-h-screen bg-background">
         <Header />
         <SideCart />
@@ -223,7 +223,7 @@ const BlogArticle = () => {
 
         <Footer />
       </div>
-    </CartProvider>
+    </>
   );
 };
 

@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { CartProvider } from "@/context/CartContext";
+
 import SideCart from "@/components/SideCart";
 
 const events = [
@@ -31,7 +31,7 @@ const events = [
 
 const Events = () => {
   return (
-    <CartProvider>
+    <>
       <div className="min-h-screen bg-background">
         <Header />
         <SideCart />
@@ -93,7 +93,7 @@ const Events = () => {
 
         <Footer />
       </div>
-    </CartProvider>
+    </>
   );
 };
 

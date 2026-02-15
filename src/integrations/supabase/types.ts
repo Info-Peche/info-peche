@@ -109,9 +109,12 @@ export type Database = {
           created_at: string | null
           description: string | null
           id: string
+          is_archived: boolean | null
           is_current: boolean | null
           issue_number: string
           pdf_url: string | null
+          physical_price_cents: number | null
+          physical_stock: number | null
           preview_pages: number | null
           price_cents: number | null
           published_at: string | null
@@ -123,9 +126,12 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           id?: string
+          is_archived?: boolean | null
           is_current?: boolean | null
           issue_number: string
           pdf_url?: string | null
+          physical_price_cents?: number | null
+          physical_stock?: number | null
           preview_pages?: number | null
           price_cents?: number | null
           published_at?: string | null
@@ -137,9 +143,12 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           id?: string
+          is_archived?: boolean | null
           is_current?: boolean | null
           issue_number?: string
           pdf_url?: string | null
+          physical_price_cents?: number | null
+          physical_stock?: number | null
           preview_pages?: number | null
           price_cents?: number | null
           published_at?: string | null

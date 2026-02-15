@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Lock, Calendar, User, BookOpen } from "lucide-react";
+import { ArrowLeft, Lock, Calendar, User, BookOpen, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { CartProvider } from "@/context/CartContext";
@@ -10,9 +12,39 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PRODUCTS } from "@/lib/products";
+import { toast } from "@/hooks/use-toast";
 
 const BlogArticle = () => {
   const { slug } = useParams<{ slug: string }>();
+  const [email, setEmail] = useState("");
+  const [purchasing, setPurchasing] = useState(false);
+
+  const handleDigitalPurchase = async (accessType: "single_issue" | "pass_15_days") => {
+    if (!email) {
+      toast({ title: "Email requis", description: "Entrez votre email pour continuer.", variant: "destructive" });
+      return;
+    }
+    setPurchasing(true);
+    try {
+      const priceId = accessType === "single_issue" ? PRODUCTS.lectureNumero.price_id : PRODUCTS.pass15jours.price_id;
+      const { data, error } = await supabase.functions.invoke("create-digital-checkout", {
+        body: {
+          email,
+          price_id: priceId,
+          issue_id: article?.related_issue_id || null,
+          access_type: accessType,
+        },
+      });
+      if (error) throw error;
+      if (data?.url) {
+        window.open(data.url, "_blank");
+      }
+    } catch (err: any) {
+      toast({ title: "Erreur", description: err.message || "Impossible de créer la session de paiement.", variant: "destructive" });
+    } finally {
+      setPurchasing(false);
+    }
+  };
 
   const { data: article, isLoading } = useQuery({
     queryKey: ["blog-article", slug],
@@ -133,15 +165,27 @@ const BlogArticle = () => {
                         <h3 className="text-xl font-bold text-foreground mb-2">
                           Envie de lire la suite ?
                         </h3>
-                        <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                        <p className="text-muted-foreground mb-4 max-w-md mx-auto">
                           Cet article complet est disponible dans votre magazine Info Pêche.
                         </p>
+
+                        <div className="max-w-xs mx-auto mb-5">
+                          <Input
+                            type="email"
+                            placeholder="Votre email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            className="text-center"
+                          />
+                        </div>
+
                         <div className="flex flex-col sm:flex-row gap-3 justify-center">
                           <Button
                             className="bg-primary hover:bg-primary/90 text-white font-bold rounded-full px-6"
-                            onClick={() => { window.location.href = "/#subscribe"; }}
+                            onClick={() => handleDigitalPurchase("single_issue")}
+                            disabled={purchasing}
                           >
-                            <BookOpen className="w-4 h-4 mr-2" />
+                            {purchasing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <BookOpen className="w-4 h-4 mr-2" />}
                             Lire en ligne — {PRODUCTS.lectureNumero.price}€
                           </Button>
                           <Button
@@ -154,9 +198,13 @@ const BlogArticle = () => {
                         </div>
                         <p className="text-xs text-muted-foreground mt-4">
                           ou accédez à tous les anciens numéros avec le{" "}
-                          <Link to="/#subscribe" className="text-primary font-medium underline">
+                          <button
+                            onClick={() => handleDigitalPurchase("pass_15_days")}
+                            className="text-primary font-medium underline cursor-pointer disabled:opacity-50"
+                            disabled={purchasing}
+                          >
                             Pass 15 jours — {PRODUCTS.pass15jours.price}€
-                          </Link>
+                          </button>
                         </p>
                       </div>
                     </motion.div>

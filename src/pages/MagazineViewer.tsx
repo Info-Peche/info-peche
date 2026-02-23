@@ -512,8 +512,7 @@ const MagazineViewerContent = () => {
           </Button>
           <Button
             size="sm"
-            variant="outline"
-            className="rounded-full px-6 font-bold border-white/30 text-white hover:bg-white/10"
+            className="rounded-full px-6 font-bold bg-white text-foreground hover:bg-white/90"
             onClick={handleBuyDigital}
           >
             Ce numéro — {((issueInfo?.price_cents || 300) / 100).toFixed(0)}€

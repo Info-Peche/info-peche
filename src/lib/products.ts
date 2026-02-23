@@ -11,10 +11,10 @@ export const PRODUCTS = {
     description: "Le choix malin : 4€ le numéro au lieu de 6,50€",
     features: [
       "12 numéros livrés chez vous",
-      "Cadeau de bienvenue exclusif",
-      "Accès illimité aux archives numériques",
-      "Invitations événements VIP",
-      "—25% vs. achat au numéro",
+      "Paiement en 4× sans frais",
+      "Articles premium en ligne (blog abonnés)",
+      "Accès illimité aux anciens numéros",
+      "−40% vs. achat au numéro",
     ],
   },
   abo1an: {
@@ -25,12 +25,11 @@ export const PRODUCTS = {
     product_id: "prod_Tyzho0muIqVKsX",
     mode: "subscription" as const,
     interval: "1 an",
-    description: "6 numéros livrés + version numérique offerte",
+    description: "6 numéros livrés + accès premium en ligne",
     features: [
       "6 numéros livrés chez vous",
-      "Version numérique incluse",
-      "Accès archives (1 an)",
-      "Newsletter conseils exclusifs",
+      "Articles premium en ligne (blog abonnés)",
+      "−30% vs. achat au numéro",
     ],
   },
   abo6mois: {
@@ -44,8 +43,7 @@ export const PRODUCTS = {
     description: "L'idéal pour découvrir, livraison offerte",
     features: [
       "3 numéros livrés chez vous",
-      "Livraison offerte en France",
-      "Accès articles en ligne",
+      "Livraison offerte",
     ],
   },
   numeroCourant: {
@@ -58,8 +56,7 @@ export const PRODUCTS = {
     description: "L'édition actuelle livrée chez vous",
     features: [
       "Magazine papier haute qualité",
-      "Livraison incluse",
-      "Accès aux articles en ligne",
+      "Frais de livraison selon destination",
     ],
   },
   ancienNumero: {

@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ShoppingBag, Menu, X, ChevronDown } from "lucide-react";
+import { ShoppingBag, Menu, X, ChevronDown, UserCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
 import logo from "@/assets/info-peche-logo.jpg";
 
 const resourceLinks = [
@@ -28,6 +29,7 @@ const Header = () => {
   const [isResourcesOpen, setIsResourcesOpen] = useState(false);
   const [isMobileResourcesOpen, setIsMobileResourcesOpen] = useState(false);
   const { setIsOpen, itemCount } = useCart();
+  const { user } = useAuth();
   const dropdownRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const isHome = location.pathname === "/";
@@ -134,7 +136,18 @@ const Header = () => {
           </Button>
         </nav>
 
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-3">
+          <Link to="/mon-compte">
+            <Button
+              variant="ghost"
+              size="icon"
+              className={`text-foreground hover:bg-primary/10 hover:text-primary ${user ? "text-primary" : ""}`}
+              title={user ? "Mon compte" : "Se connecter"}
+            >
+              <UserCircle className="h-6 w-6" />
+            </Button>
+          </Link>
+
           <Button
             variant="ghost"
             size="icon"

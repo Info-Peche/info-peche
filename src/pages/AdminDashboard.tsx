@@ -237,8 +237,10 @@ const AdminDashboard = () => {
     }
   };
 
+  const isSubscription = (order: Order) => order.order_type.startsWith("subscription");
+
   const getFormulaLabel = (order: Order) => {
-    if (order.order_type === "subscription") return order.subscription_type || "—";
+    if (isSubscription(order)) return order.subscription_type || "—";
     if (order.items && Array.isArray(order.items) && order.items.length > 0) {
       const issues = order.items.map((item: any) => item.issue_number || item.title || item.name).filter(Boolean);
       return issues.length > 0 ? `N°${issues.join(", N°")}` : "—";
@@ -247,7 +249,7 @@ const AdminDashboard = () => {
   };
 
   const getSubscriptionCount = (email: string) =>
-    orders.filter(o => o.email === email && o.order_type === "subscription" && o.payment_status === "paid").length;
+    orders.filter(o => o.email === email && isSubscription(o) && o.payment_status === "paid").length;
 
   const getCustomerSince = (email: string) => {
     const co = orders.filter(o => o.email === email && o.payment_status === "paid");
@@ -296,7 +298,7 @@ const AdminDashboard = () => {
           ? <span className="whitespace-nowrap">{new Date(order.subscription_end_date).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" })}</span>
           : "—";
       case "renouvellement":
-        if (order.order_type !== "subscription") return "—";
+        if (!isSubscription(order)) return "—";
         const count = getSubscriptionCount(order.email);
         return count > 1
           ? <Badge variant="default" className="text-xs gap-1"><RefreshCw className="w-3 h-3" /> {count}× renouvelé</Badge>

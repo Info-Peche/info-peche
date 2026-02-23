@@ -33,7 +33,7 @@ serve(async (req) => {
 
     // Retrieve the checkout session with line items
     const session = await stripe.checkout.sessions.retrieve(session_id, {
-      expand: ["line_items", "line_items.data.price.product"],
+      expand: ["line_items", "line_items.data.price.product", "subscription"],
     });
     logStep("Session retrieved", { status: session.payment_status, email: session.customer_details?.email });
 
@@ -55,14 +55,49 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
+    // Build update payload
+    const updatePayload: Record<string, any> = {
+      payment_status: "paid",
+      status: "confirmed",
+      stripe_payment_intent_id: session.payment_intent as string || null,
+      stripe_subscription_id: session.subscription
+        ? (typeof session.subscription === "string" ? session.subscription : session.subscription.id)
+        : null,
+    };
+
+    // If this is a subscription, extract dates and payment method from Stripe
+    if (session.mode === "subscription" && session.subscription) {
+      const sub = typeof session.subscription === "string"
+        ? await stripe.subscriptions.retrieve(session.subscription)
+        : session.subscription;
+
+      const startDate = new Date(sub.current_period_start * 1000).toISOString();
+      const endDate = new Date(sub.current_period_end * 1000).toISOString();
+      updatePayload.subscription_start_date = startDate;
+      updatePayload.subscription_end_date = endDate;
+      updatePayload.is_recurring = true;
+
+      // Detect payment method type
+      const pmTypes = sub.default_payment_method
+        ? typeof sub.default_payment_method === "string"
+          ? null
+          : sub.default_payment_method.type
+        : null;
+      if (pmTypes) {
+        const methodMap: Record<string, string> = {
+          card: "card",
+          sepa_debit: "sepa_debit",
+          paypal: "paypal",
+        };
+        updatePayload.payment_method = methodMap[pmTypes] || pmTypes;
+      }
+
+      logStep("Subscription dates set", { startDate, endDate });
+    }
+
     const { data: orderData, error: updateError } = await supabaseAdmin
       .from("orders")
-      .update({
-        payment_status: "paid",
-        status: "confirmed",
-        stripe_payment_intent_id: session.payment_intent as string || null,
-        stripe_subscription_id: session.subscription as string || null,
-      })
+      .update(updatePayload)
       .eq("stripe_checkout_session_id", session_id)
       .select()
       .single();

@@ -95,7 +95,7 @@ serve(async (req) => {
       },
       custom_text: {
         submit: {
-          message: "🎣 Merci pour votre commande ! Rejoignez les 20 000+ lecteurs qui nous font confiance.",
+          message: "🎣 Rejoignez les 20 000+ lecteurs qui nous font confiance.",
         },
         after_submit: {
           message: "L'équipe Info-Pêche vous souhaite une bonne lecture !",
@@ -110,7 +110,7 @@ serve(async (req) => {
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      { auth: { persistSession: false } }
+      { auth: { persistSession: false } },
     );
 
     const totalAmount = items.reduce((sum: number, item: any) => {

@@ -277,12 +277,6 @@ const CheckoutContent = () => {
                 )}
               </Button>
               <div className="text-center space-y-2 mt-4">
-                <p className="text-sm font-semibold text-foreground">
-                  🎣 Rejoignez les 20 000+ lecteurs qui nous font confiance.
-                </p>
-                <p className="text-sm text-muted-foreground italic">
-                  L'équipe Info-Pêche vous souhaite une bonne lecture !
-                </p>
                 <p className="text-xs text-muted-foreground">Paiement sécurisé par Stripe — CB, PayPal, SEPA</p>
               </div>
             </motion.form>

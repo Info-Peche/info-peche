@@ -159,8 +159,8 @@ const ShopContent = () => {
                             className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-full"
                             onClick={() => handleAddDigital(issue)}
                           >
-                            <Eye className="h-4 w-4 mr-2" />
-                            Feuilleter l'aperçu
+                            <BookOpen className="h-4 w-4 mr-2" />
+                            Consulter le magazine
                           </Button>
                         ) : (
                           <Button

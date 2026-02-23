@@ -457,8 +457,7 @@ const MagazineViewerContent = () => {
                   </ul>
                   <Button
                     size="sm"
-                    variant="outline"
-                    className="w-full rounded-full font-bold border-white/30 text-white hover:bg-white/10"
+                    className="w-full rounded-full font-bold bg-foreground/80 text-background hover:bg-foreground border border-foreground/50"
                     onClick={handleBuyDigital}
                   >
                     Acheter ce numéro

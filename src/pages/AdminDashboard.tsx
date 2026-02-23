@@ -13,8 +13,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { LogOut, Search, Package, Loader2, Download, CheckCircle } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LogOut, Search, Package, Loader2, Download, Newspaper } from "lucide-react";
 import { toast } from "sonner";
+import AdminEditionManager from "@/components/AdminEditionManager";
 
 type Order = {
   id: string;
@@ -179,7 +181,7 @@ const AdminDashboard = () => {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Package className="w-6 h-6 text-primary" />
-            <h1 className="text-xl font-serif font-bold text-foreground">Admin — Commandes</h1>
+            <h1 className="text-xl font-serif font-bold text-foreground">Administration</h1>
           </div>
           <Button variant="ghost" size="sm" onClick={handleLogout}>
             <LogOut className="w-4 h-4 mr-2" /> Déconnexion
@@ -188,97 +190,114 @@ const AdminDashboard = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <div className="flex items-center gap-4 mb-6 flex-wrap">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Rechercher par nom, email ou n° commande..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          <Badge variant="outline" className="text-sm">
-            {filteredOrders.length} commande{filteredOrders.length > 1 ? "s" : ""}
-          </Badge>
-          <Button variant="outline" size="sm" onClick={exportCSV}>
-            <Download className="w-4 h-4 mr-2" /> Exporter CSV
-          </Button>
-        </div>
+        <Tabs defaultValue="orders" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="orders" className="gap-2">
+              <Package className="w-4 h-4" /> Commandes
+            </TabsTrigger>
+            <TabsTrigger value="edition" className="gap-2">
+              <Newspaper className="w-4 h-4" /> Édition du mois
+            </TabsTrigger>
+          </TabsList>
 
-        {loading ? (
-          <div className="text-center py-20">
-            <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto" />
-          </div>
-        ) : filteredOrders.length === 0 ? (
-          <div className="text-center py-20 text-muted-foreground">
-            Aucune commande trouvée.
-          </div>
-        ) : (
-          <div className="bg-card rounded-xl border border-border overflow-hidden">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-10">✓</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Client</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Tél</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Formule</TableHead>
-                    <TableHead>Total</TableHead>
-                    <TableHead>Paiement</TableHead>
-                    <TableHead>Ville</TableHead>
-                    <TableHead>Commentaire</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredOrders.map(order => (
-                    <TableRow key={order.id} className={order.is_processed ? "opacity-60" : ""}>
-                      <TableCell>
-                        <Checkbox
-                          checked={order.is_processed}
-                          onCheckedChange={() => toggleProcessed(order.id, order.is_processed)}
-                        />
-                      </TableCell>
-                      <TableCell className="text-xs whitespace-nowrap">
-                        {new Date(order.created_at).toLocaleDateString("fr-FR", {
-                          day: "2-digit", month: "2-digit", year: "numeric",
-                        })}
-                      </TableCell>
-                      <TableCell className="font-medium text-sm">
-                        {order.first_name} {order.last_name}
-                      </TableCell>
-                      <TableCell className="text-xs">{order.email}</TableCell>
-                      <TableCell className="text-xs">{order.phone || "—"}</TableCell>
-                      <TableCell>
-                        <Badge variant={order.is_recurring ? "default" : "outline"} className="text-xs">
-                          {order.order_type === "subscription" ? "Abo" : "Achat"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-xs">{order.subscription_type || "—"}</TableCell>
-                      <TableCell className="font-bold text-sm">
-                        {(order.total_amount / 100).toFixed(2)}€
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={statusColor(order.payment_status) as any} className="text-xs">
-                          {order.payment_status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-xs">
-                        {order.postal_code} {order.city}
-                      </TableCell>
-                      <TableCell className="text-xs max-w-[150px] truncate" title={order.comment || ""}>
-                        {order.comment || "—"}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+          <TabsContent value="edition">
+            <AdminEditionManager />
+          </TabsContent>
+
+          <TabsContent value="orders">
+            <div className="flex items-center gap-4 mb-6 flex-wrap">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Rechercher par nom, email ou n° commande..."
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Badge variant="outline" className="text-sm">
+                {filteredOrders.length} commande{filteredOrders.length > 1 ? "s" : ""}
+              </Badge>
+              <Button variant="outline" size="sm" onClick={exportCSV}>
+                <Download className="w-4 h-4 mr-2" /> Exporter CSV
+              </Button>
             </div>
-          </div>
-        )}
+
+            {loading ? (
+              <div className="text-center py-20">
+                <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto" />
+              </div>
+            ) : filteredOrders.length === 0 ? (
+              <div className="text-center py-20 text-muted-foreground">
+                Aucune commande trouvée.
+              </div>
+            ) : (
+              <div className="bg-card rounded-xl border border-border overflow-hidden">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-10">✓</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Client</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Tél</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Formule</TableHead>
+                        <TableHead>Total</TableHead>
+                        <TableHead>Paiement</TableHead>
+                        <TableHead>Ville</TableHead>
+                        <TableHead>Commentaire</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredOrders.map(order => (
+                        <TableRow key={order.id} className={order.is_processed ? "opacity-60" : ""}>
+                          <TableCell>
+                            <Checkbox
+                              checked={order.is_processed}
+                              onCheckedChange={() => toggleProcessed(order.id, order.is_processed)}
+                            />
+                          </TableCell>
+                          <TableCell className="text-xs whitespace-nowrap">
+                            {new Date(order.created_at).toLocaleDateString("fr-FR", {
+                              day: "2-digit", month: "2-digit", year: "numeric",
+                            })}
+                          </TableCell>
+                          <TableCell className="font-medium text-sm">
+                            {order.first_name} {order.last_name}
+                          </TableCell>
+                          <TableCell className="text-xs">{order.email}</TableCell>
+                          <TableCell className="text-xs">{order.phone || "—"}</TableCell>
+                          <TableCell>
+                            <Badge variant={order.is_recurring ? "default" : "outline"} className="text-xs">
+                              {order.order_type === "subscription" ? "Abo" : "Achat"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-xs">{order.subscription_type || "—"}</TableCell>
+                          <TableCell className="font-bold text-sm">
+                            {(order.total_amount / 100).toFixed(2)}€
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={statusColor(order.payment_status) as any} className="text-xs">
+                              {order.payment_status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-xs">
+                            {order.postal_code} {order.city}
+                          </TableCell>
+                          <TableCell className="text-xs max-w-[150px] truncate" title={order.comment || ""}>
+                            {order.comment || "—"}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );

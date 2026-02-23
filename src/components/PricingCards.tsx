@@ -6,11 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { useCart } from "@/context/CartContext";
 import { PRODUCTS } from "@/lib/products";
 import { supabase } from "@/integrations/supabase/client";
-
-const COVER_IMAGE = "https://fokaikipfikcokjwyeka.supabase.co/storage/v1/object/public/magazine-covers/ip100-cover.png";
+import { useCurrentEdition } from "@/hooks/useCurrentEdition";
 
 const PricingCards = () => {
   const [avatars, setAvatars] = useState<string[]>([]);
+  const { data: edition } = useCurrentEdition();
+  const coverImage = edition?.cover_image || "";
 
   useEffect(() => {
     const fetchAvatars = async () => {
@@ -25,6 +26,7 @@ const PricingCards = () => {
     };
     fetchAvatars();
   }, []);
+
   const { addItem } = useCart();
 
   const cards = [
@@ -124,6 +126,7 @@ const PricingCards = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 max-w-6xl mx-auto items-start">
           {cards.map((product, index) => {
             const Icon = product.icon;
+            const isSubscription = "interval" in product;
             return (
               <motion.div
                 key={product.id}
@@ -149,10 +152,30 @@ const PricingCards = () => {
                   </div>
                 )}
 
+                {/* Magazine cover visual */}
+                {coverImage && (
+                  <div className="px-6 pt-5 pb-2 flex justify-center">
+                    <div className="relative w-28 h-36 rounded-lg overflow-hidden shadow-lg border border-border/30 group">
+                      <img
+                        src={coverImage}
+                        alt={`Couverture ${edition?.issue_number || "Info Pêche"}`}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      {isSubscription && (
+                        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent pt-4 pb-1.5 px-2">
+                          <p className="text-white text-[9px] font-bold text-center leading-tight">
+                            {product.id === "abo-2-ans" ? "× 12 numéros" : product.id === "abo-1-an" ? "× 6 numéros" : "× 3 numéros"}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* Gradient accent */}
                 <div className={`h-1 bg-gradient-to-r ${product.accentClass}`} />
 
-                <div className="px-6 pt-5 pb-6 flex flex-col flex-1">
+                <div className="px-6 pt-4 pb-6 flex flex-col flex-1">
                   {/* Icon + name */}
                   <div className="flex items-center gap-3 mb-3">
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${product.iconBg}`}>
@@ -171,7 +194,7 @@ const PricingCards = () => {
                       <span className={`text-4xl font-serif font-bold tracking-tight ${product.highlight ? "text-primary" : "text-foreground"}`}>
                         {product.price}€
                       </span>
-                      {"interval" in product && (
+                      {isSubscription && (
                         <span className="text-sm text-muted-foreground mb-1">/ {product.interval}</span>
                       )}
                     </div>
@@ -208,13 +231,13 @@ const PricingCards = () => {
                           ? "bg-foreground text-background hover:bg-foreground/90"
                           : "bg-secondary text-foreground hover:bg-secondary/80 border border-border"
                     }`}
-                    onClick={() => addItem({ id: product.id, name: product.name, price: product.price, image: COVER_IMAGE })}
+                    onClick={() => addItem({ id: product.id, name: product.name, price: product.price, image: coverImage })}
                   >
                     {product.ctaLabel}
                   </Button>
 
                   {/* Guarantee micro-copy */}
-                  {"interval" in product && (
+                  {isSubscription && (
                     <p className="text-[10px] text-muted-foreground text-center mt-3">
                       Sans engagement · Annulable à tout moment
                     </p>

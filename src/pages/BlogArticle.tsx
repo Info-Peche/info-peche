@@ -217,31 +217,6 @@ const BlogArticle = () => {
                               </Button>
                             </div>
 
-                            <div className="border-t border-border pt-4 mt-4">
-                              <p className="text-xs text-muted-foreground mb-3">Ou achetez cet article à l'unité :</p>
-                              <div className="max-w-xs mx-auto mb-3">
-                                <Input
-                                  type="email"
-                                  placeholder="Votre email"
-                                  value={email}
-                                  onChange={(e) => setEmail(e.target.value)}
-                                  className="text-center text-sm"
-                                />
-                              </div>
-                              <div className="flex flex-col sm:flex-row gap-2 justify-center">
-                                <Button size="sm" variant="secondary" onClick={() => handleDigitalPurchase("single_issue")} disabled={purchasing}>
-                                  {purchasing && <Loader2 className="w-3 h-3 mr-1 animate-spin" />}
-                                  <BookOpen className="w-3 h-3 mr-1" />
-                                  Lire en ligne — {PRODUCTS.lectureNumero.price}€
-                                </Button>
-                              </div>
-                              <p className="text-xs text-muted-foreground mt-3">
-                                ou{" "}
-                                <button onClick={() => handleDigitalPurchase("pass_15_days")} className="text-primary font-medium underline cursor-pointer" disabled={purchasing}>
-                                  Pass 15 jours — {PRODUCTS.pass15jours.price}€
-                                </button>
-                              </p>
-                            </div>
                           </div>
                         </motion.div>
                       )}

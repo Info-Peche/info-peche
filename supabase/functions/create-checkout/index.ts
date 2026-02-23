@@ -71,6 +71,13 @@ serve(async (req) => {
       country: customer_info.country || "FR",
       order_type: mode,
       items_json: JSON.stringify(items),
+      comment: customer_info.comment || "",
+      billing_different: customer_info.billing_different ? "true" : "false",
+      billing_address_line1: customer_info.billing_address_line1 || "",
+      billing_address_line2: customer_info.billing_address_line2 || "",
+      billing_city: customer_info.billing_city || "",
+      billing_postal_code: customer_info.billing_postal_code || "",
+      billing_country: customer_info.billing_country || "FR",
     };
 
     const sessionParams: any = {
@@ -79,7 +86,7 @@ serve(async (req) => {
       line_items: lineItems,
       mode,
       metadata,
-      payment_method_types: ["card", "sepa_debit"],
+      payment_method_types: ["card", "sepa_debit", "paypal"],
       success_url: `${origin}/commande-confirmee?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/boutique`,
       locale: "fr",
@@ -128,6 +135,13 @@ serve(async (req) => {
       stripe_checkout_session_id: session.id,
       payment_status: "pending",
       status: "pending",
+      comment: customer_info.comment || null,
+      billing_address_line1: customer_info.billing_different ? customer_info.billing_address_line1 : null,
+      billing_address_line2: customer_info.billing_different ? customer_info.billing_address_line2 : null,
+      billing_city: customer_info.billing_different ? customer_info.billing_city : null,
+      billing_postal_code: customer_info.billing_different ? customer_info.billing_postal_code : null,
+      billing_country: customer_info.billing_different ? customer_info.billing_country : null,
+      subscription_type: hasSubscription ? items[0]?.price_id : null,
     });
 
     if (dbError) {

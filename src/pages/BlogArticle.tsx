@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SideCart from "@/components/SideCart";
+import YouTubeSidebar from "@/components/YouTubeSidebar";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -62,6 +63,21 @@ const BlogArticle = () => {
     enabled: !!slug,
   });
 
+  // Fetch the related issue to get youtube_video_url
+  const { data: relatedIssue } = useQuery({
+    queryKey: ["related-issue", article?.related_issue_id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("digital_issues")
+        .select("youtube_video_url")
+        .eq("id", article!.related_issue_id!)
+        .single();
+      if (error) return null;
+      return data;
+    },
+    enabled: !!article?.related_issue_id,
+  });
+
   const renderContent = (text: string) => {
     return text.split("\n\n").map((paragraph, i) => {
       if (paragraph.startsWith("## ")) {
@@ -84,9 +100,7 @@ const BlogArticle = () => {
   const getDisplayContent = () => {
     if (!article) return "";
     if (article.is_free) return article.content;
-    // Subscribers with blog access see full content
     if (user && hasAccessToBlog) return article.content;
-    // For paywall articles, show only up to the paywall_preview_length
     const cutoff = article.paywall_preview_length || 500;
     const content = article.content;
     let cut = content.indexOf("\n\n", cutoff);
@@ -104,13 +118,21 @@ const BlogArticle = () => {
 
         <main className="pt-24 pb-20">
           {isLoading ? (
-            <div className="container mx-auto px-4 max-w-3xl pt-20">
-              <Skeleton className="h-64 w-full rounded-xl mb-8" />
-              <Skeleton className="h-10 w-3/4 mb-4" />
-              <Skeleton className="h-6 w-1/2 mb-8" />
-              <Skeleton className="h-4 w-full mb-2" />
-              <Skeleton className="h-4 w-full mb-2" />
-              <Skeleton className="h-4 w-2/3" />
+            <div className="container mx-auto px-4 max-w-5xl pt-20">
+              <div className="grid lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2">
+                  <Skeleton className="h-64 w-full rounded-xl mb-8" />
+                  <Skeleton className="h-10 w-3/4 mb-4" />
+                  <Skeleton className="h-6 w-1/2 mb-8" />
+                  <Skeleton className="h-4 w-full mb-2" />
+                  <Skeleton className="h-4 w-full mb-2" />
+                  <Skeleton className="h-4 w-2/3" />
+                </div>
+                <div>
+                  <Skeleton className="h-48 w-full rounded-xl mb-4" />
+                  <Skeleton className="h-32 w-full rounded-xl" />
+                </div>
+              </div>
             </div>
           ) : !article ? (
             <div className="text-center pt-28">
@@ -129,116 +151,117 @@ const BlogArticle = () => {
                 />
               </div>
 
-              <article className="container mx-auto px-4 max-w-3xl -mt-16 relative">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-card rounded-2xl shadow-xl p-8 md:p-12"
-                >
-                  <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mb-6">
-                    <span className="bg-primary/10 text-primary px-3 py-1 rounded-full font-semibold text-xs">
-                      {article.category}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Calendar className="h-4 w-4" />
-                      {new Date(article.published_at).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <User className="h-4 w-4" /> {article.author}
-                    </span>
-                  </div>
-
-                  <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-8 leading-tight">
-                    {article.title}
-                  </h1>
-
-                  <div className="prose prose-lg max-w-none text-foreground/85 leading-relaxed">
-                    {renderContent(getDisplayContent())}
-                  </div>
-
-                  {/* Paywall CTA */}
-                  {showPaywall && (
+              <div className="container mx-auto px-4 max-w-5xl -mt-16 relative">
+                <div className="grid lg:grid-cols-3 gap-8">
+                  {/* Article content */}
+                  <article className="lg:col-span-2">
                     <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.5 }}
-                      className="mt-12 relative"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-card rounded-2xl shadow-xl p-8 md:p-12"
                     >
-                      <div className="absolute -top-20 left-0 right-0 h-20 bg-gradient-to-t from-card to-transparent" />
-                      <div className="bg-muted rounded-xl p-8 text-center border border-border">
-                        <Lock className="h-8 w-8 text-primary mx-auto mb-4" />
-                        <h3 className="text-xl font-bold text-foreground mb-2">
-                          Envie de lire la suite ?
-                        </h3>
-                        <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                          Cet article est réservé aux abonnés Info Pêche (formule 1 an ou 2 ans).
-                        </p>
+                      <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mb-6">
+                        <span className="bg-primary/10 text-primary px-3 py-1 rounded-full font-semibold text-xs">
+                          {article.category}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4" />
+                          {new Date(article.published_at).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <User className="h-4 w-4" /> {article.author}
+                        </span>
+                      </div>
 
-                        <div className="flex flex-col sm:flex-row gap-3 justify-center mb-4">
-                          <Button
-                            className="bg-primary hover:bg-primary/90 text-white font-bold rounded-full px-6"
-                            onClick={() => {
-                              window.location.href = "/#subscribe";
-                            }}
-                          >
-                            <Crown className="w-4 h-4 mr-2" />
-                            Je m'abonne
-                          </Button>
-                          <Button
-                            variant="outline"
-                            className="rounded-full px-6"
-                            onClick={() => navigate("/mon-compte")}
-                          >
-                            <LogIn className="w-4 h-4 mr-2" />
-                            Je me connecte
-                          </Button>
-                        </div>
+                      <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-8 leading-tight">
+                        {article.title}
+                      </h1>
 
-                        <div className="border-t border-border pt-4 mt-4">
-                          <p className="text-xs text-muted-foreground mb-3">Ou achetez cet article à l'unité :</p>
-                          <div className="max-w-xs mx-auto mb-3">
-                            <Input
-                              type="email"
-                              placeholder="Votre email"
-                              value={email}
-                              onChange={(e) => setEmail(e.target.value)}
-                              className="text-center text-sm"
-                            />
+                      <div className="prose prose-lg max-w-none text-foreground/85 leading-relaxed">
+                        {renderContent(getDisplayContent())}
+                      </div>
+
+                      {/* Paywall CTA */}
+                      {showPaywall && (
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: 0.5 }}
+                          className="mt-12 relative"
+                        >
+                          <div className="absolute -top-20 left-0 right-0 h-20 bg-gradient-to-t from-card to-transparent" />
+                          <div className="bg-muted rounded-xl p-8 text-center border border-border">
+                            <Lock className="h-8 w-8 text-primary mx-auto mb-4" />
+                            <h3 className="text-xl font-bold text-foreground mb-2">
+                              Envie de lire la suite ?
+                            </h3>
+                            <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                              Cet article est réservé aux abonnés Info Pêche (formule 1 an ou 2 ans).
+                            </p>
+
+                            <div className="flex flex-col sm:flex-row gap-3 justify-center mb-4">
+                              <Button
+                                className="bg-primary hover:bg-primary/90 text-white font-bold rounded-full px-6"
+                                onClick={() => { window.location.href = "/#subscribe"; }}
+                              >
+                                <Crown className="w-4 h-4 mr-2" />
+                                Je m'abonne
+                              </Button>
+                              <Button
+                                variant="outline"
+                                className="rounded-full px-6"
+                                onClick={() => navigate("/mon-compte")}
+                              >
+                                <LogIn className="w-4 h-4 mr-2" />
+                                Je me connecte
+                              </Button>
+                            </div>
+
+                            <div className="border-t border-border pt-4 mt-4">
+                              <p className="text-xs text-muted-foreground mb-3">Ou achetez cet article à l'unité :</p>
+                              <div className="max-w-xs mx-auto mb-3">
+                                <Input
+                                  type="email"
+                                  placeholder="Votre email"
+                                  value={email}
+                                  onChange={(e) => setEmail(e.target.value)}
+                                  className="text-center text-sm"
+                                />
+                              </div>
+                              <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                                <Button size="sm" variant="secondary" onClick={() => handleDigitalPurchase("single_issue")} disabled={purchasing}>
+                                  {purchasing && <Loader2 className="w-3 h-3 mr-1 animate-spin" />}
+                                  <BookOpen className="w-3 h-3 mr-1" />
+                                  Lire en ligne — {PRODUCTS.lectureNumero.price}€
+                                </Button>
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-3">
+                                ou{" "}
+                                <button onClick={() => handleDigitalPurchase("pass_15_days")} className="text-primary font-medium underline cursor-pointer" disabled={purchasing}>
+                                  Pass 15 jours — {PRODUCTS.pass15jours.price}€
+                                </button>
+                              </p>
+                            </div>
                           </div>
-                          <div className="flex flex-col sm:flex-row gap-2 justify-center">
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              onClick={() => handleDigitalPurchase("single_issue")}
-                              disabled={purchasing}
-                            >
-                              {purchasing && <Loader2 className="w-3 h-3 mr-1 animate-spin" />}
-                              <BookOpen className="w-3 h-3 mr-1" />
-                              Lire en ligne — {PRODUCTS.lectureNumero.price}€
-                            </Button>
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-3">
-                            ou{" "}
-                            <button
-                              onClick={() => handleDigitalPurchase("pass_15_days")}
-                              className="text-primary font-medium underline cursor-pointer"
-                              disabled={purchasing}
-                            >
-                              Pass 15 jours — {PRODUCTS.pass15jours.price}€
-                            </button>
-                          </p>
-                        </div>
+                        </motion.div>
+                      )}
+
+                      <div className="mt-10 pt-6 border-t border-border">
+                        <Link to="/blog" className="inline-flex items-center text-primary font-medium hover:underline">
+                          <ArrowLeft className="mr-2 h-4 w-4" /> Retour au blog
+                        </Link>
                       </div>
                     </motion.div>
-                  )}
+                  </article>
 
-                  <div className="mt-10 pt-6 border-t border-border">
-                    <Link to="/blog" className="inline-flex items-center text-primary font-medium hover:underline">
-                      <ArrowLeft className="mr-2 h-4 w-4" /> Retour au blog
-                    </Link>
-                  </div>
-                </motion.div>
-              </article>
+                  {/* Sidebar */}
+                  <aside className="lg:col-span-1">
+                    <div className="sticky top-28">
+                      <YouTubeSidebar videoUrl={relatedIssue?.youtube_video_url} />
+                    </div>
+                  </aside>
+                </div>
+              </div>
             </>
           )}
         </main>

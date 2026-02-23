@@ -84,6 +84,11 @@ const PricingCards = () => {
                       <span className="text-xs text-muted-foreground ml-1.5">/{product.interval}</span>
                     )}
                   </div>
+                  {product.id === "abo-2-ans" && (
+                    <p className="text-xs font-bold text-primary mt-1">
+                      💳 Paiement en 4× disponible — 4 × 12€
+                    </p>
+                  )}
                 </div>
 
                 <ul className="space-y-3 mb-6">

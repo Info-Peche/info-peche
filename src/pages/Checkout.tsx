@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Loader2, ShoppingBag, Lock } from "lucide-react";
+import { ArrowLeft, Loader2, ShoppingBag, Lock, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import { useCart } from "@/context/CartContext";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,6 +20,7 @@ const CheckoutContent = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [differentBilling, setDifferentBilling] = useState(false);
 
   const [form, setForm] = useState({
     email: "",
@@ -29,9 +32,15 @@ const CheckoutContent = () => {
     city: "",
     postal_code: "",
     country: "FR",
+    comment: "",
+    billing_address_line1: "",
+    billing_address_line2: "",
+    billing_city: "",
+    billing_postal_code: "",
+    billing_country: "FR",
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
@@ -41,12 +50,8 @@ const CheckoutContent = () => {
 
     setLoading(true);
     try {
-      // Map cart items to Stripe line items
       const checkoutItems = items.map(item => {
-        // Find the matching product to get price_id and mode
-        // Match by product id, or fallback to ancien-numero for back issues
         const product = Object.values(PRODUCTS).find(p => p.id === item.id) || PRODUCTS.ancienNumero;
-
         return {
           price_id: product.price_id,
           quantity: item.quantity,
@@ -58,7 +63,10 @@ const CheckoutContent = () => {
       const { data, error } = await supabase.functions.invoke("create-checkout", {
         body: {
           items: checkoutItems,
-          customer_info: form,
+          customer_info: {
+            ...form,
+            billing_different: differentBilling,
+          },
         },
       });
 
@@ -97,6 +105,9 @@ const CheckoutContent = () => {
     );
   }
 
+  // Check if cart has the 2-year subscription
+  const has2YearSub = items.some(item => item.id === "abo-2-ans");
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -118,7 +129,7 @@ const CheckoutContent = () => {
               onSubmit={handleSubmit}
               className="md:col-span-3 space-y-6"
             >
-              <div className="bg-white rounded-xl border border-border p-6 space-y-4">
+              <div className="bg-card rounded-xl border border-border p-6 space-y-4">
                 <h2 className="text-lg font-bold text-foreground">Vos coordonnées</h2>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -140,7 +151,7 @@ const CheckoutContent = () => {
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl border border-border p-6 space-y-4">
+              <div className="bg-card rounded-xl border border-border p-6 space-y-4">
                 <h2 className="text-lg font-bold text-foreground">Adresse de livraison</h2>
                 <div>
                   <Label htmlFor="address_line1">Adresse *</Label>
@@ -160,6 +171,61 @@ const CheckoutContent = () => {
                     <Input id="city" name="city" required value={form.city} onChange={handleChange} />
                   </div>
                 </div>
+              </div>
+
+              {/* Billing address toggle */}
+              <div className="bg-card rounded-xl border border-border p-6 space-y-4">
+                <div className="flex items-center space-x-3">
+                  <Checkbox
+                    id="different_billing"
+                    checked={differentBilling}
+                    onCheckedChange={(checked) => setDifferentBilling(!!checked)}
+                  />
+                  <Label htmlFor="different_billing" className="cursor-pointer font-medium">
+                    Adresse de facturation différente de l'adresse de livraison
+                  </Label>
+                </div>
+
+                {differentBilling && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    className="space-y-4 pt-2"
+                  >
+                    <div>
+                      <Label htmlFor="billing_address_line1">Adresse de facturation *</Label>
+                      <Input id="billing_address_line1" name="billing_address_line1" required value={form.billing_address_line1} onChange={handleChange} />
+                    </div>
+                    <div>
+                      <Label htmlFor="billing_address_line2">Complément</Label>
+                      <Input id="billing_address_line2" name="billing_address_line2" value={form.billing_address_line2} onChange={handleChange} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="billing_postal_code">Code postal *</Label>
+                        <Input id="billing_postal_code" name="billing_postal_code" required value={form.billing_postal_code} onChange={handleChange} />
+                      </div>
+                      <div>
+                        <Label htmlFor="billing_city">Ville *</Label>
+                        <Input id="billing_city" name="billing_city" required value={form.billing_city} onChange={handleChange} />
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </div>
+
+              {/* Comment */}
+              <div className="bg-card rounded-xl border border-border p-6 space-y-3">
+                <Label htmlFor="comment">Commentaire (facultatif)</Label>
+                <Textarea
+                  id="comment"
+                  name="comment"
+                  value={form.comment}
+                  onChange={handleChange}
+                  placeholder="Instructions de livraison, message, etc."
+                  rows={3}
+                  className="resize-none"
+                />
               </div>
 
               <Button
@@ -185,18 +251,40 @@ const CheckoutContent = () => {
               transition={{ delay: 0.1 }}
               className="md:col-span-2"
             >
-              <div className="bg-white rounded-xl border border-border p-6 sticky top-28">
+              <div className="bg-card rounded-xl border border-border p-6 sticky top-28">
                 <h2 className="text-lg font-bold text-foreground mb-4">Récapitulatif</h2>
-                <div className="space-y-3 mb-6">
+                <div className="space-y-4 mb-6">
                   {items.map(item => (
-                    <div key={item.id} className="flex justify-between text-sm">
-                      <span className="text-foreground/80">
-                        {item.name} {item.quantity > 1 && `×${item.quantity}`}
-                      </span>
-                      <span className="font-medium">{(item.price * item.quantity).toFixed(2)}€</span>
+                    <div key={item.id} className="flex items-start gap-3">
+                      {item.image && (
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className="w-16 h-20 object-contain rounded-lg border border-border flex-shrink-0"
+                        />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground leading-tight">{item.name}</p>
+                        {item.quantity > 1 && (
+                          <p className="text-xs text-muted-foreground">×{item.quantity}</p>
+                        )}
+                        <p className="text-sm font-bold text-primary mt-1">
+                          {(item.price * item.quantity).toFixed(2)}€
+                        </p>
+                      </div>
                     </div>
                   ))}
                 </div>
+
+                {has2YearSub && (
+                  <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 mb-4">
+                    <p className="text-xs font-bold text-primary mb-1">💳 Paiement en 4× disponible</p>
+                    <p className="text-xs text-muted-foreground">
+                      4 × {(48 / 4).toFixed(2)}€ — proposé à l'étape suivante via Stripe
+                    </p>
+                  </div>
+                )}
+
                 <div className="border-t border-border pt-4 flex justify-between">
                   <span className="font-bold">Total</span>
                   <span className="text-xl font-bold text-primary">{total.toFixed(2)}€</span>

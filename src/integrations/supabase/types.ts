@@ -161,13 +161,20 @@ export type Database = {
         Row: {
           address_line1: string
           address_line2: string | null
+          billing_address_line1: string | null
+          billing_address_line2: string | null
+          billing_city: string | null
+          billing_country: string | null
+          billing_postal_code: string | null
           city: string
+          comment: string | null
           country: string
           created_at: string
           currency: string
           email: string
           first_name: string
           id: string
+          is_processed: boolean
           is_recurring: boolean
           items: Json
           last_name: string
@@ -180,18 +187,29 @@ export type Database = {
           stripe_checkout_session_id: string | null
           stripe_payment_intent_id: string | null
           stripe_subscription_id: string | null
+          subscriber_number: string | null
+          subscription_end_date: string | null
+          subscription_start_date: string | null
+          subscription_type: string | null
           total_amount: number
         }
         Insert: {
           address_line1: string
           address_line2?: string | null
+          billing_address_line1?: string | null
+          billing_address_line2?: string | null
+          billing_city?: string | null
+          billing_country?: string | null
+          billing_postal_code?: string | null
           city: string
+          comment?: string | null
           country?: string
           created_at?: string
           currency?: string
           email: string
           first_name: string
           id?: string
+          is_processed?: boolean
           is_recurring?: boolean
           items?: Json
           last_name: string
@@ -204,18 +222,29 @@ export type Database = {
           stripe_checkout_session_id?: string | null
           stripe_payment_intent_id?: string | null
           stripe_subscription_id?: string | null
+          subscriber_number?: string | null
+          subscription_end_date?: string | null
+          subscription_start_date?: string | null
+          subscription_type?: string | null
           total_amount: number
         }
         Update: {
           address_line1?: string
           address_line2?: string | null
+          billing_address_line1?: string | null
+          billing_address_line2?: string | null
+          billing_city?: string | null
+          billing_country?: string | null
+          billing_postal_code?: string | null
           city?: string
+          comment?: string | null
           country?: string
           created_at?: string
           currency?: string
           email?: string
           first_name?: string
           id?: string
+          is_processed?: boolean
           is_recurring?: boolean
           items?: Json
           last_name?: string
@@ -228,6 +257,10 @@ export type Database = {
           stripe_checkout_session_id?: string | null
           stripe_payment_intent_id?: string | null
           stripe_subscription_id?: string | null
+          subscriber_number?: string | null
+          subscription_end_date?: string | null
+          subscription_start_date?: string | null
+          subscription_type?: string | null
           total_amount?: number
         }
         Relationships: []

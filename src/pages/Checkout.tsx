@@ -41,7 +41,7 @@ const CheckoutContent = () => {
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -50,8 +50,8 @@ const CheckoutContent = () => {
 
     setLoading(true);
     try {
-      const checkoutItems = items.map(item => {
-        const product = Object.values(PRODUCTS).find(p => p.id === item.id) || PRODUCTS.ancienNumero;
+      const checkoutItems = items.map((item) => {
+        const product = Object.values(PRODUCTS).find((p) => p.id === item.id) || PRODUCTS.ancienNumero;
         return {
           price_id: product.price_id,
           quantity: item.quantity,
@@ -106,7 +106,7 @@ const CheckoutContent = () => {
   }
 
   // Check if cart has the 2-year subscription
-  const has2YearSub = items.some(item => item.id === "abo-2-ans");
+  const has2YearSub = items.some((item) => item.id === "abo-2-ans");
 
   return (
     <div className="min-h-screen bg-background">
@@ -117,9 +117,7 @@ const CheckoutContent = () => {
             <ArrowLeft className="w-4 h-4 mr-2" /> Retour
           </Button>
 
-          <h1 className="text-3xl md:text-4xl font-serif font-bold mb-8 text-foreground">
-            Finaliser votre commande
-          </h1>
+          <h1 className="text-3xl md:text-4xl font-serif font-bold mb-8 text-foreground">Finaliser votre commande</h1>
 
           <div className="grid md:grid-cols-5 gap-8">
             {/* Form */}
@@ -155,7 +153,13 @@ const CheckoutContent = () => {
                 <h2 className="text-lg font-bold text-foreground">Adresse de livraison</h2>
                 <div>
                   <Label htmlFor="address_line1">Adresse *</Label>
-                  <Input id="address_line1" name="address_line1" required value={form.address_line1} onChange={handleChange} />
+                  <Input
+                    id="address_line1"
+                    name="address_line1"
+                    required
+                    value={form.address_line1}
+                    onChange={handleChange}
+                  />
                 </div>
                 <div>
                   <Label htmlFor="address_line2">Complément d'adresse</Label>
@@ -164,7 +168,13 @@ const CheckoutContent = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="postal_code">Code postal *</Label>
-                    <Input id="postal_code" name="postal_code" required value={form.postal_code} onChange={handleChange} />
+                    <Input
+                      id="postal_code"
+                      name="postal_code"
+                      required
+                      value={form.postal_code}
+                      onChange={handleChange}
+                    />
                   </div>
                   <div>
                     <Label htmlFor="city">Ville *</Label>
@@ -194,20 +204,43 @@ const CheckoutContent = () => {
                   >
                     <div>
                       <Label htmlFor="billing_address_line1">Adresse de facturation *</Label>
-                      <Input id="billing_address_line1" name="billing_address_line1" required value={form.billing_address_line1} onChange={handleChange} />
+                      <Input
+                        id="billing_address_line1"
+                        name="billing_address_line1"
+                        required
+                        value={form.billing_address_line1}
+                        onChange={handleChange}
+                      />
                     </div>
                     <div>
                       <Label htmlFor="billing_address_line2">Complément</Label>
-                      <Input id="billing_address_line2" name="billing_address_line2" value={form.billing_address_line2} onChange={handleChange} />
+                      <Input
+                        id="billing_address_line2"
+                        name="billing_address_line2"
+                        value={form.billing_address_line2}
+                        onChange={handleChange}
+                      />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="billing_postal_code">Code postal *</Label>
-                        <Input id="billing_postal_code" name="billing_postal_code" required value={form.billing_postal_code} onChange={handleChange} />
+                        <Input
+                          id="billing_postal_code"
+                          name="billing_postal_code"
+                          required
+                          value={form.billing_postal_code}
+                          onChange={handleChange}
+                        />
                       </div>
                       <div>
                         <Label htmlFor="billing_city">Ville *</Label>
-                        <Input id="billing_city" name="billing_city" required value={form.billing_city} onChange={handleChange} />
+                        <Input
+                          id="billing_city"
+                          name="billing_city"
+                          required
+                          value={form.billing_city}
+                          onChange={handleChange}
+                        />
                       </div>
                     </div>
                   </motion.div>
@@ -234,21 +267,23 @@ const CheckoutContent = () => {
                 className="w-full py-6 text-lg rounded-xl bg-primary hover:bg-primary/90 text-white shadow-lg"
               >
                 {loading ? (
-                  <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Redirection...</>
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" /> Redirection...
+                  </>
                 ) : (
-                  <><Lock className="w-5 h-5 mr-2" /> Payer {total.toFixed(2)}€</>
+                  <>
+                    <Lock className="w-5 h-5 mr-2" /> Payer {total.toFixed(2)}€
+                  </>
                 )}
               </Button>
               <div className="text-center space-y-2 mt-4">
                 <p className="text-sm font-semibold text-foreground">
-                  🎣 Merci pour votre commande ! Rejoignez les 20 000+ lecteurs qui nous font confiance.
+                  🎣 Rejoignez les 20 000+ lecteurs qui nous font confiance.
                 </p>
                 <p className="text-sm text-muted-foreground italic">
                   L'équipe Info-Pêche vous souhaite une bonne lecture !
                 </p>
-                <p className="text-xs text-muted-foreground">
-                  Paiement sécurisé par Stripe — CB, PayPal, SEPA
-                </p>
+                <p className="text-xs text-muted-foreground">Paiement sécurisé par Stripe — CB, PayPal, SEPA</p>
               </div>
             </motion.form>
 
@@ -262,7 +297,7 @@ const CheckoutContent = () => {
               <div className="bg-card rounded-xl border border-border p-6 sticky top-28">
                 <h2 className="text-lg font-bold text-foreground mb-4">Récapitulatif</h2>
                 <div className="space-y-4 mb-6">
-                  {items.map(item => (
+                  {items.map((item) => (
                     <div key={item.id} className="flex items-start gap-3">
                       {item.image && (
                         <img
@@ -273,9 +308,7 @@ const CheckoutContent = () => {
                       )}
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-foreground leading-tight">{item.name}</p>
-                        {item.quantity > 1 && (
-                          <p className="text-xs text-muted-foreground">×{item.quantity}</p>
-                        )}
+                        {item.quantity > 1 && <p className="text-xs text-muted-foreground">×{item.quantity}</p>}
                         <p className="text-sm font-bold text-primary mt-1">
                           {(item.price * item.quantity).toFixed(2)}€
                         </p>

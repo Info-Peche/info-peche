@@ -1,21 +1,23 @@
 import { useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Lock, Calendar, User, BookOpen, Loader2 } from "lucide-react";
+import { ArrowLeft, Lock, Calendar, User, BookOpen, Loader2, LogIn, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-
 import SideCart from "@/components/SideCart";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PRODUCTS } from "@/lib/products";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
 
 const BlogArticle = () => {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
+  const { user, hasAccessToBlog } = useAuth();
   const [email, setEmail] = useState("");
   const [purchasing, setPurchasing] = useState(false);
 
@@ -82,14 +84,17 @@ const BlogArticle = () => {
   const getDisplayContent = () => {
     if (!article) return "";
     if (article.is_free) return article.content;
+    // Subscribers with blog access see full content
+    if (user && hasAccessToBlog) return article.content;
     // For paywall articles, show only up to the paywall_preview_length
     const cutoff = article.paywall_preview_length || 500;
-    // Find a good cut point (end of paragraph)
     const content = article.content;
     let cut = content.indexOf("\n\n", cutoff);
     if (cut === -1) cut = cutoff;
     return content.substring(0, cut);
   };
+
+  const showPaywall = article && !article.is_free && !(user && hasAccessToBlog);
 
   return (
     <>
@@ -152,7 +157,7 @@ const BlogArticle = () => {
                   </div>
 
                   {/* Paywall CTA */}
-                  {!article.is_free && (
+                  {showPaywall && (
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
@@ -165,47 +170,64 @@ const BlogArticle = () => {
                         <h3 className="text-xl font-bold text-foreground mb-2">
                           Envie de lire la suite ?
                         </h3>
-                        <p className="text-muted-foreground mb-4 max-w-md mx-auto">
-                          Cet article complet est disponible dans votre magazine Info Pêche.
+                        <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                          Cet article est réservé aux abonnés Info Pêche (formule 1 an ou 2 ans).
                         </p>
 
-                        <div className="max-w-xs mx-auto mb-5">
-                          <Input
-                            type="email"
-                            placeholder="Votre email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            className="text-center"
-                          />
-                        </div>
-
-                        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                        <div className="flex flex-col sm:flex-row gap-3 justify-center mb-4">
                           <Button
                             className="bg-primary hover:bg-primary/90 text-white font-bold rounded-full px-6"
-                            onClick={() => handleDigitalPurchase("single_issue")}
-                            disabled={purchasing}
+                            onClick={() => {
+                              window.location.href = "/#subscribe";
+                            }}
                           >
-                            {purchasing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <BookOpen className="w-4 h-4 mr-2" />}
-                            Lire en ligne — {PRODUCTS.lectureNumero.price}€
+                            <Crown className="w-4 h-4 mr-2" />
+                            Je m'abonne
                           </Button>
                           <Button
                             variant="outline"
                             className="rounded-full px-6"
-                            onClick={() => { window.location.href = "/#subscribe"; }}
+                            onClick={() => navigate("/mon-compte")}
                           >
-                            S'abonner
+                            <LogIn className="w-4 h-4 mr-2" />
+                            Je me connecte
                           </Button>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-4">
-                          ou accédez à tous les anciens numéros avec le{" "}
-                          <button
-                            onClick={() => handleDigitalPurchase("pass_15_days")}
-                            className="text-primary font-medium underline cursor-pointer disabled:opacity-50"
-                            disabled={purchasing}
-                          >
-                            Pass 15 jours — {PRODUCTS.pass15jours.price}€
-                          </button>
-                        </p>
+
+                        <div className="border-t border-border pt-4 mt-4">
+                          <p className="text-xs text-muted-foreground mb-3">Ou achetez cet article à l'unité :</p>
+                          <div className="max-w-xs mx-auto mb-3">
+                            <Input
+                              type="email"
+                              placeholder="Votre email"
+                              value={email}
+                              onChange={(e) => setEmail(e.target.value)}
+                              className="text-center text-sm"
+                            />
+                          </div>
+                          <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => handleDigitalPurchase("single_issue")}
+                              disabled={purchasing}
+                            >
+                              {purchasing && <Loader2 className="w-3 h-3 mr-1 animate-spin" />}
+                              <BookOpen className="w-3 h-3 mr-1" />
+                              Lire en ligne — {PRODUCTS.lectureNumero.price}€
+                            </Button>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-3">
+                            ou{" "}
+                            <button
+                              onClick={() => handleDigitalPurchase("pass_15_days")}
+                              className="text-primary font-medium underline cursor-pointer"
+                              disabled={purchasing}
+                            >
+                              Pass 15 jours — {PRODUCTS.pass15jours.price}€
+                            </button>
+                          </p>
+                        </div>
                       </div>
                     </motion.div>
                   )}

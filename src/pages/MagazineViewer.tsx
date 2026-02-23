@@ -16,12 +16,18 @@ import {
   Lock,
   ShoppingCart,
   Eye,
+  Crown,
+  Sparkles,
+  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
+import { PRODUCTS } from "@/lib/products";
 import SideCart from "@/components/SideCart";
 
 // Configure PDF.js worker
@@ -33,6 +39,7 @@ const MagazineViewerContent = () => {
   const isPreview = searchParams.get("mode") === "preview";
   const navigate = useNavigate();
   const { addItem } = useCart();
+  const { user, hasAccessToMagazines } = useAuth();
 
   const [email, setEmail] = useState(() => localStorage.getItem("reader_email") || "");
   const [verified, setVerified] = useState(false);
@@ -336,17 +343,9 @@ const MagazineViewerContent = () => {
 
       {/* Preview banner */}
       {isPreview && (
-        <div className="bg-amber-500/90 text-white text-center py-2 px-4 text-sm font-semibold flex items-center justify-center gap-2">
+        <div className="bg-amber-500/90 text-white text-center py-2.5 px-4 text-sm font-semibold flex items-center justify-center gap-2 flex-wrap">
           <Eye className="w-4 h-4" />
-          <span>Aperçu gratuit — Vous consultez les {previewPages} premières pages sur {numPages > 0 ? numPages : '…'} pages</span>
-          <Button
-            size="sm"
-            variant="secondary"
-            className="ml-3 bg-white text-amber-700 hover:bg-white/90 rounded-full px-4 py-1 text-xs font-bold"
-            onClick={handleBuyDigital}
-          >
-            Acheter le numéro complet
-          </Button>
+          <span>Aperçu gratuit — {previewPages} premières pages sur {numPages > 0 ? numPages : '…'}</span>
         </div>
       )}
 
@@ -394,22 +393,87 @@ const MagazineViewerContent = () => {
             animate={{ opacity: 1, y: 0 }}
             className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-foreground via-foreground/95 to-transparent pt-32 pb-8 px-4"
           >
-            <div className="max-w-md mx-auto text-center">
+            <div className="max-w-2xl mx-auto text-center">
               <Lock className="w-8 h-8 text-primary mx-auto mb-3" />
               <h3 className="text-white text-xl font-serif font-bold mb-2">
                 Envie de lire la suite ?
               </h3>
               <p className="text-white/60 text-sm mb-6">
-                Vous avez consulté les {previewPages} premières pages. Achetez ce numéro pour accéder à l'intégralité du magazine.
+                Vous avez consulté les {previewPages} premières pages. Choisissez votre formule pour accéder à l'intégralité.
               </p>
-              <Button
-                size="lg"
-                className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-8 py-5 font-bold shadow-xl"
-                onClick={handleBuyDigital}
-              >
-                <ShoppingCart className="w-5 h-5 mr-2" />
-                Acheter ce numéro — {((issueInfo?.price_cents || 300) / 100).toFixed(2)}€
-              </Button>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg mx-auto">
+                {/* Option 2 ans — highlighted */}
+                <div className="bg-primary/10 border-2 border-primary rounded-2xl p-5 relative">
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                    <Badge className="bg-primary text-primary-foreground text-[10px] font-bold px-3 gap-1">
+                      <Sparkles className="w-3 h-3" /> Recommandé
+                    </Badge>
+                  </div>
+                  <Crown className="w-6 h-6 text-primary mx-auto mb-2" />
+                  <h4 className="text-white font-bold text-sm mb-1">Abonnement 2 ans</h4>
+                  <p className="text-primary font-serif font-bold text-2xl mb-1">{PRODUCTS.abo2ans.price}€</p>
+                  <p className="text-white/50 text-[11px] mb-3">soit 4€/numéro · payable en 4×12€</p>
+                  <ul className="text-left space-y-1.5 mb-4">
+                    <li className="flex items-center gap-2 text-white/80 text-xs">
+                      <Check className="w-3 h-3 text-primary shrink-0" />
+                      Tous les anciens numéros en illimité
+                    </li>
+                    <li className="flex items-center gap-2 text-white/80 text-xs">
+                      <Check className="w-3 h-3 text-primary shrink-0" />
+                      12 prochains numéros livrés
+                    </li>
+                    <li className="flex items-center gap-2 text-white/80 text-xs">
+                      <Check className="w-3 h-3 text-primary shrink-0" />
+                      Articles premium du blog
+                    </li>
+                  </ul>
+                  <Button
+                    size="sm"
+                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-full font-bold shadow-lg shadow-primary/30"
+                    onClick={() => {
+                      addItem({ id: PRODUCTS.abo2ans.id, name: PRODUCTS.abo2ans.name, price: PRODUCTS.abo2ans.price });
+                    }}
+                  >
+                    S'abonner 2 ans
+                  </Button>
+                </div>
+
+                {/* Option achat unitaire */}
+                <div className="bg-white/5 border border-white/20 rounded-2xl p-5">
+                  <ShoppingCart className="w-6 h-6 text-white/60 mx-auto mb-2" />
+                  <h4 className="text-white font-bold text-sm mb-1">Ce numéro seul</h4>
+                  <p className="text-white font-serif font-bold text-2xl mb-1">{((issueInfo?.price_cents || 300) / 100).toFixed(0)}€</p>
+                  <p className="text-white/50 text-[11px] mb-3">Accès permanent à ce numéro</p>
+                  <ul className="text-left space-y-1.5 mb-4">
+                    <li className="flex items-center gap-2 text-white/60 text-xs">
+                      <Check className="w-3 h-3 text-white/40 shrink-0" />
+                      Consultation en ligne immédiate
+                    </li>
+                    <li className="flex items-center gap-2 text-white/60 text-xs">
+                      <Check className="w-3 h-3 text-white/40 shrink-0" />
+                      Accès permanent au numéro
+                    </li>
+                  </ul>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="w-full rounded-full font-bold border-white/30 text-white hover:bg-white/10"
+                    onClick={handleBuyDigital}
+                  >
+                    Acheter ce numéro
+                  </Button>
+                </div>
+              </div>
+
+              {user ? null : (
+                <p className="text-white/40 text-xs mt-4">
+                  Déjà abonné ?{" "}
+                  <Link to="/mon-compte" className="text-primary hover:underline">
+                    Connectez-vous
+                  </Link>
+                </p>
+              )}
             </div>
           </motion.div>
         )}
@@ -436,14 +500,24 @@ const MagazineViewerContent = () => {
 
       {/* Preview bottom CTA bar */}
       {isPreview && !isOnLastPreviewPage && (
-        <div className="bg-foreground border-t border-white/10 px-4 py-3 flex items-center justify-center">
+        <div className="bg-foreground border-t border-white/10 px-4 py-3 flex items-center justify-center gap-4 flex-wrap">
           <Button
             size="sm"
             className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-6 font-bold"
+            onClick={() => {
+              addItem({ id: PRODUCTS.abo2ans.id, name: PRODUCTS.abo2ans.name, price: PRODUCTS.abo2ans.price });
+            }}
+          >
+            <Crown className="w-4 h-4 mr-2" />
+            Abo 2 ans — Accès illimité — {PRODUCTS.abo2ans.price}€
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="rounded-full px-6 font-bold border-white/30 text-white hover:bg-white/10"
             onClick={handleBuyDigital}
           >
-            <ShoppingCart className="w-4 h-4 mr-2" />
-            Acheter ce numéro — {((issueInfo?.price_cents || 300) / 100).toFixed(2)}€
+            Ce numéro — {((issueInfo?.price_cents || 300) / 100).toFixed(0)}€
           </Button>
         </div>
       )}

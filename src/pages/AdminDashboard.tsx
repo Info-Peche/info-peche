@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, Search, Package, Loader2, Download, Newspaper, RefreshCw, CalendarClock } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { LogOut, Search, Package, Loader2, Download, Newspaper, RefreshCw, CalendarClock, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import AdminEditionManager from "@/components/AdminEditionManager";
 
@@ -49,12 +57,91 @@ type Order = {
   billing_country: string | null;
 };
 
+type ColumnKey = "date" | "client" | "email" | "tel" | "paiement_type" | "formule" | "total" | "paiement_status" | "fin_abo" | "renouvellement" | "client_depuis" | "ville" | "pays" | "commentaire";
+
+const ALL_COLUMNS: { key: ColumnKey; label: string; defaultVisible: boolean; minWidth: number; defaultWidth: number }[] = [
+  { key: "date", label: "Date", defaultVisible: true, minWidth: 80, defaultWidth: 100 },
+  { key: "client", label: "Client", defaultVisible: true, minWidth: 100, defaultWidth: 150 },
+  { key: "email", label: "Email", defaultVisible: true, minWidth: 120, defaultWidth: 180 },
+  { key: "tel", label: "Tél", defaultVisible: true, minWidth: 80, defaultWidth: 110 },
+  { key: "paiement_type", label: "Type de paiement", defaultVisible: true, minWidth: 80, defaultWidth: 120 },
+  { key: "formule", label: "Formule", defaultVisible: true, minWidth: 80, defaultWidth: 120 },
+  { key: "total", label: "Total", defaultVisible: true, minWidth: 60, defaultWidth: 80 },
+  { key: "paiement_status", label: "Paiement", defaultVisible: true, minWidth: 80, defaultWidth: 100 },
+  { key: "fin_abo", label: "Fin abo", defaultVisible: true, minWidth: 80, defaultWidth: 100 },
+  { key: "renouvellement", label: "Renouvellement", defaultVisible: true, minWidth: 100, defaultWidth: 140 },
+  { key: "client_depuis", label: "Client depuis", defaultVisible: true, minWidth: 90, defaultWidth: 110 },
+  { key: "ville", label: "Ville", defaultVisible: true, minWidth: 80, defaultWidth: 120 },
+  { key: "pays", label: "Pays", defaultVisible: false, minWidth: 50, defaultWidth: 70 },
+  { key: "commentaire", label: "Commentaire", defaultVisible: true, minWidth: 100, defaultWidth: 160 },
+];
+
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [authChecked, setAuthChecked] = useState(false);
+
+  // Column visibility
+  const [visibleColumns, setVisibleColumns] = useState<Set<ColumnKey>>(() => {
+    const saved = localStorage.getItem("admin-visible-columns");
+    if (saved) return new Set(JSON.parse(saved) as ColumnKey[]);
+    return new Set(ALL_COLUMNS.filter(c => c.defaultVisible).map(c => c.key));
+  });
+
+  // Column widths
+  const [columnWidths, setColumnWidths] = useState<Record<ColumnKey, number>>(() => {
+    const saved = localStorage.getItem("admin-column-widths");
+    if (saved) return JSON.parse(saved);
+    return Object.fromEntries(ALL_COLUMNS.map(c => [c.key, c.defaultWidth])) as Record<ColumnKey, number>;
+  });
+
+  // Persist preferences
+  useEffect(() => {
+    localStorage.setItem("admin-visible-columns", JSON.stringify([...visibleColumns]));
+  }, [visibleColumns]);
+
+  useEffect(() => {
+    localStorage.setItem("admin-column-widths", JSON.stringify(columnWidths));
+  }, [columnWidths]);
+
+  const toggleColumn = (key: ColumnKey) => {
+    setVisibleColumns(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  // Resize logic
+  const resizingRef = useRef<{ key: ColumnKey; startX: number; startWidth: number } | null>(null);
+
+  const onResizeStart = useCallback((key: ColumnKey, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const startX = e.clientX;
+    const startWidth = columnWidths[key];
+    resizingRef.current = { key, startX, startWidth };
+
+    const onMouseMove = (ev: MouseEvent) => {
+      if (!resizingRef.current) return;
+      const col = ALL_COLUMNS.find(c => c.key === resizingRef.current!.key)!;
+      const delta = ev.clientX - resizingRef.current.startX;
+      const newWidth = Math.max(col.minWidth, resizingRef.current.startWidth + delta);
+      setColumnWidths(prev => ({ ...prev, [resizingRef.current!.key]: newWidth }));
+    };
+
+    const onMouseUp = () => {
+      resizingRef.current = null;
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+    };
+
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
+  }, [columnWidths]);
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -114,48 +201,28 @@ const AdminDashboard = () => {
       "N° abonné", "Type abonnement", "Début abo", "Fin abo",
       "Montant (€)", "Mode de paiement", "Statut paiement", "Traité"
     ];
-
     const rows = filteredOrders.map(o => [
       o.id,
       new Date(o.created_at).toLocaleDateString("fr-FR"),
-      o.last_name,
-      o.first_name,
-      o.address_line1,
-      o.address_line2 || "",
-      o.postal_code,
-      o.city,
-      o.country,
-      o.email,
-      o.phone || "",
-      o.comment || "",
-      o.subscriber_number || "",
-      o.subscription_type || "",
+      o.last_name, o.first_name, o.address_line1, o.address_line2 || "",
+      o.postal_code, o.city, o.country, o.email, o.phone || "",
+      o.comment || "", o.subscriber_number || "", o.subscription_type || "",
       o.subscription_start_date ? new Date(o.subscription_start_date).toLocaleDateString("fr-FR") : "",
       o.subscription_end_date ? new Date(o.subscription_end_date).toLocaleDateString("fr-FR") : "",
-      (o.total_amount / 100).toFixed(2),
-      o.payment_method,
-      o.payment_status,
+      (o.total_amount / 100).toFixed(2), o.payment_method, o.payment_status,
       o.is_processed ? "Oui" : "Non",
     ]);
-
     const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(";")).join("\n");
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url;
-    a.download = `commandes-infopeche-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    a.href = url; a.download = `commandes-infopeche-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click(); URL.revokeObjectURL(url);
   };
 
   const filteredOrders = orders.filter(o => {
     const q = search.toLowerCase();
-    return (
-      o.email.toLowerCase().includes(q) ||
-      o.first_name.toLowerCase().includes(q) ||
-      o.last_name.toLowerCase().includes(q) ||
-      o.id.toLowerCase().includes(q)
-    );
+    return o.email.toLowerCase().includes(q) || o.first_name.toLowerCase().includes(q) || o.last_name.toLowerCase().includes(q) || o.id.toLowerCase().includes(q);
   });
 
   const activeOrders = filteredOrders.filter(o => !o.is_processed);
@@ -171,9 +238,7 @@ const AdminDashboard = () => {
   };
 
   const getFormulaLabel = (order: Order) => {
-    if (order.order_type === "subscription") {
-      return order.subscription_type || "—";
-    }
+    if (order.order_type === "subscription") return order.subscription_type || "—";
     if (order.items && Array.isArray(order.items) && order.items.length > 0) {
       const issues = order.items.map((item: any) => item.issue_number || item.title || item.name).filter(Boolean);
       return issues.length > 0 ? `N°${issues.join(", N°")}` : "—";
@@ -181,128 +246,124 @@ const AdminDashboard = () => {
     return "—";
   };
 
-  // Count how many subscription orders this email has (renewal detection)
-  const getSubscriptionCount = (email: string) => {
-    return orders.filter(o => o.email === email && o.order_type === "subscription" && o.payment_status === "paid").length;
-  };
+  const getSubscriptionCount = (email: string) =>
+    orders.filter(o => o.email === email && o.order_type === "subscription" && o.payment_status === "paid").length;
 
-  // Get earliest order date for this email (customer since)
   const getCustomerSince = (email: string) => {
-    const customerOrders = orders.filter(o => o.email === email && o.payment_status === "paid");
-    if (customerOrders.length === 0) return null;
-    const earliest = customerOrders.reduce((min, o) =>
-      new Date(o.created_at) < new Date(min.created_at) ? o : min
-    );
-    return earliest.created_at;
+    const co = orders.filter(o => o.email === email && o.payment_status === "paid");
+    if (co.length === 0) return null;
+    return co.reduce((min, o) => new Date(o.created_at) < new Date(min.created_at) ? o : min).created_at;
   };
 
   const getCustomerSeniorityLabel = (email: string) => {
     const since = getCustomerSince(email);
     if (!since) return "—";
-    const years = Math.floor((Date.now() - new Date(since).getTime()) / (365.25 * 24 * 60 * 60 * 1000));
-    const months = Math.floor((Date.now() - new Date(since).getTime()) / (30.44 * 24 * 60 * 60 * 1000));
+    const diff = Date.now() - new Date(since).getTime();
+    const years = Math.floor(diff / (365.25 * 24 * 60 * 60 * 1000));
+    const months = Math.floor(diff / (30.44 * 24 * 60 * 60 * 1000));
     if (years >= 1) return `${years} an${years > 1 ? "s" : ""}`;
     return `${months} mois`;
   };
 
   const statusColor = (status: string) => {
     switch (status) {
-      case "paid": return "default";
-      case "confirmed": return "default";
+      case "paid": case "confirmed": return "default";
       case "pending": return "secondary";
       default: return "outline";
     }
   };
 
+  const renderCellContent = (col: ColumnKey, order: Order) => {
+    switch (col) {
+      case "date":
+        return <span className="whitespace-nowrap">{new Date(order.created_at).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" })}</span>;
+      case "client":
+        return <span className="font-medium">{order.first_name} {order.last_name}</span>;
+      case "email":
+        return order.email;
+      case "tel":
+        return order.phone || "—";
+      case "paiement_type":
+        return <Badge variant="outline" className="text-xs">{getPaymentMethodLabel(order.payment_method)}</Badge>;
+      case "formule":
+        return getFormulaLabel(order);
+      case "total":
+        return <span className="font-bold">{(order.total_amount / 100).toFixed(2)}€</span>;
+      case "paiement_status":
+        return <Badge variant={statusColor(order.payment_status) as any} className="text-xs">{order.payment_status}</Badge>;
+      case "fin_abo":
+        return order.subscription_end_date
+          ? <span className="whitespace-nowrap">{new Date(order.subscription_end_date).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" })}</span>
+          : "—";
+      case "renouvellement":
+        if (order.order_type !== "subscription") return "—";
+        const count = getSubscriptionCount(order.email);
+        return count > 1
+          ? <Badge variant="default" className="text-xs gap-1"><RefreshCw className="w-3 h-3" /> {count}× renouvelé</Badge>
+          : <span className="text-muted-foreground">1ère souscription</span>;
+      case "client_depuis":
+        return <span className="flex items-center gap-1 whitespace-nowrap"><CalendarClock className="w-3 h-3 text-muted-foreground" />{getCustomerSeniorityLabel(order.email)}</span>;
+      case "ville":
+        return `${order.postal_code} ${order.city}`;
+      case "pays":
+        return order.country || "—";
+      case "commentaire":
+        return <span className="truncate block" title={order.comment || ""}>{order.comment || "—"}</span>;
+    }
+  };
+
+  const visibleCols = ALL_COLUMNS.filter(c => visibleColumns.has(c.key));
+
   const renderOrderTable = (orderList: Order[]) => (
     <div className="bg-card rounded-xl border border-border overflow-hidden">
       <div className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-10">✓</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Client</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Tél</TableHead>
-              <TableHead>Type de paiement</TableHead>
-              <TableHead>Formule</TableHead>
-              <TableHead>Total</TableHead>
-              <TableHead>Paiement</TableHead>
-              <TableHead>Fin abo</TableHead>
-              <TableHead>Renouvellement</TableHead>
-              <TableHead>Client depuis</TableHead>
-              <TableHead>Ville</TableHead>
-              <TableHead>Pays</TableHead>
-              <TableHead>Commentaire</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
+        <table className="w-max min-w-full text-sm" style={{ tableLayout: "fixed" }}>
+          <colgroup>
+            <col style={{ width: 40 }} />
+            {visibleCols.map(c => (
+              <col key={c.key} style={{ width: columnWidths[c.key] }} />
+            ))}
+          </colgroup>
+          <thead>
+            <tr className="border-b">
+              <th className="h-12 px-2 text-left align-middle font-medium text-muted-foreground" style={{ width: 40 }}>✓</th>
+              {visibleCols.map(c => (
+                <th
+                  key={c.key}
+                  className="h-12 px-3 text-left align-middle font-medium text-muted-foreground relative select-none"
+                  style={{ width: columnWidths[c.key] }}
+                >
+                  <span className="truncate block pr-2">{c.label}</span>
+                  <div
+                    className="absolute right-0 top-0 h-full w-2 cursor-col-resize hover:bg-primary/20 active:bg-primary/30 transition-colors"
+                    onMouseDown={(e) => onResizeStart(c.key, e)}
+                  />
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
             {orderList.map(order => (
-              <TableRow key={order.id}>
-                <TableCell>
+              <tr key={order.id} className="border-b transition-colors hover:bg-muted/50">
+                <td className="p-2 align-middle">
                   <Checkbox
                     checked={order.is_processed}
                     onCheckedChange={() => toggleProcessed(order.id, order.is_processed)}
                   />
-                </TableCell>
-                <TableCell className="text-xs whitespace-nowrap">
-                  {new Date(order.created_at).toLocaleDateString("fr-FR", {
-                    day: "2-digit", month: "2-digit", year: "numeric",
-                  })}
-                </TableCell>
-                <TableCell className="font-medium text-sm">
-                  {order.first_name} {order.last_name}
-                </TableCell>
-                <TableCell className="text-xs">{order.email}</TableCell>
-                <TableCell className="text-xs">{order.phone || "—"}</TableCell>
-                <TableCell>
-                  <Badge variant="outline" className="text-xs">
-                    {getPaymentMethodLabel(order.payment_method)}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-xs">{getFormulaLabel(order)}</TableCell>
-                <TableCell className="font-bold text-sm">
-                  {(order.total_amount / 100).toFixed(2)}€
-                </TableCell>
-                <TableCell>
-                  <Badge variant={statusColor(order.payment_status) as any} className="text-xs">
-                    {order.payment_status}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-xs whitespace-nowrap">
-                  {order.subscription_end_date
-                    ? new Date(order.subscription_end_date).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" })
-                    : "—"}
-                </TableCell>
-                <TableCell className="text-xs">
-                  {order.order_type === "subscription" ? (() => {
-                    const count = getSubscriptionCount(order.email);
-                    if (count > 1) return (
-                      <Badge variant="default" className="text-xs gap-1">
-                        <RefreshCw className="w-3 h-3" /> {count}× renouvelé
-                      </Badge>
-                    );
-                    return <span className="text-muted-foreground">1ère souscription</span>;
-                  })() : "—"}
-                </TableCell>
-                <TableCell className="text-xs whitespace-nowrap">
-                  <span className="flex items-center gap-1">
-                    <CalendarClock className="w-3 h-3 text-muted-foreground" />
-                    {getCustomerSeniorityLabel(order.email)}
-                  </span>
-                </TableCell>
-                <TableCell className="text-xs">
-                  {order.postal_code} {order.city}
-                </TableCell>
-                <TableCell className="text-xs">{order.country || "—"}</TableCell>
-                <TableCell className="text-xs max-w-[150px] truncate" title={order.comment || ""}>
-                  {order.comment || "—"}
-                </TableCell>
-              </TableRow>
+                </td>
+                {visibleCols.map(c => (
+                  <td
+                    key={c.key}
+                    className="px-3 py-2 align-middle text-xs overflow-hidden"
+                    style={{ maxWidth: columnWidths[c.key] }}
+                  >
+                    {renderCellContent(c.key, order)}
+                  </td>
+                ))}
+              </tr>
             ))}
-          </TableBody>
-        </Table>
+          </tbody>
+        </table>
       </div>
     </div>
   );
@@ -358,6 +419,28 @@ const AdminDashboard = () => {
               <Badge variant="outline" className="text-sm">
                 {activeOrders.length} à traiter
               </Badge>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <SlidersHorizontal className="w-4 h-4 mr-2" /> Colonnes
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>Colonnes visibles</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {ALL_COLUMNS.map(col => (
+                    <DropdownMenuCheckboxItem
+                      key={col.key}
+                      checked={visibleColumns.has(col.key)}
+                      onCheckedChange={() => toggleColumn(col.key)}
+                    >
+                      {col.label}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
               <Button variant="outline" size="sm" onClick={exportCSV}>
                 <Download className="w-4 h-4 mr-2" /> Exporter CSV
               </Button>

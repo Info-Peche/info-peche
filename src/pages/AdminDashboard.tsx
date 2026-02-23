@@ -14,7 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, Search, Package, Loader2, Download, Newspaper } from "lucide-react";
+import { LogOut, Search, Package, Loader2, Download, Newspaper, RefreshCw, CalendarClock } from "lucide-react";
 import { toast } from "sonner";
 import AdminEditionManager from "@/components/AdminEditionManager";
 
@@ -174,12 +174,35 @@ const AdminDashboard = () => {
     if (order.order_type === "subscription") {
       return order.subscription_type || "—";
     }
-    // Achat à l'unité : afficher le numéro du magazine
     if (order.items && Array.isArray(order.items) && order.items.length > 0) {
       const issues = order.items.map((item: any) => item.issue_number || item.title || item.name).filter(Boolean);
       return issues.length > 0 ? `N°${issues.join(", N°")}` : "—";
     }
     return "—";
+  };
+
+  // Count how many subscription orders this email has (renewal detection)
+  const getSubscriptionCount = (email: string) => {
+    return orders.filter(o => o.email === email && o.order_type === "subscription" && o.payment_status === "paid").length;
+  };
+
+  // Get earliest order date for this email (customer since)
+  const getCustomerSince = (email: string) => {
+    const customerOrders = orders.filter(o => o.email === email && o.payment_status === "paid");
+    if (customerOrders.length === 0) return null;
+    const earliest = customerOrders.reduce((min, o) =>
+      new Date(o.created_at) < new Date(min.created_at) ? o : min
+    );
+    return earliest.created_at;
+  };
+
+  const getCustomerSeniorityLabel = (email: string) => {
+    const since = getCustomerSince(email);
+    if (!since) return "—";
+    const years = Math.floor((Date.now() - new Date(since).getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+    const months = Math.floor((Date.now() - new Date(since).getTime()) / (30.44 * 24 * 60 * 60 * 1000));
+    if (years >= 1) return `${years} an${years > 1 ? "s" : ""}`;
+    return `${months} mois`;
   };
 
   const statusColor = (status: string) => {
@@ -206,6 +229,9 @@ const AdminDashboard = () => {
               <TableHead>Formule</TableHead>
               <TableHead>Total</TableHead>
               <TableHead>Paiement</TableHead>
+              <TableHead>Fin abo</TableHead>
+              <TableHead>Renouvellement</TableHead>
+              <TableHead>Client depuis</TableHead>
               <TableHead>Ville</TableHead>
               <TableHead>Pays</TableHead>
               <TableHead>Commentaire</TableHead>
@@ -243,6 +269,28 @@ const AdminDashboard = () => {
                   <Badge variant={statusColor(order.payment_status) as any} className="text-xs">
                     {order.payment_status}
                   </Badge>
+                </TableCell>
+                <TableCell className="text-xs whitespace-nowrap">
+                  {order.subscription_end_date
+                    ? new Date(order.subscription_end_date).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" })
+                    : "—"}
+                </TableCell>
+                <TableCell className="text-xs">
+                  {order.order_type === "subscription" ? (() => {
+                    const count = getSubscriptionCount(order.email);
+                    if (count > 1) return (
+                      <Badge variant="default" className="text-xs gap-1">
+                        <RefreshCw className="w-3 h-3" /> {count}× renouvelé
+                      </Badge>
+                    );
+                    return <span className="text-muted-foreground">1ère souscription</span>;
+                  })() : "—"}
+                </TableCell>
+                <TableCell className="text-xs whitespace-nowrap">
+                  <span className="flex items-center gap-1">
+                    <CalendarClock className="w-3 h-3 text-muted-foreground" />
+                    {getCustomerSeniorityLabel(order.email)}
+                  </span>
                 </TableCell>
                 <TableCell className="text-xs">
                   {order.postal_code} {order.city}

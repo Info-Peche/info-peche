@@ -1,34 +1,27 @@
 import { motion } from "framer-motion";
-import { Check, ShoppingCart, Sparkles, Play } from "lucide-react";
+import { Check, ShoppingCart, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
 import { useState } from "react";
-
-const YOUTUBE_VIDEO_ID = "gwYLuVXP-Ik";
-const COVER_IMAGE = "https://fokaikipfikcokjwyeka.supabase.co/storage/v1/object/public/magazine-covers/ip100-cover.png";
+import { useCurrentEdition } from "@/hooks/useCurrentEdition";
 
 const LatestEdition = () => {
   const { addItem } = useCart();
   const [showVideo, setShowVideo] = useState(false);
+  const { data: edition } = useCurrentEdition();
 
-  const features = [
-    "Dossier spécial : Les amorces d'hiver",
-    "Test matériel : 5 cannes au banc d'essai",
-    "Reportage : Championnat du monde 2024",
-    "Technique : La pêche à la grande canne expliquée",
-  ];
+  if (!edition) return null;
 
   const product = {
     id: "mag-current",
-    name: "Info-Pêche - Édition Actuelle",
+    name: `Info-Pêche - ${edition.issue_number}`,
     price: 6.50,
-    image: COVER_IMAGE,
-    description: "Le guide ultime pour réussir votre saison de pêche."
+    image: edition.cover_image,
+    description: "Le guide ultime pour réussir votre saison de pêche.",
   };
 
   return (
     <section id="magazine" className="py-28 bg-background relative overflow-hidden">
-      {/* Decorative background */}
       <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-secondary/60 to-transparent" />
       <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl" />
 
@@ -41,12 +34,11 @@ const LatestEdition = () => {
             viewport={{ once: true }}
             className="flex-1 relative group w-full max-w-xl space-y-6"
           >
-            {/* Video or cover */}
             {showVideo ? (
               <div className="space-y-3">
                 <div className="relative z-10 rounded-2xl overflow-hidden shadow-2xl border border-border/50 aspect-video">
                   <iframe
-                    src={`https://www.youtube.com/embed/${YOUTUBE_VIDEO_ID}?autoplay=1&rel=0`}
+                    src={`https://www.youtube.com/embed/${edition.youtube_video_id}?autoplay=1&rel=0`}
                     title="Info-Pêche - Feuilletez le dernier numéro"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
@@ -59,20 +51,17 @@ const LatestEdition = () => {
               </div>
             ) : (
               <div className="relative">
-                {/* Glow behind cover */}
                 <div className="absolute inset-4 bg-primary/15 blur-[60px] rounded-full group-hover:bg-primary/25 transition-all duration-700" />
-
-                <div 
+                <div
                   className="relative z-10 p-3 bg-card rounded-2xl shadow-2xl border border-border/50 group-hover:shadow-glow-primary transition-all duration-500 cursor-pointer"
                   onClick={() => setShowVideo(true)}
                 >
                   <div className="relative">
                     <img
-                      src={`https://img.youtube.com/vi/${YOUTUBE_VIDEO_ID}/maxresdefault.jpg`}
+                      src={`https://img.youtube.com/vi/${edition.youtube_video_id}/maxresdefault.jpg`}
                       alt="Vidéo de présentation du magazine Info-Pêche"
                       className="w-full h-auto rounded-xl aspect-video object-cover"
                     />
-                    {/* Play button overlay */}
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="w-20 h-20 bg-primary/90 rounded-full flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform duration-300">
                         <Play className="w-8 h-8 text-primary-foreground ml-1" fill="currentColor" />
@@ -87,15 +76,14 @@ const LatestEdition = () => {
                   Nicolas, rédacteur en chef, vous présente le dernier numéro
                 </p>
 
-                {/* Floating badge */}
                 <motion.div
                   animate={{ rotate: [10, 14, 10], y: [0, -4, 0] }}
                   transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
                   className="absolute -top-5 -right-5 z-20 bg-accent text-accent-foreground w-24 h-24 rounded-full flex items-center justify-center font-bold shadow-lg shadow-accent/30"
                 >
                   <div className="text-center leading-tight p-3">
-                    <span className="text-base font-extrabold block">N°100</span>
-                    <span className="text-[10px] font-medium block mt-0.5">Janvier 2026</span>
+                    <span className="text-base font-extrabold block">{edition.issue_number}</span>
+                    <span className="text-[10px] font-medium block mt-0.5">{edition.issue_period}</span>
                   </div>
                 </motion.div>
               </div>
@@ -122,7 +110,7 @@ const LatestEdition = () => {
             </div>
 
             <div className="space-y-3">
-              {features.map((feature, index) => (
+              {edition.highlights.map((feature, index) => (
                 <motion.div
                   key={index}
                   initial={{ opacity: 0, x: 20 }}

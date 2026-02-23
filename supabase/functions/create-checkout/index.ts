@@ -95,10 +95,10 @@ serve(async (req) => {
       },
       custom_text: {
         submit: {
-          message: "🎣 Merci pour votre commande ! Livraison offerte en France métropolitaine. Plus de 20 000 lecteurs nous font confiance.",
+          message: "🎣 Merci pour votre commande ! Rejoignez les 20 000+ lecteurs qui nous font confiance.",
         },
         after_submit: {
-          message: "Votre magazine sera expédié sous 48h. L'équipe Info-Pêche vous souhaite une bonne lecture !",
+          message: "L'équipe Info-Pêche vous souhaite une bonne lecture !",
         },
       },
     };

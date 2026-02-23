@@ -34,18 +34,15 @@ const BackIssuesSection = () => {
             className="group"
           >
             <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-card shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col">
-              <div className="relative h-52 overflow-hidden">
+              <div className="relative h-64 overflow-hidden bg-muted/30 flex items-center justify-center p-4">
                 <img
                   src={magazineCover}
                   alt="Lire les anciens numéros en ligne"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  className="w-auto h-full object-contain drop-shadow-lg group-hover:scale-105 transition-transform duration-500 rounded-sm"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                <div className="absolute bottom-4 left-4 flex items-center gap-2">
-                  <div className="bg-primary text-primary-foreground p-2 rounded-full">
-                    <Monitor className="w-5 h-5" />
-                  </div>
-                  <span className="text-white font-bold text-lg">Lecture en ligne</span>
+                <div className="absolute top-3 left-3 flex items-center gap-2 bg-primary text-primary-foreground py-1.5 px-3 rounded-full text-sm font-bold shadow">
+                  <Monitor className="w-4 h-4" />
+                  Lecture en ligne
                 </div>
               </div>
 
@@ -87,18 +84,15 @@ const BackIssuesSection = () => {
             className="group"
           >
             <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-card shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col">
-              <div className="relative h-52 overflow-hidden">
+              <div className="relative h-64 overflow-hidden bg-muted/30 flex items-center justify-center p-4">
                 <img
                   src={magazineCover}
                   alt="Commander les anciens numéros en papier"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  className="w-auto h-full object-contain drop-shadow-lg group-hover:scale-105 transition-transform duration-500 rounded-sm"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                <div className="absolute bottom-4 left-4 flex items-center gap-2">
-                  <div className="bg-accent text-accent-foreground p-2 rounded-full">
-                    <Package className="w-5 h-5" />
-                  </div>
-                  <span className="text-white font-bold text-lg">Livraison à domicile</span>
+                <div className="absolute top-3 left-3 flex items-center gap-2 bg-accent text-accent-foreground py-1.5 px-3 rounded-full text-sm font-bold shadow">
+                  <Package className="w-4 h-4" />
+                  Livraison à domicile
                 </div>
               </div>
 

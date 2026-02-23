@@ -1,13 +1,30 @@
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Check, Sparkles, Crown, Star, Zap, ShoppingBag } from "lucide-react";
+import { Check, Sparkles, Crown, Star, Zap, ShoppingBag, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useCart } from "@/context/CartContext";
 import { PRODUCTS } from "@/lib/products";
+import { supabase } from "@/integrations/supabase/client";
 
 const COVER_IMAGE = "https://fokaikipfikcokjwyeka.supabase.co/storage/v1/object/public/magazine-covers/ip100-cover.png";
 
 const PricingCards = () => {
+  const [avatars, setAvatars] = useState<string[]>([]);
+
+  useEffect(() => {
+    const fetchAvatars = async () => {
+      const { data } = await supabase
+        .from("reviews")
+        .select("avatar_url")
+        .eq("is_approved", true)
+        .not("avatar_url", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(5);
+      if (data) setAvatars(data.map((r) => r.avatar_url!).filter(Boolean));
+    };
+    fetchAvatars();
+  }, []);
   const { addItem } = useCart();
 
   const cards = [
@@ -89,9 +106,13 @@ const PricingCards = () => {
           className="flex items-center justify-center gap-2 mb-14"
         >
           <div className="flex -space-x-2">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 border-2 border-background flex items-center justify-center text-[10px] font-bold text-primary">
-                {String.fromCharCode(64 + i)}
+            {(avatars.length > 0 ? avatars : Array(5).fill(null)).slice(0, 5).map((url, i) => (
+              <div key={i} className="w-8 h-8 rounded-full border-2 border-background overflow-hidden bg-muted flex items-center justify-center">
+                {url ? (
+                  <img src={url} alt="Abonné" className="w-full h-full object-cover" />
+                ) : (
+                  <User className="w-4 h-4 text-muted-foreground" />
+                )}
               </div>
             ))}
           </div>

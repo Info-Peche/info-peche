@@ -85,7 +85,7 @@ const Hero = () => {
             <Button
               size="lg"
               className="bg-primary hover:bg-primary/90 text-white px-10 py-7 text-lg rounded-full w-full sm:w-auto shadow-glow-primary hover:scale-105 transition-all duration-300 font-bold"
-              onClick={() => document.getElementById('subscribe')?.scrollIntoView({ behavior: 'smooth' })}
+              onClick={() => document.getElementById("subscribe")?.scrollIntoView({ behavior: "smooth" })}
             >
               Je m'abonne
               <ArrowRight className="ml-2 h-5 w-5" />
@@ -94,9 +94,9 @@ const Hero = () => {
               size="lg"
               variant="outline"
               className="bg-white/10 hover:bg-white/20 text-white border-white/20 px-10 py-7 text-lg rounded-full w-full sm:w-auto hover:scale-105 transition-all duration-300 font-medium backdrop-blur-sm"
-              onClick={() => document.getElementById('magazine')?.scrollIntoView({ behavior: 'smooth' })}
+              onClick={() => document.getElementById("magazine")?.scrollIntoView({ behavior: "smooth" })}
             >
-              Découvrir le numéro
+              Découvrir le dernier numéro
             </Button>
           </motion.div>
         </motion.div>

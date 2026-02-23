@@ -158,6 +158,30 @@ const AdminDashboard = () => {
     );
   });
 
+  const activeOrders = filteredOrders.filter(o => !o.is_processed);
+  const archivedOrders = filteredOrders.filter(o => o.is_processed);
+
+  const getPaymentMethodLabel = (method: string) => {
+    switch (method.toLowerCase()) {
+      case "card": return "CB";
+      case "paypal": return "PayPal";
+      case "sepa": case "sepa_debit": return "SEPA";
+      default: return method;
+    }
+  };
+
+  const getFormulaLabel = (order: Order) => {
+    if (order.order_type === "subscription") {
+      return order.subscription_type || "—";
+    }
+    // Achat à l'unité : afficher le numéro du magazine
+    if (order.items && Array.isArray(order.items) && order.items.length > 0) {
+      const issues = order.items.map((item: any) => item.issue_number || item.title || item.name).filter(Boolean);
+      return issues.length > 0 ? `N°${issues.join(", N°")}` : "—";
+    }
+    return "—";
+  };
+
   const statusColor = (status: string) => {
     switch (status) {
       case "paid": return "default";
@@ -166,6 +190,74 @@ const AdminDashboard = () => {
       default: return "outline";
     }
   };
+
+  const renderOrderTable = (orderList: Order[]) => (
+    <div className="bg-card rounded-xl border border-border overflow-hidden">
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-10">✓</TableHead>
+              <TableHead>Date</TableHead>
+              <TableHead>Client</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Tél</TableHead>
+              <TableHead>Type de paiement</TableHead>
+              <TableHead>Formule</TableHead>
+              <TableHead>Total</TableHead>
+              <TableHead>Paiement</TableHead>
+              <TableHead>Ville</TableHead>
+              <TableHead>Pays</TableHead>
+              <TableHead>Commentaire</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {orderList.map(order => (
+              <TableRow key={order.id}>
+                <TableCell>
+                  <Checkbox
+                    checked={order.is_processed}
+                    onCheckedChange={() => toggleProcessed(order.id, order.is_processed)}
+                  />
+                </TableCell>
+                <TableCell className="text-xs whitespace-nowrap">
+                  {new Date(order.created_at).toLocaleDateString("fr-FR", {
+                    day: "2-digit", month: "2-digit", year: "numeric",
+                  })}
+                </TableCell>
+                <TableCell className="font-medium text-sm">
+                  {order.first_name} {order.last_name}
+                </TableCell>
+                <TableCell className="text-xs">{order.email}</TableCell>
+                <TableCell className="text-xs">{order.phone || "—"}</TableCell>
+                <TableCell>
+                  <Badge variant="outline" className="text-xs">
+                    {getPaymentMethodLabel(order.payment_method)}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-xs">{getFormulaLabel(order)}</TableCell>
+                <TableCell className="font-bold text-sm">
+                  {(order.total_amount / 100).toFixed(2)}€
+                </TableCell>
+                <TableCell>
+                  <Badge variant={statusColor(order.payment_status) as any} className="text-xs">
+                    {order.payment_status}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-xs">
+                  {order.postal_code} {order.city}
+                </TableCell>
+                <TableCell className="text-xs">{order.country || "—"}</TableCell>
+                <TableCell className="text-xs max-w-[150px] truncate" title={order.comment || ""}>
+                  {order.comment || "—"}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
 
   if (!authChecked) {
     return (
@@ -216,86 +308,47 @@ const AdminDashboard = () => {
                 />
               </div>
               <Badge variant="outline" className="text-sm">
-                {filteredOrders.length} commande{filteredOrders.length > 1 ? "s" : ""}
+                {activeOrders.length} à traiter
               </Badge>
               <Button variant="outline" size="sm" onClick={exportCSV}>
                 <Download className="w-4 h-4 mr-2" /> Exporter CSV
               </Button>
             </div>
 
-            {loading ? (
-              <div className="text-center py-20">
-                <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto" />
-              </div>
-            ) : filteredOrders.length === 0 ? (
-              <div className="text-center py-20 text-muted-foreground">
-                Aucune commande trouvée.
-              </div>
-            ) : (
-              <div className="bg-card rounded-xl border border-border overflow-hidden">
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-10">✓</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Client</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Tél</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Formule</TableHead>
-                        <TableHead>Total</TableHead>
-                        <TableHead>Paiement</TableHead>
-                        <TableHead>Ville</TableHead>
-                        <TableHead>Commentaire</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredOrders.map(order => (
-                        <TableRow key={order.id} className={order.is_processed ? "opacity-60" : ""}>
-                          <TableCell>
-                            <Checkbox
-                              checked={order.is_processed}
-                              onCheckedChange={() => toggleProcessed(order.id, order.is_processed)}
-                            />
-                          </TableCell>
-                          <TableCell className="text-xs whitespace-nowrap">
-                            {new Date(order.created_at).toLocaleDateString("fr-FR", {
-                              day: "2-digit", month: "2-digit", year: "numeric",
-                            })}
-                          </TableCell>
-                          <TableCell className="font-medium text-sm">
-                            {order.first_name} {order.last_name}
-                          </TableCell>
-                          <TableCell className="text-xs">{order.email}</TableCell>
-                          <TableCell className="text-xs">{order.phone || "—"}</TableCell>
-                          <TableCell>
-                            <Badge variant={order.is_recurring ? "default" : "outline"} className="text-xs">
-                              {order.order_type === "subscription" ? "Abo" : "Achat"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-xs">{order.subscription_type || "—"}</TableCell>
-                          <TableCell className="font-bold text-sm">
-                            {(order.total_amount / 100).toFixed(2)}€
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={statusColor(order.payment_status) as any} className="text-xs">
-                              {order.payment_status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-xs">
-                            {order.postal_code} {order.city}
-                          </TableCell>
-                          <TableCell className="text-xs max-w-[150px] truncate" title={order.comment || ""}>
-                            {order.comment || "—"}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
-            )}
+            <Tabs defaultValue="active" className="space-y-4">
+              <TabsList>
+                <TabsTrigger value="active">
+                  À traiter ({activeOrders.length})
+                </TabsTrigger>
+                <TabsTrigger value="archived">
+                  Archivées ({archivedOrders.length})
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="active">
+                {loading ? (
+                  <div className="text-center py-20">
+                    <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto" />
+                  </div>
+                ) : activeOrders.length === 0 ? (
+                  <div className="text-center py-20 text-muted-foreground">
+                    Aucune commande à traiter.
+                  </div>
+                ) : renderOrderTable(activeOrders)}
+              </TabsContent>
+
+              <TabsContent value="archived">
+                {loading ? (
+                  <div className="text-center py-20">
+                    <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto" />
+                  </div>
+                ) : archivedOrders.length === 0 ? (
+                  <div className="text-center py-20 text-muted-foreground">
+                    Aucune commande archivée.
+                  </div>
+                ) : renderOrderTable(archivedOrders)}
+              </TabsContent>
+            </Tabs>
           </TabsContent>
         </Tabs>
       </main>

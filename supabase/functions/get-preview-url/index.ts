@@ -35,29 +35,34 @@ serve(async (req) => {
       throw new Error("Issue not found or no PDF available");
     }
 
-    // Try the stored path, then with .pdf extension
+    // Try multiple path variations to find the PDF
     const pdfPath = issue.pdf_url;
-    let signedData, signError;
+    const pathsToTry = [
+      pdfPath,
+      `${pdfPath}.pdf`,
+      `Magazine/${pdfPath}`,
+      `Magazine/${pdfPath}.pdf`,
+    ];
 
-    // First try exact path
-    ({ data: signedData, error: signError } = await supabaseAdmin.storage
-      .from("magazine-pdfs")
-      .createSignedUrl(pdfPath, 1800));
+    let signedData = null;
+    let lastError = null;
 
-    // If failed, try with .pdf extension
-    if (signError || !signedData?.signedUrl) {
-      ({ data: signedData, error: signError } = await supabaseAdmin.storage
+    for (const path of pathsToTry) {
+      const { data, error } = await supabaseAdmin.storage
         .from("magazine-pdfs")
-        .createSignedUrl(`${pdfPath}.pdf`, 1800));
+        .createSignedUrl(path, 1800);
+      if (!error && data?.signedUrl) {
+        signedData = data;
+        break;
+      }
+      lastError = error;
     }
 
-    if (signError || !signedData?.signedUrl) {
-      // List files to help debug
-      const { data: files } = await supabaseAdmin.storage
-        .from("magazine-pdfs")
-        .list("", { limit: 100 });
-      const fileNames = files?.map(f => f.name) || [];
-      throw new Error(`Could not generate signed URL for path "${pdfPath}". Available files: ${JSON.stringify(fileNames)}`);
+    if (!signedData?.signedUrl) {
+      // List files in Magazine/ folder to help debug
+      const { data: rootFiles } = await supabaseAdmin.storage.from("magazine-pdfs").list("", { limit: 50 });
+      const { data: magFiles } = await supabaseAdmin.storage.from("magazine-pdfs").list("Magazine", { limit: 50 });
+      throw new Error(`Could not find PDF "${pdfPath}". Root: ${JSON.stringify(rootFiles?.map(f => f.name))}. Magazine/: ${JSON.stringify(magFiles?.map(f => f.name))}`);
     }
 
     return new Response(

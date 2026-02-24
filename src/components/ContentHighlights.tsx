@@ -117,7 +117,7 @@ const BackIssuesSection = () => {
                   <Button
                     variant="outline"
                     className="rounded-full border-foreground/20 hover:bg-secondary px-6"
-                    onClick={() => navigate("/boutique")}
+                    onClick={() => navigate("/boutique?mode=physical")}
                   >
                     Commander <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>

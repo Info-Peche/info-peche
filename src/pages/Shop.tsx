@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ShoppingBag, Monitor, Package, AlertCircle, BookOpen, Truck, Eye } from "lucide-react";
+import { ShoppingBag, Monitor, Package, AlertCircle, BookOpen, Truck, Eye, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,10 +15,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 type ViewMode = "online" | "physical";
 
+const extractYear = (title: string): string => {
+  const match = title.match(/(\d{4})/);
+  return match ? match[1] : "Autre";
+};
+
 const ShopContent = () => {
   const { addItem } = useCart();
   const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<ViewMode>("online");
+  const [selectedYear, setSelectedYear] = useState<string>("all");
 
   const { data: issues, isLoading } = useQuery({
     queryKey: ["archived-issues"],
@@ -33,12 +39,23 @@ const ShopContent = () => {
     },
   });
 
-  const filteredIssues = issues?.filter((issue) => {
+  // Extract available years from issues
+  const availableYears = useMemo(() => {
+    if (!issues) return [];
+    const years = [...new Set(issues.map((i) => extractYear(i.title)))].sort((a, b) => b.localeCompare(a));
+    return years;
+  }, [issues]);
+
+  const filteredIssues = useMemo(() => {
+    let filtered = issues || [];
     if (viewMode === "physical") {
-      return issue.physical_stock !== null && issue.physical_stock > 0;
+      filtered = filtered.filter((issue) => issue.physical_stock !== null && issue.physical_stock > 0);
     }
-    return true; // digital always available
-  });
+    if (selectedYear !== "all") {
+      filtered = filtered.filter((issue) => extractYear(issue.title) === selectedYear);
+    }
+    return filtered;
+  }, [issues, viewMode, selectedYear]);
 
   const handleAddPhysical = (issue: any) => {
     addItem({
@@ -97,7 +114,37 @@ const ShopContent = () => {
               <Truck className="w-4 h-4" />
               Livraison à domicile
             </button>
-          </div>
+           </div>
+
+          {/* Year filter */}
+          {availableYears.length > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-6 flex-wrap">
+              <Calendar className="w-4 h-4 text-muted-foreground" />
+              <button
+                onClick={() => setSelectedYear("all")}
+                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
+                  selectedYear === "all"
+                    ? "bg-foreground text-background shadow"
+                    : "bg-secondary text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Tous
+              </button>
+              {availableYears.map((year) => (
+                <button
+                  key={year}
+                  onClick={() => setSelectedYear(year)}
+                  className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
+                    selectedYear === year
+                      ? "bg-foreground text-background shadow"
+                      : "bg-secondary text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {year}
+                </button>
+              ))}
+            </div>
+          )}
         </motion.div>
 
         {isLoading ? (

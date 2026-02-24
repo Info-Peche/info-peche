@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ShoppingBag, Monitor, Package, AlertCircle, BookOpen, Truck, Eye, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,7 +23,9 @@ const extractYear = (title: string): string => {
 const ShopContent = () => {
   const { addItem } = useCart();
   const navigate = useNavigate();
-  const [viewMode, setViewMode] = useState<ViewMode>("online");
+  const [searchParams] = useSearchParams();
+  const initialMode = searchParams.get("mode") === "physical" ? "physical" : "online";
+  const [viewMode, setViewMode] = useState<ViewMode>(initialMode);
   const [selectedYear, setSelectedYear] = useState<string>("all");
 
   const { data: issues, isLoading } = useQuery({

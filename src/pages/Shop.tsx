@@ -148,8 +148,9 @@ const ShopContent = () => {
                       </div>
                     </div>
                     <CardContent className="p-5 flex flex-col flex-1">
-                      <p className="text-xs text-muted-foreground font-medium mb-1">{issue.issue_number}</p>
-                      <h2 className="text-lg font-serif font-bold text-foreground mb-2">{issue.title}</h2>
+                      <h2 className="text-lg font-serif font-bold text-foreground mb-2">
+                        {issue.title.replace(/^Info Pêche\s*/i, '').replace(/^n°/i, 'N°')}
+                      </h2>
                       <p className="text-sm text-muted-foreground mb-5 flex-1 line-clamp-3">{issue.description}</p>
                       
                       <div className="mt-auto">

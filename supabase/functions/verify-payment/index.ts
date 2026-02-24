@@ -106,6 +106,24 @@ serve(async (req) => {
       logStep("DB update error", { error: updateError.message });
     } else {
       logStep("Order updated", { orderId: orderData?.id });
+
+      // Decrement physical stock for paper magazine purchases
+      if (order?.items && Array.isArray(order.items)) {
+        for (const item of order.items as any[]) {
+          const itemId = item.id || "";
+          if (typeof itemId === "string" && itemId.startsWith("physical-")) {
+            const issueId = itemId.replace("physical-", "");
+            const { error: stockError } = await supabaseAdmin.rpc("decrement_stock" as any, {
+              _issue_id: issueId,
+            });
+            if (stockError) {
+              logStep("Stock decrement error", { issueId, error: stockError.message });
+            } else {
+              logStep("Stock decremented", { issueId });
+            }
+          }
+        }
+      }
     }
 
     const order = orderData;

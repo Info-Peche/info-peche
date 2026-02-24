@@ -10,8 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import {
   Plus, ArrowLeft, Trash2, Image as ImageIcon, Upload, Loader2,
-  GripVertical, Eye, Edit, Save, FileText, Bold, Italic, Heading2, Heading3, List, Sparkles, ImagePlus
+  GripVertical, Eye, Edit, Save, FileText, Bold, Italic, Heading2, Heading3, List, Sparkles, ImagePlus, Wand2
 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -95,6 +96,9 @@ const AdminBlogEditor = () => {
   const [reformattingExcerpt, setReformattingExcerpt] = useState(false);
   const [reformattingBlocks, setReformattingBlocks] = useState<Set<string>>(new Set());
   const [generatingImages, setGeneratingImages] = useState<Set<string>>(new Set());
+  const [generatingArticle, setGeneratingArticle] = useState(false);
+  const [rawPasteText, setRawPasteText] = useState("");
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
 
   // Form state
   const [title, setTitle] = useState("");
@@ -181,6 +185,38 @@ const AdminBlogEditor = () => {
       toast.error("Erreur : " + (e.message || "inconnue"));
     } finally {
       setGeneratingImages(prev => { const s = new Set(prev); s.delete(blockId); return s; });
+    }
+  };
+  const handleCreateArticleAI = async () => {
+    if (!rawPasteText.trim()) {
+      toast.error("Collez d'abord le texte brut de l'article");
+      return;
+    }
+    setGeneratingArticle(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-article-ai", {
+        body: { rawText: rawPasteText },
+      });
+      if (error) throw error;
+      if (data?.error) {
+        toast.error(data.error);
+        return;
+      }
+      const article = data.article;
+      if (article) {
+        setTitle(article.title || "");
+        setSlug(generateSlug(article.title || ""));
+        setExcerpt(article.excerpt || "");
+        setCategory(article.category || "Technique");
+        setContentBlocks([{ id: generateId(), type: "text", content: article.content || "" }]);
+        setShowCreateDialog(false);
+        setRawPasteText("");
+        toast.success("Article généré avec succès ! Vérifiez et ajustez si nécessaire.");
+      }
+    } catch (e: any) {
+      toast.error("Erreur IA : " + (e.message || "inconnue"));
+    } finally {
+      setGeneratingArticle(false);
     }
   };
 
@@ -475,6 +511,38 @@ const AdminBlogEditor = () => {
         <h2 className="text-xl font-bold flex-1">
           {editingArticle ? "Modifier l'article" : "Nouvel article"}
         </h2>
+        {!editingArticle && (
+          <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-1">
+                <Wand2 className="w-4 h-4" /> Créer avec l'IA
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Créer un article avec l'IA Info-Pêche</DialogTitle>
+              </DialogHeader>
+              <p className="text-sm text-muted-foreground">
+                Collez ici le texte brut copié du PDF. L'IA va le restructurer en article de blog complet avec le ton expert Info-Pêche : titre, chapeau, contenu structuré avec titres, sous-titres, listes et mise en forme.
+              </p>
+              <Textarea
+                value={rawPasteText}
+                onChange={e => setRawPasteText(e.target.value)}
+                placeholder="Collez tout le texte brut du PDF ici..."
+                rows={15}
+                className="font-mono text-sm"
+              />
+              <Button
+                onClick={handleCreateArticleAI}
+                disabled={generatingArticle || !rawPasteText.trim()}
+                className="w-full gap-2"
+              >
+                {generatingArticle ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+                {generatingArticle ? "Génération en cours..." : "Générer l'article"}
+              </Button>
+            </DialogContent>
+          </Dialog>
+        )}
         <Button variant="outline" size="sm" onClick={() => setPreviewMode(!previewMode)}>
           {previewMode ? <Edit className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
           {previewMode ? "Éditer" : "Aperçu"}

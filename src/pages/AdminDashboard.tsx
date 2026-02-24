@@ -22,9 +22,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, Search, Package, Loader2, Download, Newspaper, RefreshCw, CalendarClock, SlidersHorizontal } from "lucide-react";
+import { LogOut, Search, Package, Loader2, Download, Newspaper, RefreshCw, CalendarClock, SlidersHorizontal, FileText } from "lucide-react";
 import { toast } from "sonner";
 import AdminEditionManager from "@/components/AdminEditionManager";
+import AdminBlogEditor from "@/components/AdminBlogEditor";
 
 type Order = {
   id: string;
@@ -401,10 +402,17 @@ const AdminDashboard = () => {
             <TabsTrigger value="edition" className="gap-2">
               <Newspaper className="w-4 h-4" /> Édition du mois
             </TabsTrigger>
+            <TabsTrigger value="blog" className="gap-2">
+              <FileText className="w-4 h-4" /> Blog
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="edition">
             <AdminEditionManager />
+          </TabsContent>
+
+          <TabsContent value="blog">
+            <AdminBlogEditor />
           </TabsContent>
 
           <TabsContent value="orders">

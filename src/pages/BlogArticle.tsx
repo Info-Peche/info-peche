@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, Lock, Calendar, User, BookOpen, Loader2, LogIn, Crown } from "lucide-react";
@@ -80,6 +80,19 @@ const BlogArticle = () => {
 
   const renderContent = (text: string) => {
     return text.split("\n\n").map((paragraph, i) => {
+      // Image block: [IMAGE](url){caption:text}
+      const imgMatch = paragraph.match(/^\[IMAGE\]\((.*?)\)\{caption:(.*?)\}$/);
+      if (imgMatch) {
+        return (
+          <figure key={i} className="my-8">
+            <img src={imgMatch[1]} alt={imgMatch[2] || ""} className="w-full rounded-lg" loading="lazy" />
+            {imgMatch[2] && <figcaption className="text-sm text-muted-foreground text-center mt-2 italic">{imgMatch[2]}</figcaption>}
+          </figure>
+        );
+      }
+      if (paragraph.startsWith("### ")) {
+        return <h3 key={i} className="text-xl font-bold text-foreground mt-6 mb-3">{paragraph.replace("### ", "")}</h3>;
+      }
       if (paragraph.startsWith("## ")) {
         return <h2 key={i} className="text-2xl font-bold text-foreground mt-8 mb-4">{paragraph.replace("## ", "")}</h2>;
       }
@@ -88,12 +101,12 @@ const BlogArticle = () => {
         return (
           <ul key={i} className="list-disc pl-6 space-y-2 my-4">
             {items.map((item, j) => (
-              <li key={j} dangerouslySetInnerHTML={{ __html: item.replace(/^- /, "").replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>") }} />
+              <li key={j} dangerouslySetInnerHTML={{ __html: item.replace(/^- /, "").replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>").replace(/\*(.*?)\*/g, "<em>$1</em>") }} />
             ))}
           </ul>
         );
       }
-      return <p key={i} className="my-4" dangerouslySetInnerHTML={{ __html: paragraph.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>") }} />;
+      return <p key={i} className="my-4" dangerouslySetInnerHTML={{ __html: paragraph.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>").replace(/\*(.*?)\*/g, "<em>$1</em>") }} />;
     });
   };
 
@@ -109,6 +122,52 @@ const BlogArticle = () => {
   };
 
   const showPaywall = article && !article.is_free && !(user && hasAccessToBlog);
+
+  // SEO: Update document head
+  useEffect(() => {
+    if (!article) return;
+    document.title = `${article.title} | Info Pêche`;
+    const setMeta = (name: string, content: string) => {
+      let el = document.querySelector(`meta[name="${name}"]`) || document.querySelector(`meta[property="${name}"]`);
+      if (!el) {
+        el = document.createElement("meta");
+        el.setAttribute(name.startsWith("og:") ? "property" : "name", name);
+        document.head.appendChild(el);
+      }
+      el.setAttribute("content", content);
+    };
+    setMeta("description", article.excerpt.substring(0, 160));
+    setMeta("og:title", article.title);
+    setMeta("og:description", article.excerpt.substring(0, 160));
+    setMeta("og:type", "article");
+    if (article.cover_image) setMeta("og:image", article.cover_image);
+
+    // JSON-LD
+    let scriptEl = document.querySelector('script[data-jsonld="article"]') as HTMLScriptElement | null;
+    if (!scriptEl) {
+      scriptEl = document.createElement("script");
+      scriptEl.type = "application/ld+json";
+      scriptEl.setAttribute("data-jsonld", "article");
+      document.head.appendChild(scriptEl);
+    }
+    scriptEl.textContent = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Article",
+      headline: article.title,
+      description: article.excerpt,
+      image: article.cover_image || undefined,
+      author: { "@type": "Organization", name: article.author || "Info Pêche" },
+      publisher: { "@type": "Organization", name: "Info Pêche" },
+      datePublished: article.published_at,
+      dateModified: article.updated_at || article.published_at,
+      mainEntityOfPage: window.location.href,
+    });
+
+    return () => {
+      document.title = "Info Pêche";
+      scriptEl?.remove();
+    };
+  }, [article]);
 
   return (
     <>

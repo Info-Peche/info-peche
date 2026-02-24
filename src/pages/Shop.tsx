@@ -146,6 +146,13 @@ const ShopContent = () => {
                           )}
                         </Badge>
                       </div>
+                      {viewMode === "physical" && hasPhysical && issue.physical_stock! <= 15 && (
+                        <div className="absolute top-3 right-3">
+                          <Badge className="bg-destructive text-destructive-foreground text-xs font-bold shadow-sm animate-pulse">
+                            Plus que {issue.physical_stock} en stock !
+                          </Badge>
+                        </div>
+                      )}
                     </div>
                     <CardContent className="p-5 flex flex-col flex-1">
                       <h2 className="text-lg font-serif font-bold text-foreground mb-2">

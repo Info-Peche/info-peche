@@ -35,13 +35,29 @@ serve(async (req) => {
       throw new Error("Issue not found or no PDF available");
     }
 
-    // Generate a signed URL (valid 30 minutes for preview)
-    const { data: signedData, error: signError } = await supabaseAdmin.storage
+    // Try the stored path, then with .pdf extension
+    const pdfPath = issue.pdf_url;
+    let signedData, signError;
+
+    // First try exact path
+    ({ data: signedData, error: signError } = await supabaseAdmin.storage
       .from("magazine-pdfs")
-      .createSignedUrl(issue.pdf_url, 1800);
+      .createSignedUrl(pdfPath, 1800));
+
+    // If failed, try with .pdf extension
+    if (signError || !signedData?.signedUrl) {
+      ({ data: signedData, error: signError } = await supabaseAdmin.storage
+        .from("magazine-pdfs")
+        .createSignedUrl(`${pdfPath}.pdf`, 1800));
+    }
 
     if (signError || !signedData?.signedUrl) {
-      throw new Error("Could not generate signed URL");
+      // List files to help debug
+      const { data: files } = await supabaseAdmin.storage
+        .from("magazine-pdfs")
+        .list("", { limit: 100 });
+      const fileNames = files?.map(f => f.name) || [];
+      throw new Error(`Could not generate signed URL for path "${pdfPath}". Available files: ${JSON.stringify(fileNames)}`);
     }
 
     return new Response(

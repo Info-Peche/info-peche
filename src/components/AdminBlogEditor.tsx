@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import {
   Plus, ArrowLeft, Trash2, Image as ImageIcon, Upload, Loader2,
-  GripVertical, Eye, Edit, Save, FileText, Bold, Italic, Heading2, Heading3, List, Sparkles
+  GripVertical, Eye, Edit, Save, FileText, Bold, Italic, Heading2, Heading3, List, Sparkles, ImagePlus
 } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -94,6 +94,7 @@ const AdminBlogEditor = () => {
   const [saving, setSaving] = useState(false);
   const [reformattingExcerpt, setReformattingExcerpt] = useState(false);
   const [reformattingBlocks, setReformattingBlocks] = useState<Set<string>>(new Set());
+  const [generatingImages, setGeneratingImages] = useState<Set<string>>(new Set());
 
   // Form state
   const [title, setTitle] = useState("");
@@ -145,6 +146,42 @@ const AdminBlogEditor = () => {
     const result = await reformatWithAI(block.content, "content");
     if (result) updateBlock(blockId, { content: result });
     setReformattingBlocks(prev => { const s = new Set(prev); s.delete(blockId); return s; });
+  };
+
+  const handleGenerateImage = async (blockId: string, afterIndex: number) => {
+    const block = contentBlocks.find(b => b.id === blockId);
+    if (!block || block.type !== "text" || !block.content.trim()) {
+      toast.error("Ajoutez du texte pour générer une image");
+      return;
+    }
+    setGeneratingImages(prev => new Set(prev).add(blockId));
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-blog-image", {
+        body: { articleText: block.content },
+      });
+      if (error) throw error;
+      if (data?.error) {
+        toast.error(data.error);
+        return;
+      }
+      if (data?.imageUrl) {
+        setContentBlocks(prev => {
+          const copy = [...prev];
+          copy.splice(afterIndex + 1, 0, {
+            id: generateId(),
+            type: "image",
+            content: data.imageUrl,
+            caption: "",
+          });
+          return copy;
+        });
+        toast.success("Image générée et ajoutée !");
+      }
+    } catch (e: any) {
+      toast.error("Erreur : " + (e.message || "inconnue"));
+    } finally {
+      setGeneratingImages(prev => { const s = new Set(prev); s.delete(blockId); return s; });
+    }
   };
 
   const { data: articles, isLoading } = useQuery({
@@ -599,16 +636,28 @@ const AdminBlogEditor = () => {
                           rows={10}
                           className="font-mono text-sm leading-relaxed"
                         />
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleReformatBlock(block.id)}
-                          disabled={reformattingBlocks.has(block.id) || !block.content.trim()}
-                          className="text-xs gap-1"
-                        >
-                          {reformattingBlocks.has(block.id) ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                          Reformater avec l'IA
-                        </Button>
+                        <div className="flex gap-2 flex-wrap">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleReformatBlock(block.id)}
+                            disabled={reformattingBlocks.has(block.id) || generatingImages.has(block.id) || !block.content.trim()}
+                            className="text-xs gap-1"
+                          >
+                            {reformattingBlocks.has(block.id) ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                            Reformater avec l'IA
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleGenerateImage(block.id, index)}
+                            disabled={generatingImages.has(block.id) || reformattingBlocks.has(block.id) || !block.content.trim()}
+                            className="text-xs gap-1"
+                          >
+                            {generatingImages.has(block.id) ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImagePlus className="w-3.5 h-3.5" />}
+                            Générer une image IA
+                          </Button>
+                        </div>
                       </div>
                     ) : (
                       <div className="space-y-3">

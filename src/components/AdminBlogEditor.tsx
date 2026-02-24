@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import {
   Plus, ArrowLeft, Trash2, Image as ImageIcon, Upload, Loader2,
-  GripVertical, Eye, Edit, Save, FileText, Bold, Italic, Heading2, Heading3, List
+  GripVertical, Eye, Edit, Save, FileText, Bold, Italic, Heading2, Heading3, List, Sparkles
 } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -92,6 +92,8 @@ const AdminBlogEditor = () => {
   const [view, setView] = useState<"list" | "edit">("list");
   const [editingArticle, setEditingArticle] = useState<BlogArticle | null>(null);
   const [saving, setSaving] = useState(false);
+  const [reformattingExcerpt, setReformattingExcerpt] = useState(false);
+  const [reformattingBlocks, setReformattingBlocks] = useState<Set<string>>(new Set());
 
   // Form state
   const [title, setTitle] = useState("");
@@ -107,6 +109,43 @@ const AdminBlogEditor = () => {
   ]);
   const [previewMode, setPreviewMode] = useState(false);
   const [relatedIssueId, setRelatedIssueId] = useState<string | null>(null);
+
+  const reformatWithAI = async (rawText: string, type: "chapeau" | "content"): Promise<string | null> => {
+    if (!rawText.trim()) {
+      toast.error("Collez d'abord du texte à reformater");
+      return null;
+    }
+    try {
+      const { data, error } = await supabase.functions.invoke("reformat-article", {
+        body: { rawText, type },
+      });
+      if (error) throw error;
+      if (data?.error) {
+        toast.error(data.error);
+        return null;
+      }
+      return data.result;
+    } catch (e: any) {
+      toast.error("Erreur IA : " + (e.message || "inconnue"));
+      return null;
+    }
+  };
+
+  const handleReformatExcerpt = async () => {
+    setReformattingExcerpt(true);
+    const result = await reformatWithAI(excerpt, "chapeau");
+    if (result) setExcerpt(result);
+    setReformattingExcerpt(false);
+  };
+
+  const handleReformatBlock = async (blockId: string) => {
+    const block = contentBlocks.find(b => b.id === blockId);
+    if (!block || block.type !== "text") return;
+    setReformattingBlocks(prev => new Set(prev).add(blockId));
+    const result = await reformatWithAI(block.content, "content");
+    if (result) updateBlock(blockId, { content: result });
+    setReformattingBlocks(prev => { const s = new Set(prev); s.delete(blockId); return s; });
+  };
 
   const { data: articles, isLoading } = useQuery({
     queryKey: ["admin-blog-articles"],
@@ -485,13 +524,25 @@ const AdminBlogEditor = () => {
             {/* Chapeau / Intro */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Chapeau / Introduction</CardTitle>
+                <CardTitle className="text-base flex items-center justify-between">
+                  <span>Chapeau / Introduction</span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleReformatExcerpt}
+                    disabled={reformattingExcerpt || !excerpt.trim()}
+                    className="text-xs gap-1"
+                  >
+                    {reformattingExcerpt ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                    Reformater avec l'IA
+                  </Button>
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <Textarea
                   value={excerpt}
                   onChange={e => setExcerpt(e.target.value)}
-                  placeholder="Le texte d'accroche qui apparaîtra sur la page blog et en introduction de l'article..."
+                  placeholder="Collez ici le chapeau brut copié du PDF. Cliquez ensuite sur 'Reformater avec l'IA' pour le nettoyer."
                   rows={4}
                   className="leading-relaxed"
                 />
@@ -539,14 +590,26 @@ const AdminBlogEditor = () => {
                     </div>
 
                     {block.type === "text" ? (
-                      <Textarea
-                        data-block-id={block.id}
-                        value={block.content}
-                        onChange={e => updateBlock(block.id, { content: e.target.value })}
-                        placeholder="Collez ou saisissez votre texte ici... Utilisez ** pour le gras, * pour l'italique, ## pour les titres."
-                        rows={8}
-                        className="font-mono text-sm leading-relaxed"
-                      />
+                      <div className="space-y-2">
+                        <Textarea
+                          data-block-id={block.id}
+                          value={block.content}
+                          onChange={e => updateBlock(block.id, { content: e.target.value })}
+                          placeholder="Collez ici le texte brut copié du PDF. Cliquez ensuite sur '✨ Reformater' pour que l'IA nettoie et structure le contenu."
+                          rows={10}
+                          className="font-mono text-sm leading-relaxed"
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleReformatBlock(block.id)}
+                          disabled={reformattingBlocks.has(block.id) || !block.content.trim()}
+                          className="text-xs gap-1"
+                        >
+                          {reformattingBlocks.has(block.id) ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                          Reformater avec l'IA
+                        </Button>
+                      </div>
                     ) : (
                       <div className="space-y-3">
                         <img src={block.content} alt={block.caption || ""} className="w-full max-h-64 object-contain rounded-lg bg-muted" />

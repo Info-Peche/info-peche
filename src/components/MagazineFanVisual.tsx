@@ -32,44 +32,39 @@ const MagazineFanVisual = ({ count, className = "" }: MagazineFanVisualProps) =>
 
   if (covers.length === 0) return null;
 
+  // All dimensions in px – kept small to never overflow card (~220px wide)
+  const config = {
+    3:  { w: 60, h: 84, rot: 8,  tx: 22, ty: 3, containerH: 100 },
+    6:  { w: 44, h: 62, rot: 12, tx: 14, ty: 2, containerH: 90  },
+    12: { w: 32, h: 45, rot: 16, tx: 8,  ty: 1.5, containerH: 80  },
+  }[count];
+
   const getFanStyle = (index: number, total: number): React.CSSProperties => {
     const mid = (total - 1) / 2;
     const offset = index - mid;
-
-    const maxRotation = total <= 3 ? 10 : total <= 6 ? 14 : 18;
-    const rotation = mid !== 0 ? (offset / mid) * maxRotation : 0;
-
-    const maxTranslateX = total <= 3 ? 28 : total <= 6 ? 16 : 10;
-    const translateX = offset * maxTranslateX;
-
-    const translateY = Math.abs(offset) * (total <= 3 ? 3 : 2);
+    const norm = mid !== 0 ? offset / mid : 0;
 
     return {
-      transform: `rotate(${rotation}deg) translateX(${translateX}px) translateY(${translateY}px)`,
+      transform: `rotate(${norm * config.rot}deg) translateY(${Math.abs(offset) * config.ty}px)`,
+      left: `calc(50% + ${offset * config.tx}px - ${config.w / 2}px)`,
       zIndex: total - Math.abs(Math.round(offset)),
       transformOrigin: "bottom center",
+      width: config.w,
+      height: config.h,
     };
   };
 
-  const coverSize = count <= 3
-    ? "w-16 h-22 md:w-20 md:h-28"
-    : count <= 6
-      ? "w-11 h-16 md:w-14 md:h-20"
-      : "w-8 h-11 md:w-11 md:h-16";
-
-  const containerHeight = count <= 3 ? 120 : count <= 6 ? 100 : 90;
-
   return (
     <figure
-      className={`relative flex items-end justify-center overflow-hidden ${className}`}
-      style={{ height: containerHeight }}
+      className={`relative w-full overflow-hidden ${className}`}
+      style={{ height: config.containerH }}
       role="img"
       aria-label={`Éventail de ${count} numéros du magazine Info Pêche`}
     >
       {covers.map((url, i) => (
         <div
           key={i}
-          className={`absolute ${coverSize} rounded-sm overflow-hidden shadow-md border border-border/20`}
+          className="absolute rounded-sm overflow-hidden shadow-md border border-border/20"
           style={getFanStyle(i, covers.length)}
         >
           <img
@@ -78,8 +73,8 @@ const MagazineFanVisual = ({ count, className = "" }: MagazineFanVisualProps) =>
             aria-hidden="true"
             className="w-full h-full object-cover"
             loading="lazy"
-            width={count <= 3 ? 80 : count <= 6 ? 56 : 44}
-            height={count <= 3 ? 112 : count <= 6 ? 80 : 64}
+            width={config.w}
+            height={config.h}
           />
         </div>
       ))}

@@ -8,7 +8,7 @@ export const PRODUCTS = {
     product_id: "prod_Tyzgq3QeYl52IS",
     mode: "subscription" as const,
     interval: "2 ans",
-    description: "Le choix malin : 4€ le numéro au lieu de 6,50€",
+    description: "12 numéros livrés · −40% vs. achat au numéro",
     features: [
       "12 numéros livrés chez vous",
       "Paiement en 4× sans frais",
@@ -25,7 +25,7 @@ export const PRODUCTS = {
     product_id: "prod_Tyzho0muIqVKsX",
     mode: "subscription" as const,
     interval: "1 an",
-    description: "6 numéros livrés + accès premium en ligne",
+    description: "6 numéros livrés · −30% vs. achat au numéro",
     features: [
       "6 numéros livrés chez vous",
       "Articles premium en ligne (blog abonnés)",

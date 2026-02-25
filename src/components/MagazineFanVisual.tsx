@@ -78,6 +78,10 @@ const MagazineFanVisual = ({ count, className = "" }: MagazineFanVisualProps) =>
           />
         </div>
       ))}
+      {/* Badge pastille nombre de numéros */}
+      <span className="absolute bottom-1 right-2 z-50 bg-primary text-primary-foreground text-[11px] font-bold rounded-full px-2.5 py-1 shadow-lg border-2 border-background">
+        ×{count}
+      </span>
     </figure>
   );
 };

@@ -13,14 +13,13 @@ const MagazineFanVisual = ({ count, className = "" }: MagazineFanVisualProps) =>
     const fetchCovers = async () => {
       const { data } = await supabase
         .from("digital_issues")
-        .select("cover_image")
+        .select("cover_image, issue_number")
         .not("cover_image", "is", null)
         .order("issue_number", { ascending: false })
         .limit(12);
 
       if (data) {
         const urls = data.map((d) => d.cover_image!).filter(Boolean);
-        // Cycle covers if we don't have enough
         const result: string[] = [];
         for (let i = 0; i < count; i++) {
           result.push(urls[i % urls.length]);
@@ -33,20 +32,17 @@ const MagazineFanVisual = ({ count, className = "" }: MagazineFanVisualProps) =>
 
   if (covers.length === 0) return null;
 
-  // Fan layout: spread covers in an arc
   const getFanStyle = (index: number, total: number): React.CSSProperties => {
     const mid = (total - 1) / 2;
     const offset = index - mid;
 
-    // Tighter spread for small counts, wider for large
-    const maxRotation = total <= 3 ? 12 : total <= 6 ? 18 : 22;
-    const rotation = (offset / mid) * maxRotation;
+    const maxRotation = total <= 3 ? 10 : total <= 6 ? 14 : 18;
+    const rotation = mid !== 0 ? (offset / mid) * maxRotation : 0;
 
-    const maxTranslateX = total <= 3 ? 30 : total <= 6 ? 20 : 14;
+    const maxTranslateX = total <= 3 ? 28 : total <= 6 ? 16 : 10;
     const translateX = offset * maxTranslateX;
 
-    // Arc effect: items at edges are slightly lower
-    const translateY = Math.abs(offset) * (total <= 3 ? 4 : 3);
+    const translateY = Math.abs(offset) * (total <= 3 ? 3 : 2);
 
     return {
       transform: `rotate(${rotation}deg) translateX(${translateX}px) translateY(${translateY}px)`,
@@ -55,30 +51,39 @@ const MagazineFanVisual = ({ count, className = "" }: MagazineFanVisualProps) =>
     };
   };
 
-  // Size covers based on count
   const coverSize = count <= 3
-    ? "w-20 h-28 md:w-24 md:h-32"
+    ? "w-16 h-22 md:w-20 md:h-28"
     : count <= 6
-      ? "w-14 h-20 md:w-18 md:h-24"
-      : "w-10 h-14 md:w-14 md:h-20";
+      ? "w-11 h-16 md:w-14 md:h-20"
+      : "w-8 h-11 md:w-11 md:h-16";
+
+  const containerHeight = count <= 3 ? 120 : count <= 6 ? 100 : 90;
 
   return (
-    <div className={`relative flex items-end justify-center ${className}`} style={{ height: count <= 3 ? 140 : count <= 6 ? 120 : 110 }}>
+    <figure
+      className={`relative flex items-end justify-center overflow-hidden ${className}`}
+      style={{ height: containerHeight }}
+      role="img"
+      aria-label={`Éventail de ${count} numéros du magazine Info Pêche`}
+    >
       {covers.map((url, i) => (
         <div
           key={i}
-          className={`absolute ${coverSize} rounded-sm overflow-hidden shadow-md border border-border/20 transition-transform duration-300 hover:scale-110 hover:z-50`}
+          className={`absolute ${coverSize} rounded-sm overflow-hidden shadow-md border border-border/20`}
           style={getFanStyle(i, covers.length)}
         >
           <img
             src={url}
-            alt={`Numéro ${i + 1}`}
+            alt=""
+            aria-hidden="true"
             className="w-full h-full object-cover"
             loading="lazy"
+            width={count <= 3 ? 80 : count <= 6 ? 56 : 44}
+            height={count <= 3 ? 112 : count <= 6 ? 80 : 64}
           />
         </div>
       ))}
-    </div>
+    </figure>
   );
 };
 

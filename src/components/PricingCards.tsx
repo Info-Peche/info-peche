@@ -7,6 +7,7 @@ import { useCart } from "@/context/CartContext";
 import { PRODUCTS } from "@/lib/products";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentEdition } from "@/hooks/useCurrentEdition";
+import MagazineFanVisual from "@/components/MagazineFanVisual";
 
 const PricingCards = () => {
   const [avatars, setAvatars] = useState<string[]>([]);
@@ -153,7 +154,13 @@ const PricingCards = () => {
                 )}
 
                 {/* Magazine cover visual */}
-                {coverImage && (
+                {isSubscription ? (
+                  <div className="px-4 pt-5 pb-2">
+                    <MagazineFanVisual
+                      count={product.id === "abo-2-ans" ? 12 : product.id === "abo-1-an" ? 6 : 3}
+                    />
+                  </div>
+                ) : coverImage ? (
                   <div className="px-6 pt-5 pb-2 flex justify-center">
                     <div className="relative w-28 h-36 rounded-lg overflow-hidden shadow-lg border border-border/30 group">
                       <img
@@ -161,16 +168,9 @@ const PricingCards = () => {
                         alt={`Couverture ${edition?.issue_number || "Info Pêche"}`}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
-                      {isSubscription && (
-                        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent pt-4 pb-1.5 px-2">
-                          <p className="text-white text-[9px] font-bold text-center leading-tight">
-                            {product.id === "abo-2-ans" ? "× 12 numéros" : product.id === "abo-1-an" ? "× 6 numéros" : "× 3 numéros"}
-                          </p>
-                        </div>
-                      )}
                     </div>
                   </div>
-                )}
+                ) : null}
 
                 {/* Gradient accent */}
                 <div className={`h-1 bg-gradient-to-r ${product.accentClass}`} />

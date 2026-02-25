@@ -34,9 +34,9 @@ const MagazineFanVisual = ({ count, className = "" }: MagazineFanVisualProps) =>
 
   // All dimensions in px – kept small to never overflow card (~220px wide)
   const config = {
-    3:  { w: 60, h: 84, rot: 8,  tx: 22, ty: 3, containerH: 100 },
-    6:  { w: 52, h: 72, rot: 12, tx: 16, ty: 2, containerH: 100 },
-    12: { w: 40, h: 56, rot: 16, tx: 9,  ty: 1.5, containerH: 95  },
+    3:  { w: 80, h: 112, rot: 10, tx: 28, ty: 3, containerH: 130 },
+    6:  { w: 68, h: 95,  rot: 14, tx: 18, ty: 2, containerH: 130 },
+    12: { w: 52, h: 73,  rot: 18, tx: 10, ty: 1.5, containerH: 120 },
   }[count];
 
   const getFanStyle = (index: number, total: number): React.CSSProperties => {

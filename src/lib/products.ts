@@ -2,7 +2,7 @@
 export const PRODUCTS = {
   abo2ans: {
     id: "abo-2-ans",
-    name: "Abonnement 2 ans — 12 numéros",
+    name: "Abonnement 2 ans",
     price: 48,
     price_id: "price_1T11hVKbRd4yKDMHHCpMLRc3",
     product_id: "prod_Tyzgq3QeYl52IS",
@@ -19,7 +19,7 @@ export const PRODUCTS = {
   },
   abo1an: {
     id: "abo-1-an",
-    name: "Abonnement 1 an — 6 numéros",
+    name: "Abonnement 1 an",
     price: 26.5,
     price_id: "price_1T11hkKbRd4yKDMH6WlS54AH",
     product_id: "prod_Tyzho0muIqVKsX",
@@ -34,7 +34,7 @@ export const PRODUCTS = {
   },
   abo6mois: {
     id: "abo-6-mois",
-    name: "Abonnement 6 mois — 3 numéros",
+    name: "Abonnement 6 mois",
     price: 14.5,
     price_id: "price_1T11i1KbRd4yKDMHppfC8rE9",
     product_id: "prod_Tyzh45p7SqdgGh",

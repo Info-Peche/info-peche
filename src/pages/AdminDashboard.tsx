@@ -330,7 +330,27 @@ const AdminDashboard = () => {
     }
   };
 
-  const visibleCols = ALL_COLUMNS.filter(c => visibleColumns.has(c.key));
+  const visibleCols = columnOrder
+    .filter(key => visibleColumns.has(key))
+    .map(key => ALL_COLUMNS.find(c => c.key === key)!)
+    .filter(Boolean);
+
+  const handleDragStart = (key: ColumnKey) => setDraggedCol(key);
+  const handleDragOver = (e: React.DragEvent, key: ColumnKey) => { e.preventDefault(); setDragOverCol(key); };
+  const handleDragEnd = () => { setDraggedCol(null); setDragOverCol(null); };
+  const handleDrop = (targetKey: ColumnKey) => {
+    if (!draggedCol || draggedCol === targetKey) return;
+    setColumnOrder(prev => {
+      const next = [...prev];
+      const fromIdx = next.indexOf(draggedCol);
+      const toIdx = next.indexOf(targetKey);
+      next.splice(fromIdx, 1);
+      next.splice(toIdx, 0, draggedCol);
+      return next;
+    });
+    setDraggedCol(null);
+    setDragOverCol(null);
+  };
 
   const renderOrderTable = (orderList: Order[]) => (
     <div className="bg-card rounded-xl border border-border overflow-hidden">

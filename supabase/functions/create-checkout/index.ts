@@ -25,9 +25,7 @@ serve(async (req) => {
       apiVersion: "2025-08-27.basil",
     });
 
-    const { items, customer_info } = await req.json();
-    // items: Array<{ price_id: string; quantity: number; mode: "payment" | "subscription" }>
-    // customer_info: { email, first_name, last_name, phone, address_line1, address_line2, city, postal_code, country }
+    const { items, customer_info, shipping_cents } = await req.json();
 
     if (!items || items.length === 0) {
       throw new Error("No items provided");
@@ -36,7 +34,7 @@ serve(async (req) => {
       throw new Error("Customer email is required");
     }
 
-    logStep("Request parsed", { itemCount: items.length, email: customer_info.email });
+    logStep("Request parsed", { itemCount: items.length, email: customer_info.email, shipping_cents });
 
     // Determine mode: if any item is subscription, use subscription mode
     const hasSubscription = items.some((i: any) => i.mode === "subscription");
@@ -54,10 +52,27 @@ serve(async (req) => {
     const origin = req.headers.get("origin") || "https://info-peche.fr";
 
     // Build line items
-    const lineItems = items.map((item: any) => ({
+    const lineItems: any[] = items.map((item: any) => ({
       price: item.price_id,
       quantity: item.quantity || 1,
     }));
+
+    // Add shipping as a line item if applicable
+    const shippingAmount = shipping_cents || 0;
+    if (shippingAmount > 0) {
+      lineItems.push({
+        price_data: {
+          currency: "eur",
+          product_data: {
+            name: "Frais de livraison",
+            description: `Envoi postal — ${customer_info.country === "FR" ? "France" : "International"}`,
+          },
+          unit_amount: shippingAmount,
+        },
+        quantity: 1,
+      });
+      logStep("Shipping added", { shippingAmount, country: customer_info.country });
+    }
 
     // Store customer info + items as metadata
     const metadata = {
@@ -78,6 +93,7 @@ serve(async (req) => {
       billing_city: customer_info.billing_city || "",
       billing_postal_code: customer_info.billing_postal_code || "",
       billing_country: customer_info.billing_country || "FR",
+      shipping_cents: String(shippingAmount),
     };
 
     const sessionParams: any = {
@@ -115,7 +131,7 @@ serve(async (req) => {
 
     const totalAmount = items.reduce((sum: number, item: any) => {
       return sum + (item.unit_amount || 0) * (item.quantity || 1);
-    }, 0);
+    }, 0) + shippingAmount;
 
     const { error: dbError } = await supabaseAdmin.from("orders").insert({
       email: customer_info.email,

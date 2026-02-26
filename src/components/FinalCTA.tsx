@@ -30,7 +30,7 @@ const FinalCTA = () => {
           <p className="text-white/80 text-xl mb-12 leading-relaxed">
             Rejoignez les 20 000 passionnés qui font confiance à Info-Pêche pour progresser et vivre leur passion chaque mois. <strong className="text-white">Votre premier numéro arrive sous 48h.</strong>
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <div className="flex items-center justify-center">
             <Button
               size="lg"
               className="bg-accent text-accent-foreground hover:bg-accent/90 px-12 py-7 text-lg font-bold rounded-full shadow-glow-accent hover:scale-105 transition-all duration-300"
@@ -39,9 +39,6 @@ const FinalCTA = () => {
               Je m'abonne maintenant
               <ArrowRight className="ml-2 w-5 h-5" />
             </Button>
-            <span className="text-white/50 text-sm">
-              Sans engagement • Annulation libre
-            </span>
           </div>
         </motion.div>
       </div>

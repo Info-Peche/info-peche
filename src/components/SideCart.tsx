@@ -43,7 +43,7 @@ const SideCart = () => {
             {/* Trust banner */}
             <div className="px-6 py-3 bg-primary/5 border-b border-primary/10 flex items-center gap-3">
               <Truck className="w-4 h-4 text-primary shrink-0" />
-              <span className="text-xs font-semibold text-primary">Livraison OFFERTE en France métropolitaine</span>
+              <span className="text-xs font-semibold text-primary">Livraison OFFERTE pour tous les abonnements</span>
             </div>
 
             <ScrollArea className="flex-1 p-6">

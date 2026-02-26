@@ -99,6 +99,16 @@ const AdminDashboard = () => {
     return Object.fromEntries(ALL_COLUMNS.map(c => [c.key, c.defaultWidth])) as Record<ColumnKey, number>;
   });
 
+  // Column order (drag & drop)
+  const [columnOrder, setColumnOrder] = useState<ColumnKey[]>(() => {
+    const saved = localStorage.getItem("admin-column-order");
+    if (saved) return JSON.parse(saved) as ColumnKey[];
+    return ALL_COLUMNS.map(c => c.key);
+  });
+
+  const [draggedCol, setDraggedCol] = useState<ColumnKey | null>(null);
+  const [dragOverCol, setDragOverCol] = useState<ColumnKey | null>(null);
+
   // Persist preferences
   useEffect(() => {
     localStorage.setItem("admin-visible-columns", JSON.stringify([...visibleColumns]));
@@ -107,6 +117,10 @@ const AdminDashboard = () => {
   useEffect(() => {
     localStorage.setItem("admin-column-widths", JSON.stringify(columnWidths));
   }, [columnWidths]);
+
+  useEffect(() => {
+    localStorage.setItem("admin-column-order", JSON.stringify(columnOrder));
+  }, [columnOrder]);
 
   const toggleColumn = (key: ColumnKey) => {
     setVisibleColumns(prev => {

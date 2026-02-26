@@ -366,9 +366,9 @@ const CheckoutContent = () => {
                       <Truck className="w-3.5 h-3.5" /> Livraison
                     </span>
                     {onlySubscriptions || physicalCount === 0 ? (
-                      <span className="text-xs font-bold text-green-600">OFFERTE</span>
+                      <span className="text-xs font-bold text-primary">OFFERTE</span>
                     ) : shippingCost === 0 ? (
-                      <span className="text-xs font-bold text-green-600">OFFERTE</span>
+                      <span className="text-xs font-bold text-primary">OFFERTE</span>
                     ) : (
                       <span className="font-medium">{shippingCost.toFixed(2)}€</span>
                     )}

@@ -22,10 +22,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, Search, Package, Loader2, Download, Newspaper, RefreshCw, CalendarClock, SlidersHorizontal, FileText } from "lucide-react";
+import { LogOut, Search, Package, Loader2, Download, Newspaper, RefreshCw, CalendarClock, SlidersHorizontal, FileText, GripVertical, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
 import AdminEditionManager from "@/components/AdminEditionManager";
 import AdminBlogEditor from "@/components/AdminBlogEditor";
+import AdminAnalytics from "@/components/AdminAnalytics";
 
 type Order = {
   id: string;
@@ -98,6 +99,16 @@ const AdminDashboard = () => {
     return Object.fromEntries(ALL_COLUMNS.map(c => [c.key, c.defaultWidth])) as Record<ColumnKey, number>;
   });
 
+  // Column order (drag & drop)
+  const [columnOrder, setColumnOrder] = useState<ColumnKey[]>(() => {
+    const saved = localStorage.getItem("admin-column-order");
+    if (saved) return JSON.parse(saved) as ColumnKey[];
+    return ALL_COLUMNS.map(c => c.key);
+  });
+
+  const [draggedCol, setDraggedCol] = useState<ColumnKey | null>(null);
+  const [dragOverCol, setDragOverCol] = useState<ColumnKey | null>(null);
+
   // Persist preferences
   useEffect(() => {
     localStorage.setItem("admin-visible-columns", JSON.stringify([...visibleColumns]));
@@ -106,6 +117,10 @@ const AdminDashboard = () => {
   useEffect(() => {
     localStorage.setItem("admin-column-widths", JSON.stringify(columnWidths));
   }, [columnWidths]);
+
+  useEffect(() => {
+    localStorage.setItem("admin-column-order", JSON.stringify(columnOrder));
+  }, [columnOrder]);
 
   const toggleColumn = (key: ColumnKey) => {
     setVisibleColumns(prev => {
@@ -315,7 +330,27 @@ const AdminDashboard = () => {
     }
   };
 
-  const visibleCols = ALL_COLUMNS.filter(c => visibleColumns.has(c.key));
+  const visibleCols = columnOrder
+    .filter(key => visibleColumns.has(key))
+    .map(key => ALL_COLUMNS.find(c => c.key === key)!)
+    .filter(Boolean);
+
+  const handleDragStart = (key: ColumnKey) => setDraggedCol(key);
+  const handleDragOver = (e: React.DragEvent, key: ColumnKey) => { e.preventDefault(); setDragOverCol(key); };
+  const handleDragEnd = () => { setDraggedCol(null); setDragOverCol(null); };
+  const handleDrop = (targetKey: ColumnKey) => {
+    if (!draggedCol || draggedCol === targetKey) return;
+    setColumnOrder(prev => {
+      const next = [...prev];
+      const fromIdx = next.indexOf(draggedCol);
+      const toIdx = next.indexOf(targetKey);
+      next.splice(fromIdx, 1);
+      next.splice(toIdx, 0, draggedCol);
+      return next;
+    });
+    setDraggedCol(null);
+    setDragOverCol(null);
+  };
 
   const renderOrderTable = (orderList: Order[]) => (
     <div className="bg-card rounded-xl border border-border overflow-hidden">
@@ -333,10 +368,18 @@ const AdminDashboard = () => {
               {visibleCols.map(c => (
                 <th
                   key={c.key}
-                  className="h-12 px-3 text-left align-middle font-medium text-muted-foreground relative select-none"
+                  draggable
+                  onDragStart={() => handleDragStart(c.key)}
+                  onDragOver={(e) => handleDragOver(e, c.key)}
+                  onDragEnd={handleDragEnd}
+                  onDrop={() => handleDrop(c.key)}
+                  className={`h-12 px-3 text-left align-middle font-medium text-muted-foreground relative select-none cursor-grab active:cursor-grabbing transition-colors ${dragOverCol === c.key ? "bg-primary/10" : ""}`}
                   style={{ width: columnWidths[c.key] }}
                 >
-                  <span className="truncate block pr-2">{c.label}</span>
+                  <span className="truncate block pr-2 flex items-center gap-1">
+                    <GripVertical className="w-3 h-3 text-muted-foreground/50 flex-shrink-0" />
+                    {c.label}
+                  </span>
                   <div
                     className="absolute right-0 top-0 h-full w-2 cursor-col-resize hover:bg-primary/20 active:bg-primary/30 transition-colors"
                     onMouseDown={(e) => onResizeStart(c.key, e)}
@@ -399,6 +442,9 @@ const AdminDashboard = () => {
             <TabsTrigger value="orders" className="gap-2">
               <Package className="w-4 h-4" /> Commandes
             </TabsTrigger>
+            <TabsTrigger value="analytics" className="gap-2">
+              <BarChart3 className="w-4 h-4" /> Analytics
+            </TabsTrigger>
             <TabsTrigger value="edition" className="gap-2">
               <Newspaper className="w-4 h-4" /> Édition du mois
             </TabsTrigger>
@@ -406,6 +452,10 @@ const AdminDashboard = () => {
               <FileText className="w-4 h-4" /> Blog
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="analytics">
+            <AdminAnalytics orders={orders as any} />
+          </TabsContent>
 
           <TabsContent value="edition">
             <AdminEditionManager />

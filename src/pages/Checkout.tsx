@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Loader2, ShoppingBag, Lock, ChevronDown } from "lucide-react";
+import { ArrowLeft, Loader2, ShoppingBag, Lock, Package, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCart } from "@/context/CartContext";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,6 +15,12 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SideCart from "@/components/SideCart";
 import { PRODUCTS } from "@/lib/products";
+import {
+  calculateShipping,
+  countPhysicalMagazines,
+  hasOnlySubscriptions,
+  SHIPPING_COUNTRIES,
+} from "@/lib/shipping";
 
 const CheckoutContent = () => {
   const { items, total } = useCart();
@@ -40,8 +47,20 @@ const CheckoutContent = () => {
     billing_country: "FR",
   });
 
+  const shippingCost = useMemo(
+    () => calculateShipping(items, form.country),
+    [items, form.country]
+  );
+  const physicalCount = useMemo(() => countPhysicalMagazines(items), [items]);
+  const onlySubscriptions = useMemo(() => hasOnlySubscriptions(items), [items]);
+  const grandTotal = total + shippingCost;
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleCountryChange = (value: string) => {
+    setForm((prev) => ({ ...prev, country: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -67,6 +86,7 @@ const CheckoutContent = () => {
             ...form,
             billing_different: differentBilling,
           },
+          shipping_cents: Math.round(shippingCost * 100),
         },
       });
 
@@ -181,6 +201,21 @@ const CheckoutContent = () => {
                     <Input id="city" name="city" required value={form.city} onChange={handleChange} />
                   </div>
                 </div>
+                <div>
+                  <Label htmlFor="country">Pays *</Label>
+                  <Select value={form.country} onValueChange={handleCountryChange}>
+                    <SelectTrigger id="country">
+                      <SelectValue placeholder="Choisir un pays" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SHIPPING_COUNTRIES.map((c) => (
+                        <SelectItem key={c.code} value={c.code}>
+                          {c.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               {/* Billing address toggle */}
@@ -272,7 +307,7 @@ const CheckoutContent = () => {
                   </>
                 ) : (
                   <>
-                    <Lock className="w-5 h-5 mr-2" /> Payer {total.toFixed(2)}€
+                    <Lock className="w-5 h-5 mr-2" /> Payer {grandTotal.toFixed(2)}€
                   </>
                 )}
               </Button>
@@ -320,9 +355,39 @@ const CheckoutContent = () => {
                   </div>
                 )}
 
-                <div className="border-t border-border pt-4 flex justify-between">
+                {/* Shipping line */}
+                <div className="border-t border-border pt-4 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Sous-total</span>
+                    <span className="font-medium">{total.toFixed(2)}€</span>
+                  </div>
+                  <div className="flex justify-between text-sm items-center">
+                    <span className="text-muted-foreground flex items-center gap-1.5">
+                      <Truck className="w-3.5 h-3.5" /> Livraison
+                    </span>
+                    {onlySubscriptions || physicalCount === 0 ? (
+                      <span className="text-xs font-bold text-green-600">OFFERTE</span>
+                    ) : shippingCost === 0 ? (
+                      <span className="text-xs font-bold text-green-600">OFFERTE</span>
+                    ) : (
+                      <span className="font-medium">{shippingCost.toFixed(2)}€</span>
+                    )}
+                  </div>
+                  {physicalCount > 0 && !onlySubscriptions && (
+                    <p className="text-[11px] text-muted-foreground">
+                      {physicalCount} magazine{physicalCount > 1 ? "s" : ""} · {form.country === "FR" ? "France" : "International"}
+                    </p>
+                  )}
+                  {onlySubscriptions && (
+                    <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+                      <Package className="w-3 h-3" /> Livraison offerte avec votre abonnement
+                    </p>
+                  )}
+                </div>
+
+                <div className="border-t border-border pt-4 mt-4 flex justify-between">
                   <span className="font-bold">Total</span>
-                  <span className="text-xl font-bold text-primary">{total.toFixed(2)}€</span>
+                  <span className="text-xl font-bold text-primary">{grandTotal.toFixed(2)}€</span>
                 </div>
               </div>
             </motion.div>

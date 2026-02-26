@@ -1,13 +1,13 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line,
 } from "recharts";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { BarChart3, TrendingUp, CalendarIcon } from "lucide-react";
-import { format, subMonths, subYears, startOfMonth, endOfMonth } from "date-fns";
+import { format, subMonths, subYears } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 
@@ -34,12 +34,32 @@ const FORMULA_COLORS: Record<string, string> = {
 type ChartMode = "ca" | "count";
 type DatePreset = "3m" | "6m" | "12m" | "ytd" | "all" | "custom";
 
+const getFormula = (order: Order): string => {
+  if (order.order_type === "subscription_paper") return order.subscription_type || "Abo";
+  if (order.order_type === "digital_single") return "Numéro numérique";
+  return "Numéro à l'unité";
+};
+
 const AdminAnalytics = ({ orders }: Props) => {
   const [chartMode, setChartMode] = useState<ChartMode>("ca");
-  const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set());
   const [datePreset, setDatePreset] = useState<DatePreset>("all");
   const [customFrom, setCustomFrom] = useState<Date | undefined>();
   const [customTo, setCustomTo] = useState<Date | undefined>();
+
+  // All formulas from all paid orders (date-independent so checkboxes don't vanish)
+  const allFormulas = useMemo(() => {
+    const set = new Set<string>();
+    orders.filter(o => o.payment_status === "paid").forEach(o => set.add(getFormula(o)));
+    return Array.from(set).sort();
+  }, [orders]);
+
+  // Checked formulas — all checked by default
+  const [checkedFormulas, setCheckedFormulas] = useState<Set<string>>(new Set(allFormulas));
+
+  // Sync when allFormulas changes (e.g. new data loads)
+  useEffect(() => {
+    setCheckedFormulas(new Set(allFormulas));
+  }, [allFormulas]);
 
   const now = new Date();
 
@@ -64,37 +84,26 @@ const AdminAnalytics = ({ orders }: Props) => {
     });
   }, [orders, dateRange]);
 
-  const getFormula = (order: Order): string => {
-    if (order.order_type === "subscription_paper") return order.subscription_type || "Abo";
-    if (order.order_type === "digital_single") return "Numéro numérique";
-    return "Numéro à l'unité";
-  };
-
-  const allFormulas = useMemo(() => {
-    const set = new Set<string>();
-    paidOrders.forEach((o) => set.add(getFormula(o)));
-    return Array.from(set).sort();
-  }, [paidOrders]);
-
-  const toggleFilter = (key: string) => {
-    setActiveFilters((prev) => {
+  const toggleFormula = (f: string) => {
+    setCheckedFormulas(prev => {
       const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
+      if (next.has(f)) next.delete(f);
+      else next.add(f);
       return next;
     });
   };
 
-  const visibleFormulas = activeFilters.size === 0 ? allFormulas : allFormulas.filter((f) => activeFilters.has(f));
+  const selectAll = () => setCheckedFormulas(new Set(allFormulas));
+  const selectNone = () => setCheckedFormulas(new Set());
 
   const monthlyData = useMemo(() => {
     const map = new Map<string, Record<string, number>>();
 
     paidOrders.forEach((o) => {
+      const formula = getFormula(o);
+      if (!checkedFormulas.has(formula)) return;
       const d = new Date(o.created_at);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-      const formula = getFormula(o);
-      if (!visibleFormulas.includes(formula)) return;
 
       if (!map.has(key)) map.set(key, {});
       const entry = map.get(key)!;
@@ -110,14 +119,16 @@ const AdminAnalytics = ({ orders }: Props) => {
         const [y, m] = month.split("-");
         return { month, label: `${m}/${y.slice(2)}`, ...data };
       });
-  }, [paidOrders, visibleFormulas]);
+  }, [paidOrders, checkedFormulas]);
 
-  const totalCA = useMemo(
-    () => paidOrders.reduce((sum, o) => sum + o.total_amount / 100, 0),
-    [paidOrders]
+  // KPIs scoped to visible formulas + date range
+  const filteredOrders = useMemo(
+    () => paidOrders.filter(o => checkedFormulas.has(getFormula(o))),
+    [paidOrders, checkedFormulas]
   );
+  const totalCA = useMemo(() => filteredOrders.reduce((s, o) => s + o.total_amount / 100, 0), [filteredOrders]);
+  const totalCount = filteredOrders.length;
 
-  const totalCount = paidOrders.length;
   const formatEur = (v: number) => `${v.toFixed(0)}€`;
 
   const presets: { key: DatePreset; label: string }[] = [
@@ -126,19 +137,20 @@ const AdminAnalytics = ({ orders }: Props) => {
     { key: "12m", label: "12 mois" },
     { key: "ytd", label: "Année" },
     { key: "all", label: "Tout" },
-    { key: "custom", label: "Personnalisé" },
   ];
+
+  const visibleFormulas = allFormulas.filter(f => checkedFormulas.has(f));
 
   return (
     <div className="space-y-6">
       {/* KPI summary */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-card border border-border rounded-xl p-4">
-          <p className="text-xs text-muted-foreground">CA total</p>
+          <p className="text-xs text-muted-foreground">CA (période)</p>
           <p className="text-2xl font-bold text-foreground">{totalCA.toFixed(0)}€</p>
         </div>
         <div className="bg-card border border-border rounded-xl p-4">
-          <p className="text-xs text-muted-foreground">Ventes payées</p>
+          <p className="text-xs text-muted-foreground">Ventes (période)</p>
           <p className="text-2xl font-bold text-foreground">{totalCount}</p>
         </div>
         <div className="bg-card border border-border rounded-xl p-4">
@@ -146,121 +158,113 @@ const AdminAnalytics = ({ orders }: Props) => {
           <p className="text-2xl font-bold text-foreground">{totalCount > 0 ? (totalCA / totalCount).toFixed(0) : 0}€</p>
         </div>
         <div className="bg-card border border-border rounded-xl p-4">
-          <p className="text-xs text-muted-foreground">Formules actives</p>
-          <p className="text-2xl font-bold text-foreground">{allFormulas.length}</p>
+          <p className="text-xs text-muted-foreground">Formules affichées</p>
+          <p className="text-2xl font-bold text-foreground">{visibleFormulas.length}/{allFormulas.length}</p>
         </div>
       </div>
 
-      {/* Controls */}
-      <div className="flex flex-wrap items-center gap-3">
-        {/* CA / Count toggle */}
-        <div className="flex gap-1 bg-muted rounded-lg p-1">
-          <Button
-            variant={chartMode === "ca" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => setChartMode("ca")}
-            className="gap-1.5"
-          >
-            <TrendingUp className="w-3.5 h-3.5" /> CA
-          </Button>
-          <Button
-            variant={chartMode === "count" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => setChartMode("count")}
-            className="gap-1.5"
-          >
-            <BarChart3 className="w-3.5 h-3.5" /> Ventes
-          </Button>
-        </div>
-
-        <div className="h-6 w-px bg-border" />
-
-        {/* Date presets */}
-        <div className="flex gap-1 bg-muted rounded-lg p-1">
-          {presets.map((p) => (
+      {/* Toolbar */}
+      <div className="bg-card border border-border rounded-xl p-4 space-y-4">
+        {/* Row 1: Mode + Date */}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex gap-1 bg-muted rounded-lg p-1">
             <Button
-              key={p.key}
-              variant={datePreset === p.key ? "default" : "ghost"}
+              variant={chartMode === "ca" ? "default" : "ghost"}
               size="sm"
-              onClick={() => setDatePreset(p.key)}
-              className="text-xs px-2.5"
+              onClick={() => setChartMode("ca")}
+              className="gap-1.5 text-xs"
             >
-              {p.label}
+              <TrendingUp className="w-3.5 h-3.5" /> Chiffre d'affaires
             </Button>
-          ))}
-        </div>
-
-        {/* Custom date pickers */}
-        {datePreset === "custom" && (
-          <>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className={cn("gap-1.5 text-xs", !customFrom && "text-muted-foreground")}>
-                  <CalendarIcon className="w-3.5 h-3.5" />
-                  {customFrom ? format(customFrom, "dd/MM/yyyy") : "Début"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={customFrom}
-                  onSelect={setCustomFrom}
-                  locale={fr}
-                  initialFocus
-                  className={cn("p-3 pointer-events-auto")}
-                />
-              </PopoverContent>
-            </Popover>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className={cn("gap-1.5 text-xs", !customTo && "text-muted-foreground")}>
-                  <CalendarIcon className="w-3.5 h-3.5" />
-                  {customTo ? format(customTo, "dd/MM/yyyy") : "Fin"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={customTo}
-                  onSelect={setCustomTo}
-                  locale={fr}
-                  initialFocus
-                  className={cn("p-3 pointer-events-auto")}
-                />
-              </PopoverContent>
-            </Popover>
-          </>
-        )}
-
-        <div className="h-6 w-px bg-border" />
-
-        {/* Formula filters */}
-        <div className="flex flex-wrap gap-2">
-          {allFormulas.map((f) => (
-            <Badge
-              key={f}
-              variant={activeFilters.size === 0 || activeFilters.has(f) ? "default" : "outline"}
-              className="cursor-pointer select-none transition-colors"
-              style={{
-                backgroundColor:
-                  activeFilters.size === 0 || activeFilters.has(f) ? FORMULA_COLORS[f] || "hsl(var(--primary))" : undefined,
-                color: activeFilters.size === 0 || activeFilters.has(f) ? "white" : undefined,
-              }}
-              onClick={() => toggleFilter(f)}
+            <Button
+              variant={chartMode === "count" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setChartMode("count")}
+              className="gap-1.5 text-xs"
             >
-              {f}
-            </Badge>
-          ))}
-          {activeFilters.size > 0 && (
-            <Badge variant="secondary" className="cursor-pointer" onClick={() => setActiveFilters(new Set())}>
-              Tout afficher
-            </Badge>
+              <BarChart3 className="w-3.5 h-3.5" /> Nombre de ventes
+            </Button>
+          </div>
+
+          <div className="h-6 w-px bg-border" />
+
+          <div className="flex gap-1 bg-muted rounded-lg p-1">
+            {presets.map((p) => (
+              <Button
+                key={p.key}
+                variant={datePreset === p.key ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setDatePreset(p.key)}
+                className="text-xs px-2.5"
+              >
+                {p.label}
+              </Button>
+            ))}
+            <Button
+              variant={datePreset === "custom" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setDatePreset("custom")}
+              className="text-xs px-2.5 gap-1"
+            >
+              <CalendarIcon className="w-3 h-3" /> Dates
+            </Button>
+          </div>
+
+          {datePreset === "custom" && (
+            <div className="flex items-center gap-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className={cn("gap-1.5 text-xs", !customFrom && "text-muted-foreground")}>
+                    <CalendarIcon className="w-3.5 h-3.5" />
+                    {customFrom ? format(customFrom, "dd/MM/yyyy") : "Début"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={customFrom} onSelect={setCustomFrom} locale={fr} initialFocus className={cn("p-3 pointer-events-auto")} />
+                </PopoverContent>
+              </Popover>
+              <span className="text-muted-foreground text-xs">→</span>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className={cn("gap-1.5 text-xs", !customTo && "text-muted-foreground")}>
+                    <CalendarIcon className="w-3.5 h-3.5" />
+                    {customTo ? format(customTo, "dd/MM/yyyy") : "Fin"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={customTo} onSelect={setCustomTo} locale={fr} initialFocus className={cn("p-3 pointer-events-auto")} />
+                </PopoverContent>
+              </Popover>
+            </div>
           )}
         </div>
+
+        {/* Row 2: Formula checkboxes */}
+        <div className="flex flex-wrap items-center gap-4">
+          <span className="text-xs font-medium text-muted-foreground">Formules :</span>
+          {allFormulas.map((f) => (
+            <label key={f} className="flex items-center gap-2 cursor-pointer select-none group">
+              <Checkbox
+                checked={checkedFormulas.has(f)}
+                onCheckedChange={() => toggleFormula(f)}
+              />
+              <span className="flex items-center gap-1.5 text-xs">
+                <span
+                  className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: FORMULA_COLORS[f] || "hsl(var(--primary))" }}
+                />
+                {f}
+              </span>
+            </label>
+          ))}
+          <div className="h-4 w-px bg-border" />
+          <Button variant="ghost" size="sm" className="text-xs h-7 px-2" onClick={selectAll}>Tout</Button>
+          <Button variant="ghost" size="sm" className="text-xs h-7 px-2" onClick={selectNone}>Aucun</Button>
+        </div>
       </div>
 
-      {/* Chart - LineChart */}
-      <div className="bg-card border border-border rounded-xl p-4" style={{ height: 400 }}>
+      {/* Chart */}
+      <div className="bg-card border border-border rounded-xl p-4" style={{ height: 420 }}>
         {monthlyData.length === 0 ? (
           <div className="flex items-center justify-center h-full text-muted-foreground">
             Aucune donnée pour les filtres sélectionnés

@@ -368,10 +368,18 @@ const AdminDashboard = () => {
               {visibleCols.map(c => (
                 <th
                   key={c.key}
-                  className="h-12 px-3 text-left align-middle font-medium text-muted-foreground relative select-none"
+                  draggable
+                  onDragStart={() => handleDragStart(c.key)}
+                  onDragOver={(e) => handleDragOver(e, c.key)}
+                  onDragEnd={handleDragEnd}
+                  onDrop={() => handleDrop(c.key)}
+                  className={`h-12 px-3 text-left align-middle font-medium text-muted-foreground relative select-none cursor-grab active:cursor-grabbing transition-colors ${dragOverCol === c.key ? "bg-primary/10" : ""}`}
                   style={{ width: columnWidths[c.key] }}
                 >
-                  <span className="truncate block pr-2">{c.label}</span>
+                  <span className="truncate block pr-2 flex items-center gap-1">
+                    <GripVertical className="w-3 h-3 text-muted-foreground/50 flex-shrink-0" />
+                    {c.label}
+                  </span>
                   <div
                     className="absolute right-0 top-0 h-full w-2 cursor-col-resize hover:bg-primary/20 active:bg-primary/30 transition-colors"
                     onMouseDown={(e) => onResizeStart(c.key, e)}

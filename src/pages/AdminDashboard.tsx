@@ -442,6 +442,9 @@ const AdminDashboard = () => {
             <TabsTrigger value="orders" className="gap-2">
               <Package className="w-4 h-4" /> Commandes
             </TabsTrigger>
+            <TabsTrigger value="analytics" className="gap-2">
+              <BarChart3 className="w-4 h-4" /> Analytics
+            </TabsTrigger>
             <TabsTrigger value="edition" className="gap-2">
               <Newspaper className="w-4 h-4" /> Édition du mois
             </TabsTrigger>
@@ -449,6 +452,10 @@ const AdminDashboard = () => {
               <FileText className="w-4 h-4" /> Blog
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="analytics">
+            <AdminAnalytics orders={orders as any} />
+          </TabsContent>
 
           <TabsContent value="edition">
             <AdminEditionManager />

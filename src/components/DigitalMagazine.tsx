@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Smartphone, Tablet, Monitor, ShoppingCart, Eye, Lock, Globe } from "lucide-react";
+import { Smartphone, Tablet, Monitor, ShoppingCart, Eye, Lock, Globe, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
 import { useState } from "react";
@@ -60,8 +60,25 @@ const DigitalMagazine = () => {
             viewport={{ once: true }}
             className="flex-1 w-full max-w-xl"
           >
-            {/* Main preview */}
+            {/* Main preview with arrows */}
             <div className="relative bg-foreground/5 rounded-2xl p-3 shadow-2xl border border-border/50 mb-4">
+              {/* Left arrow */}
+              <button
+                onClick={() => setActivePage((p) => Math.max(0, p - 1))}
+                disabled={activePage === 0}
+                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-20 w-10 h-10 rounded-full bg-card border border-border shadow-lg flex items-center justify-center text-foreground hover:bg-primary hover:text-primary-foreground transition-all disabled:opacity-30 disabled:hover:bg-card disabled:hover:text-foreground"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              {/* Right arrow */}
+              <button
+                onClick={() => setActivePage((p) => Math.min(pages.length - 1, p + 1))}
+                disabled={activePage === pages.length - 1}
+                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-20 w-10 h-10 rounded-full bg-card border border-border shadow-lg flex items-center justify-center text-foreground hover:bg-primary hover:text-primary-foreground transition-all disabled:opacity-30 disabled:hover:bg-card disabled:hover:text-foreground"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+
               <div className="relative overflow-hidden rounded-xl aspect-[3/4]">
                 <motion.img
                   key={activePage}

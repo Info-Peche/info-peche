@@ -368,33 +368,37 @@ const CheckoutContent = () => {
                   </div>
                 )}
 
-                {/* Shipping line */}
+                {/* Shipping line - only show if there are physical items */}
                 <div className="border-t border-border pt-4 space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Sous-total</span>
                     <span className="font-medium">{total.toFixed(2)}€</span>
                   </div>
-                  <div className="flex justify-between text-sm items-center">
-                    <span className="text-muted-foreground flex items-center gap-1.5">
-                      <Truck className="w-3.5 h-3.5" /> Livraison
-                    </span>
-                    {onlySubscriptions || physicalCount === 0 ? (
-                      <span className="text-xs font-bold text-primary">OFFERTE</span>
-                    ) : shippingCost === 0 ? (
-                      <span className="text-xs font-bold text-primary">OFFERTE</span>
-                    ) : (
-                      <span className="font-medium">{shippingCost.toFixed(2)}€</span>
-                    )}
-                  </div>
-                  {physicalCount > 0 && !onlySubscriptions && (
-                    <p className="text-[11px] text-muted-foreground">
-                      {physicalCount} magazine{physicalCount > 1 ? "s" : ""} · {form.country === "FR" ? "France" : "International"}
-                    </p>
-                  )}
-                  {onlySubscriptions && (
-                    <p className="text-[11px] text-muted-foreground flex items-center gap-1">
-                      <Package className="w-3 h-3" /> Livraison offerte avec votre abonnement
-                    </p>
+                  {items.some(item => !item.id.startsWith("digital-") && item.id !== "lecture-numero" && item.id !== "pass-15-jours") && (
+                    <>
+                      <div className="flex justify-between text-sm items-center">
+                        <span className="text-muted-foreground flex items-center gap-1.5">
+                          <Truck className="w-3.5 h-3.5" /> Livraison
+                        </span>
+                        {onlySubscriptions || physicalCount === 0 ? (
+                          <span className="text-xs font-bold text-primary">OFFERTE</span>
+                        ) : shippingCost === 0 ? (
+                          <span className="text-xs font-bold text-primary">OFFERTE</span>
+                        ) : (
+                          <span className="font-medium">{shippingCost.toFixed(2)}€</span>
+                        )}
+                      </div>
+                      {physicalCount > 0 && !onlySubscriptions && (
+                        <p className="text-[11px] text-muted-foreground">
+                          {physicalCount} magazine{physicalCount > 1 ? "s" : ""} · {form.country === "FR" ? "France" : "International"}
+                        </p>
+                      )}
+                      {onlySubscriptions && (
+                        <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+                          <Package className="w-3 h-3" /> Livraison offerte avec votre abonnement
+                        </p>
+                      )}
+                    </>
                   )}
                 </div>
 

@@ -114,7 +114,7 @@ const ShopContent = () => {
               }`}
             >
               <Truck className="w-4 h-4" />
-              Livraison à domicile
+              Anciens numéros papier
             </button>
            </div>
 

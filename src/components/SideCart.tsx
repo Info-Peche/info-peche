@@ -59,8 +59,10 @@ const SideCart = () => {
                 <div className="space-y-6">
                   {items.map((item) => (
                     <motion.div
-                      layout
                       key={item.id}
+                      initial={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                      transition={{ duration: 0.2 }}
                       className="flex gap-4 p-4 bg-secondary/10 rounded-xl border border-border"
                     >
                       {item.image && (

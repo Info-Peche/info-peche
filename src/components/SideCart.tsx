@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Plus, Minus, ShoppingBag, Trash2, Truck, Star, Shield, CreditCard } from "lucide-react";
+import { X, Plus, Minus, ShoppingBag, Trash2, Truck, Star, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -110,10 +110,6 @@ const SideCart = () => {
                   <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
                     <Star className="w-3.5 h-3.5 text-accent fill-accent shrink-0" />
                     <span><strong className="text-foreground">4.8/5</strong> — Noté par plus de 20 000 lecteurs</span>
-                  </div>
-                  <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
-                    <Shield className="w-3.5 h-3.5 text-primary shrink-0" />
-                    <span>Satisfait ou remboursé — Annulation à tout moment</span>
                   </div>
                   <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
                     <CreditCard className="w-3.5 h-3.5 text-primary shrink-0" />

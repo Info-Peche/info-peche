@@ -1,16 +1,11 @@
 import { motion } from "framer-motion";
-import { Truck, Shield, CreditCard, Headphones } from "lucide-react";
+import { Truck, CreditCard, Headphones } from "lucide-react";
 
 const guarantees = [
   {
     icon: Truck,
     title: "Livraison Offerte",
     description: "Sur tous les abonnements, en France métropolitaine.",
-  },
-  {
-    icon: Shield,
-    title: "Satisfait ou Remboursé",
-    description: "Vous pouvez annuler votre abonnement à tout moment.",
   },
   {
     icon: CreditCard,
@@ -28,7 +23,7 @@ const TrustBar = () => {
   return (
     <section className="py-16 bg-secondary/50 border-y border-border">
       <div className="container px-4 mx-auto">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
           {guarantees.map((item, index) => (
             <motion.div
               key={item.title}

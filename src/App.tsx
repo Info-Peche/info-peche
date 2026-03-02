@@ -21,6 +21,7 @@ import CGV from "./pages/CGV";
 import MagazineViewer from "./pages/MagazineViewer";
 import MonCompte from "./pages/MonCompte";
 import ResetPassword from "./pages/ResetPassword";
+import ScrollToTop from "./components/ScrollToTop";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +33,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <ScrollToTop />
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/blog" element={<Blog />} />

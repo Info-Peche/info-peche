@@ -40,11 +40,13 @@ const SideCart = () => {
               </Button>
             </div>
 
-            {/* Trust banner */}
-            <div className="px-6 py-3 bg-primary/5 border-b border-primary/10 flex items-center gap-3">
-              <Truck className="w-4 h-4 text-primary shrink-0" />
-              <span className="text-xs font-semibold text-primary">Livraison OFFERTE pour tous les abonnements</span>
-            </div>
+            {/* Trust banner - only show shipping mention if there are physical items */}
+            {items.some(item => !item.id.startsWith("digital-") && item.id !== "lecture-numero" && item.id !== "pass-15-jours") && (
+              <div className="px-6 py-3 bg-primary/5 border-b border-primary/10 flex items-center gap-3">
+                <Truck className="w-4 h-4 text-primary shrink-0" />
+                <span className="text-xs font-semibold text-primary">Livraison OFFERTE pour tous les abonnements</span>
+              </div>
+            )}
 
             <ScrollArea className="flex-1 p-6">
               {items.length === 0 ? (

@@ -351,6 +351,23 @@ const MagazineViewerContent = () => {
 
       {/* PDF Content */}
       <div className="flex-1 overflow-auto flex items-start justify-center py-8 relative">
+        {/* Left page arrow */}
+        <button
+          onClick={() => goToPage(currentPage - 1)}
+          disabled={currentPage <= 1}
+          className="absolute left-2 md:left-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white/70 hover:bg-white/20 hover:text-white transition-all disabled:opacity-20 disabled:hover:bg-white/10"
+        >
+          <ChevronLeft className="w-6 h-6" />
+        </button>
+        {/* Right page arrow */}
+        <button
+          onClick={() => goToPage(currentPage + 1)}
+          disabled={currentPage >= displayPages}
+          className="absolute right-2 md:right-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white/70 hover:bg-white/20 hover:text-white transition-all disabled:opacity-20 disabled:hover:bg-white/10"
+        >
+          <ChevronRight className="w-6 h-6" />
+        </button>
+
         <Document
           file={pdfUrl}
           onLoadSuccess={onDocumentLoadSuccess}
@@ -413,15 +430,15 @@ const MagazineViewerContent = () => {
                   <Crown className="w-6 h-6 text-primary mx-auto mb-2" />
                   <h4 className="text-white font-bold text-sm mb-1">Abonnement 2 ans</h4>
                   <p className="text-primary font-serif font-bold text-2xl mb-1">{PRODUCTS.abo2ans.price}€</p>
-                  <p className="text-white/50 text-[11px] mb-3">soit 4€/numéro · payable en 4×12€</p>
+                  <p className="text-white/50 text-[11px] mb-3">Papier livré + numérique illimité · 4×12€</p>
                   <ul className="text-left space-y-1.5 mb-4">
                     <li className="flex items-center gap-2 text-white/80 text-xs">
                       <Check className="w-3 h-3 text-primary shrink-0" />
-                      Tous les anciens numéros en illimité
+                      12 numéros papier livrés chez vous
                     </li>
                     <li className="flex items-center gap-2 text-white/80 text-xs">
                       <Check className="w-3 h-3 text-primary shrink-0" />
-                      12 prochains numéros livrés
+                      Accès illimité à TOUS les numéros en ligne
                     </li>
                     <li className="flex items-center gap-2 text-white/80 text-xs">
                       <Check className="w-3 h-3 text-primary shrink-0" />
@@ -478,22 +495,48 @@ const MagazineViewerContent = () => {
         )}
       </div>
 
-      {/* Page strip */}
+      {/* Page strip with visible page window */}
       {displayPages > 0 && (
         <div className="bg-foreground border-t border-white/10 px-4 py-2 flex items-center justify-center gap-1 overflow-x-auto">
-          {Array.from({ length: displayPages }, (_, i) => i + 1).map((page) => (
-            <button
-              key={page}
-              onClick={() => goToPage(page)}
-              className={`w-8 h-8 rounded text-xs font-medium transition-all ${
-                page === currentPage
-                  ? "bg-primary text-white"
-                  : "bg-white/10 text-white/50 hover:bg-white/20 hover:text-white"
-              }`}
-            >
-              {page}
-            </button>
-          ))}
+          {(() => {
+            const windowSize = 6;
+            let start = Math.max(1, currentPage - Math.floor(windowSize / 2));
+            let end = start + windowSize - 1;
+            if (end > displayPages) {
+              end = displayPages;
+              start = Math.max(1, end - windowSize + 1);
+            }
+            const pageNumbers = Array.from({ length: end - start + 1 }, (_, i) => start + i);
+            return (
+              <>
+                {start > 1 && (
+                  <>
+                    <button onClick={() => goToPage(1)} className="w-8 h-8 rounded text-xs font-medium bg-white/10 text-white/50 hover:bg-white/20 hover:text-white">1</button>
+                    {start > 2 && <span className="text-white/30 text-xs px-1">…</span>}
+                  </>
+                )}
+                {pageNumbers.map((page) => (
+                  <button
+                    key={page}
+                    onClick={() => goToPage(page)}
+                    className={`w-8 h-8 rounded text-xs font-medium transition-all ${
+                      page === currentPage
+                        ? "bg-primary text-white"
+                        : "bg-white/10 text-white/50 hover:bg-white/20 hover:text-white"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+                {end < displayPages && (
+                  <>
+                    {end < displayPages - 1 && <span className="text-white/30 text-xs px-1">…</span>}
+                    <button onClick={() => goToPage(displayPages)} className="w-8 h-8 rounded text-xs font-medium bg-white/10 text-white/50 hover:bg-white/20 hover:text-white">{displayPages}</button>
+                  </>
+                )}
+              </>
+            );
+          })()}
         </div>
       )}
 

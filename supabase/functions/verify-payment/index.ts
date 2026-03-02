@@ -85,11 +85,11 @@ serve(async (req) => {
         : null;
       if (pmTypes) {
         const methodMap: Record<string, string> = {
-          card: "card",
-          sepa_debit: "sepa_debit",
-          paypal: "paypal",
+          card: "carte_bancaire",
+          sepa_debit: "carte_bancaire",
+          paypal: "carte_bancaire",
         };
-        updatePayload.payment_method = methodMap[pmTypes] || pmTypes;
+        updatePayload.payment_method = methodMap[pmTypes] || "carte_bancaire";
       }
 
       logStep("Subscription dates set", { startDate, endDate });

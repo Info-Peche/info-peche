@@ -70,7 +70,10 @@ const CheckoutContent = () => {
     setLoading(true);
     try {
       const checkoutItems = items.map((item) => {
-        const product = Object.values(PRODUCTS).find((p) => p.id === item.id) || PRODUCTS.ancienNumero;
+        const isDigital = item.id.startsWith("digital-");
+        const product = isDigital
+          ? PRODUCTS.lectureNumero
+          : Object.values(PRODUCTS).find((p) => p.id === item.id) || PRODUCTS.ancienNumero;
         return {
           price_id: product.price_id,
           quantity: item.quantity,

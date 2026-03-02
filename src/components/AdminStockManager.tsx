@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Save, PackageOpen, AlertTriangle, Check } from "lucide-react";
+import { Loader2, Save, PackageOpen, AlertTriangle, Check, Search, ArrowUpDown, ArrowUp, ArrowDown, Monitor, BookOpen } from "lucide-react";
 import { toast } from "sonner";
 
 type Issue = {
@@ -17,6 +17,7 @@ type Issue = {
   is_current: boolean | null;
   is_archived: boolean | null;
   published_at: string | null;
+  pdf_url: string | null;
 };
 
 type EditState = {
@@ -25,23 +26,81 @@ type EditState = {
   price_cents: string;
 };
 
+type SortKey = "issue_number" | "physical_stock";
+type SortDir = "asc" | "desc";
+type AvailFilter = "all" | "paper" | "digital_only" | "out_of_stock";
+
 const AdminStockManager = () => {
   const [issues, setIssues] = useState<Issue[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Record<string, EditState>>({});
   const [saving, setSaving] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [sortKey, setSortKey] = useState<SortKey>("issue_number");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [availFilter, setAvailFilter] = useState<AvailFilter>("all");
 
   const fetchIssues = async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("digital_issues")
-      .select("id, issue_number, title, cover_image, physical_stock, physical_price_cents, price_cents, is_current, is_archived, published_at")
+      .select("id, issue_number, title, cover_image, physical_stock, physical_price_cents, price_cents, is_current, is_archived, published_at, pdf_url")
       .order("issue_number", { ascending: false });
     if (!error && data) setIssues(data);
     setLoading(false);
   };
 
   useEffect(() => { fetchIssues(); }, []);
+
+  const toggleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDir(prev => prev === "asc" ? "desc" : "asc");
+    } else {
+      setSortKey(key);
+      setSortDir("desc");
+    }
+  };
+
+  const getSortIcon = (key: SortKey) => {
+    if (sortKey !== key) return <ArrowUpDown className="w-3 h-3 ml-1 opacity-40" />;
+    return sortDir === "asc"
+      ? <ArrowUp className="w-3 h-3 ml-1" />
+      : <ArrowDown className="w-3 h-3 ml-1" />;
+  };
+
+  const hasPaper = (issue: Issue) => (issue.physical_stock ?? 0) > 0;
+  const hasDigital = (issue: Issue) => !!issue.pdf_url || (issue.price_cents ?? 0) > 0;
+
+  const filteredAndSorted = useMemo(() => {
+    let list = [...issues];
+
+    // Search
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter(i =>
+        i.issue_number.toLowerCase().includes(q) ||
+        i.title.toLowerCase().includes(q)
+      );
+    }
+
+    // Filter
+    if (availFilter === "paper") list = list.filter(hasPaper);
+    else if (availFilter === "digital_only") list = list.filter(i => !hasPaper(i) && hasDigital(i));
+    else if (availFilter === "out_of_stock") list = list.filter(i => !hasPaper(i) && !hasDigital(i) || (i.physical_stock !== null && i.physical_stock === 0));
+
+    // Sort
+    list.sort((a, b) => {
+      let cmp = 0;
+      if (sortKey === "issue_number") {
+        cmp = parseInt(a.issue_number) - parseInt(b.issue_number);
+      } else if (sortKey === "physical_stock") {
+        cmp = (a.physical_stock ?? -1) - (b.physical_stock ?? -1);
+      }
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+
+    return list;
+  }, [issues, search, sortKey, sortDir, availFilter]);
 
   const startEdit = (issue: Issue) => {
     setEditing(prev => ({
@@ -65,22 +124,18 @@ const AdminStockManager = () => {
   const saveEdit = async (id: string) => {
     const edit = editing[id];
     if (!edit) return;
-
     const physical_stock = parseInt(edit.physical_stock, 10);
     const physical_price_cents = Math.round(parseFloat(edit.physical_price_cents) * 100);
     const price_cents = Math.round(parseFloat(edit.price_cents) * 100);
-
     if (isNaN(physical_stock) || isNaN(physical_price_cents) || isNaN(price_cents)) {
       toast.error("Valeurs invalides");
       return;
     }
-
     setSaving(id);
     const { error } = await supabase
       .from("digital_issues")
       .update({ physical_stock, physical_price_cents, price_cents })
       .eq("id", id);
-
     if (error) {
       toast.error("Erreur lors de la sauvegarde");
     } else {
@@ -105,6 +160,27 @@ const AdminStockManager = () => {
     return <Badge variant="secondary" className="text-xs gap-1"><Check className="w-3 h-3" /> {stock}</Badge>;
   };
 
+  const getAvailabilityBadge = (issue: Issue) => {
+    const paper = hasPaper(issue);
+    const digital = hasDigital(issue);
+
+    if (paper && digital) {
+      return (
+        <div className="flex items-center justify-center gap-1.5">
+          <Badge variant="default" className="text-xs gap-1"><BookOpen className="w-3 h-3" /> Papier</Badge>
+          <Badge variant="secondary" className="text-xs gap-1"><Monitor className="w-3 h-3" /> Digital</Badge>
+        </div>
+      );
+    }
+    if (digital) {
+      return <Badge variant="secondary" className="text-xs gap-1"><Monitor className="w-3 h-3" /> Digital uniquement</Badge>;
+    }
+    if (paper) {
+      return <Badge variant="default" className="text-xs gap-1"><BookOpen className="w-3 h-3" /> Papier uniquement</Badge>;
+    }
+    return <Badge variant="destructive" className="text-xs">Indisponible</Badge>;
+  };
+
   if (loading) {
     return (
       <div className="text-center py-20">
@@ -113,6 +189,13 @@ const AdminStockManager = () => {
     );
   }
 
+  const filterButtons: { key: AvailFilter; label: string }[] = [
+    { key: "all", label: "Tous" },
+    { key: "paper", label: "Dispo papier" },
+    { key: "digital_only", label: "Digital uniquement" },
+    { key: "out_of_stock", label: "Rupture / Indisponible" },
+  ];
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -120,7 +203,33 @@ const AdminStockManager = () => {
           <PackageOpen className="w-5 h-5 text-primary" />
           Gestion des stocks & tarifs
         </h2>
-        <Badge variant="outline">{issues.length} numéros</Badge>
+        <Badge variant="outline">{filteredAndSorted.length} / {issues.length} numéros</Badge>
+      </div>
+
+      {/* Search + Filters */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+        <div className="relative flex-1 max-w-md w-full">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Rechercher par numéro ou titre..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          {filterButtons.map(f => (
+            <Button
+              key={f.key}
+              size="sm"
+              variant={availFilter === f.key ? "default" : "outline"}
+              className="h-8 text-xs"
+              onClick={() => setAvailFilter(f.key)}
+            >
+              {f.label}
+            </Button>
+          ))}
+        </div>
       </div>
 
       <div className="bg-card rounded-xl border border-border overflow-hidden">
@@ -128,17 +237,27 @@ const AdminStockManager = () => {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b">
-                <th className="h-12 px-4 text-left font-medium text-muted-foreground">Numéro</th>
+                <th
+                  className="h-12 px-4 text-left font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors"
+                  onClick={() => toggleSort("issue_number")}
+                >
+                  <span className="flex items-center">Numéro {getSortIcon("issue_number")}</span>
+                </th>
                 <th className="h-12 px-4 text-left font-medium text-muted-foreground">Titre</th>
-                <th className="h-12 px-4 text-center font-medium text-muted-foreground">Statut</th>
-                <th className="h-12 px-4 text-center font-medium text-muted-foreground">Stock physique</th>
+                <th className="h-12 px-4 text-center font-medium text-muted-foreground">Disponibilité</th>
+                <th
+                  className="h-12 px-4 text-center font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors"
+                  onClick={() => toggleSort("physical_stock")}
+                >
+                  <span className="flex items-center justify-center">Stock physique {getSortIcon("physical_stock")}</span>
+                </th>
                 <th className="h-12 px-4 text-center font-medium text-muted-foreground">Prix papier (€)</th>
                 <th className="h-12 px-4 text-center font-medium text-muted-foreground">Prix digital (€)</th>
                 <th className="h-12 px-4 text-center font-medium text-muted-foreground">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {issues.map(issue => {
+              {filteredAndSorted.map(issue => {
                 const isEditing = !!editing[issue.id];
                 const edit = editing[issue.id];
 
@@ -160,11 +279,7 @@ const AdminStockManager = () => {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-center">
-                      {issue.is_current
-                        ? <Badge className="text-xs">En cours</Badge>
-                        : issue.is_archived
-                          ? <Badge variant="outline" className="text-xs">Archivé</Badge>
-                          : <Badge variant="secondary" className="text-xs">Publié</Badge>}
+                      {getAvailabilityBadge(issue)}
                     </td>
                     <td className="px-4 py-3 text-center">
                       {isEditing ? (
@@ -243,6 +358,13 @@ const AdminStockManager = () => {
                   </tr>
                 );
               })}
+              {filteredAndSorted.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="text-center py-10 text-muted-foreground">
+                    Aucun numéro trouvé.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

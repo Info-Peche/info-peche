@@ -57,50 +57,62 @@ const SideCart = () => {
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {items.map((item) => (
-                    <motion.div
-                      key={item.id}
-                      initial={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="flex gap-4 p-4 bg-secondary/10 rounded-xl border border-border"
-                    >
-                      {item.image && (
-                        <img 
-                          src={item.image} 
-                          alt={item.name} 
-                          className="w-20 h-20 object-cover rounded-lg bg-white shadow-sm" 
-                        />
-                      )}
-                      <div className="flex-1">
-                        <div className="flex justify-between items-start mb-1">
-                          <h3 className="font-semibold text-sm line-clamp-2">{item.name}</h3>
-                          <button 
-                            onClick={() => removeItem(item.id)}
-                            className="text-muted-foreground hover:text-destructive transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                  <AnimatePresence mode="popLayout">
+                    {items.map((item) => (
+                      <motion.div
+                        key={item.id}
+                        initial={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0, overflow: "hidden", marginBottom: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="flex gap-4 p-4 bg-secondary/10 rounded-xl border border-border"
+                      >
+                        {item.image && (
+                          <img 
+                            src={item.image} 
+                            alt={item.name} 
+                            className="w-20 h-20 object-cover rounded-lg bg-white shadow-sm" 
+                          />
+                        )}
+                        <div className="flex-1">
+                          <div className="flex justify-between items-start mb-1">
+                            <h3 className="font-semibold text-sm line-clamp-2">{item.name}</h3>
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                removeItem(item.id);
+                              }}
+                              className="text-muted-foreground hover:text-destructive transition-colors p-1"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                          <p className="text-primary font-bold mb-3">{item.price.toFixed(2)}€</p>
+                          <div className="flex items-center gap-3">
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                updateQuantity(item.id, item.quantity - 1);
+                              }}
+                              className="p-1 rounded-full hover:bg-secondary transition-colors"
+                            >
+                              <Minus className="w-3 h-3" />
+                            </button>
+                            <span className="text-sm font-medium w-4 text-center">{item.quantity}</span>
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                updateQuantity(item.id, item.quantity + 1);
+                              }}
+                              className="p-1 rounded-full hover:bg-secondary transition-colors"
+                            >
+                              <Plus className="w-3 h-3" />
+                            </button>
+                          </div>
                         </div>
-                        <p className="text-primary font-bold mb-3">{item.price.toFixed(2)}€</p>
-                        <div className="flex items-center gap-3">
-                          <button 
-                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                            className="p-1 rounded-full hover:bg-secondary transition-colors"
-                          >
-                            <Minus className="w-3 h-3" />
-                          </button>
-                          <span className="text-sm font-medium w-4 text-center">{item.quantity}</span>
-                          <button 
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                            className="p-1 rounded-full hover:bg-secondary transition-colors"
-                          >
-                            <Plus className="w-3 h-3" />
-                          </button>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
                 </div>
               )}
             </ScrollArea>

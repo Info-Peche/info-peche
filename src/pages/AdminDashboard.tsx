@@ -27,6 +27,7 @@ import { toast } from "sonner";
 import AdminEditionManager from "@/components/AdminEditionManager";
 import AdminBlogEditor from "@/components/AdminBlogEditor";
 import AdminAnalytics from "@/components/AdminAnalytics";
+import AdminStockManager from "@/components/AdminStockManager";
 
 type Order = {
   id: string;

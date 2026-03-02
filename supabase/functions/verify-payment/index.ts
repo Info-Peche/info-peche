@@ -85,44 +85,91 @@ serve(async (req) => {
         : null;
       if (pmTypes) {
         const methodMap: Record<string, string> = {
-          card: "carte_bancaire",
-          sepa_debit: "carte_bancaire",
-          paypal: "carte_bancaire",
+          card: "card",
+          sepa_debit: "sepa_debit",
+          paypal: "paypal",
         };
-        updatePayload.payment_method = methodMap[pmTypes] || "carte_bancaire";
+        updatePayload.payment_method = methodMap[pmTypes] || "card";
       }
 
       logStep("Subscription dates set", { startDate, endDate });
     }
 
+    // Try to update existing order
     const { data: orderData, error: updateError } = await supabaseAdmin
       .from("orders")
       .update(updatePayload)
       .eq("stripe_checkout_session_id", session_id)
-      .select()
-      .single();
+      .select();
 
-    const order = orderData;
+    let order = orderData && orderData.length > 0 ? orderData[0] : null;
 
-    if (updateError) {
-      logStep("DB update error", { error: updateError.message });
+    // If no order found, create one from Stripe session metadata
+    if (!order) {
+      logStep("No existing order found, creating from session metadata");
+      const meta = session.metadata || {};
+      const itemsJson = meta.items_json ? JSON.parse(meta.items_json) : [];
+      const hasSubscription = session.mode === "subscription";
+      const shippingCents = parseInt(meta.shipping_cents || "0", 10);
+
+      const { data: newOrder, error: insertError } = await supabaseAdmin
+        .from("orders")
+        .insert({
+          email: session.customer_details?.email || meta.email || "",
+          first_name: meta.first_name || session.customer_details?.name?.split(" ")[0] || "N/A",
+          last_name: meta.last_name || session.customer_details?.name?.split(" ").slice(1).join(" ") || "N/A",
+          phone: meta.phone || null,
+          address_line1: meta.address_line1 || session.shipping_details?.address?.line1 || "N/A",
+          address_line2: meta.address_line2 || session.shipping_details?.address?.line2 || null,
+          city: meta.city || session.shipping_details?.address?.city || "N/A",
+          postal_code: meta.postal_code || session.shipping_details?.address?.postal_code || "N/A",
+          country: meta.country || session.shipping_details?.address?.country || "FR",
+          order_type: hasSubscription ? "subscription_paper" : "single_issue",
+          payment_method: "card",
+          is_recurring: hasSubscription,
+          items: itemsJson,
+          total_amount: session.amount_total || 0,
+          stripe_checkout_session_id: session_id,
+          payment_status: "paid",
+          status: "confirmed",
+          stripe_payment_intent_id: session.payment_intent as string || null,
+          stripe_subscription_id: updatePayload.stripe_subscription_id || null,
+          comment: meta.comment || null,
+          subscription_start_date: updatePayload.subscription_start_date || null,
+          subscription_end_date: updatePayload.subscription_end_date || null,
+          subscription_type: hasSubscription ? itemsJson[0]?.price_id : null,
+          billing_address_line1: meta.billing_different === "true" ? meta.billing_address_line1 : null,
+          billing_address_line2: meta.billing_different === "true" ? meta.billing_address_line2 : null,
+          billing_city: meta.billing_different === "true" ? meta.billing_city : null,
+          billing_postal_code: meta.billing_different === "true" ? meta.billing_postal_code : null,
+          billing_country: meta.billing_different === "true" ? meta.billing_country : null,
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        logStep("DB insert error in verify-payment", { error: insertError.message });
+      } else {
+        order = newOrder;
+        logStep("Order created from verify-payment", { orderId: order?.id });
+      }
     } else {
       logStep("Order updated", { orderId: order?.id });
+    }
 
-      // Decrement physical stock for paper magazine purchases
-      if (order?.items && Array.isArray(order.items)) {
-        for (const item of order.items as any[]) {
-          const itemId = item.id || "";
-          if (typeof itemId === "string" && itemId.startsWith("physical-")) {
-            const issueId = itemId.replace("physical-", "");
-            const { error: stockError } = await supabaseAdmin.rpc("decrement_stock" as any, {
-              _issue_id: issueId,
-            });
-            if (stockError) {
-              logStep("Stock decrement error", { issueId, error: stockError.message });
-            } else {
-              logStep("Stock decremented", { issueId });
-            }
+    // Decrement physical stock for paper magazine purchases
+    if (order?.items && Array.isArray(order.items)) {
+      for (const item of order.items as any[]) {
+        const itemId = item.id || "";
+        if (typeof itemId === "string" && itemId.startsWith("physical-")) {
+          const issueId = itemId.replace("physical-", "");
+          const { error: stockError } = await supabaseAdmin.rpc("decrement_stock" as any, {
+            _issue_id: issueId,
+          });
+          if (stockError) {
+            logStep("Stock decrement error", { issueId, error: stockError.message });
+          } else {
+            logStep("Stock decremented", { issueId });
           }
         }
       }

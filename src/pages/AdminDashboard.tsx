@@ -22,11 +22,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, Search, Package, Loader2, Download, Newspaper, RefreshCw, CalendarClock, SlidersHorizontal, FileText, GripVertical, BarChart3 } from "lucide-react";
+import { LogOut, Search, Package, Loader2, Download, Newspaper, RefreshCw, CalendarClock, SlidersHorizontal, FileText, GripVertical, BarChart3, PackageOpen } from "lucide-react";
 import { toast } from "sonner";
 import AdminEditionManager from "@/components/AdminEditionManager";
 import AdminBlogEditor from "@/components/AdminBlogEditor";
 import AdminAnalytics from "@/components/AdminAnalytics";
+import AdminStockManager from "@/components/AdminStockManager";
 
 type Order = {
   id: string;
@@ -448,6 +449,9 @@ const AdminDashboard = () => {
             <TabsTrigger value="edition" className="gap-2">
               <Newspaper className="w-4 h-4" /> Édition du mois
             </TabsTrigger>
+            <TabsTrigger value="stock" className="gap-2">
+              <PackageOpen className="w-4 h-4" /> Stocks & Tarifs
+            </TabsTrigger>
             <TabsTrigger value="blog" className="gap-2">
               <FileText className="w-4 h-4" /> Blog
             </TabsTrigger>
@@ -459,6 +463,10 @@ const AdminDashboard = () => {
 
           <TabsContent value="edition">
             <AdminEditionManager />
+          </TabsContent>
+
+          <TabsContent value="stock">
+            <AdminStockManager />
           </TabsContent>
 
           <TabsContent value="blog">

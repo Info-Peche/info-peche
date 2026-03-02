@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Loader2, ShoppingBag, Lock, Package, Truck } from "lucide-react";
+import { ArrowLeft, Loader2, ShoppingBag, Lock, Package, Truck, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,7 +23,7 @@ import {
 } from "@/lib/shipping";
 
 const CheckoutContent = () => {
-  const { items, total } = useCart();
+  const { items, removeItem, updateQuantity, total } = useCart();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -336,7 +336,17 @@ const CheckoutContent = () => {
                         />
                       )}
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground leading-tight">{item.name}</p>
+                        <div className="flex justify-between items-start">
+                          <p className="text-sm font-medium text-foreground leading-tight">{item.name}</p>
+                          <button
+                            type="button"
+                            onClick={() => removeItem(item.id)}
+                            className="text-muted-foreground hover:text-destructive transition-colors ml-2 shrink-0"
+                            aria-label="Supprimer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                         {item.quantity > 1 && <p className="text-xs text-muted-foreground">×{item.quantity}</p>}
                         <p className="text-sm font-bold text-primary mt-1">
                           {(item.price * item.quantity).toFixed(2)}€

@@ -27,6 +27,15 @@ const events = [
     image: "https://images.unsplash.com/photo-1504309092620-4d0ec726efa4?w=600&h=400&fit=crop",
     status: "À venir",
   },
+  {
+    id: "megacite-amiens-2026",
+    title: "Mégacité Amiens 2026",
+    description: "Retrouvez Info Pêche au salon Mégacité d'Amiens. Venez découvrir nos dernières publications, rencontrer l'équipe et profiter d'offres exclusives.",
+    date: "7–8 Novembre 2026",
+    location: "Mégacité, Amiens",
+    image: "https://images.unsplash.com/photo-1559827291-bce0aa4c4a57?w=600&h=400&fit=crop",
+    status: "À venir",
+  },
 ];
 
 const Events = () => {

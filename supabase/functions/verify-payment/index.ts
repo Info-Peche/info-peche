@@ -102,10 +102,12 @@ serve(async (req) => {
       .select()
       .single();
 
+    const order = orderData;
+
     if (updateError) {
       logStep("DB update error", { error: updateError.message });
     } else {
-      logStep("Order updated", { orderId: orderData?.id });
+      logStep("Order updated", { orderId: order?.id });
 
       // Decrement physical stock for paper magazine purchases
       if (order?.items && Array.isArray(order.items)) {
@@ -125,8 +127,6 @@ serve(async (req) => {
         }
       }
     }
-
-    const order = orderData;
     const customerEmail = session.customer_details?.email || order?.email;
     const customerName = `${order?.first_name || ""} ${order?.last_name || ""}`.trim();
 

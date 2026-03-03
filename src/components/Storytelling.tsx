@@ -11,9 +11,9 @@ const stats = [
 
 const Storytelling = () => {
   return (
-    <section className="py-24 bg-white overflow-hidden">
+    <section className="py-16 md:py-24 bg-white overflow-hidden">
       <div className="container px-4 mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 md:gap-16 items-center">
           {/* Image side */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -25,12 +25,12 @@ const Storytelling = () => {
             <img
               src={nicolasImage}
               alt="Nicolas Béroud, rédacteur en chef d'Info Pêche, au bord de l'eau"
-              className="w-full max-w-sm mx-auto rounded-2xl shadow-xl object-cover aspect-[3/4]"
+              className="w-full max-w-[280px] md:max-w-sm mx-auto rounded-2xl shadow-xl object-cover aspect-[3/4]"
             />
             {/* Floating stat card */}
-            <div className="absolute -bottom-6 right-0 md:-right-6 bg-white rounded-xl shadow-2xl border border-border p-6 max-w-[240px]">
-              <p className="text-4xl font-serif font-bold text-primary">40 ans</p>
-              <p className="text-sm text-muted-foreground font-medium">
+            <div className="absolute -bottom-4 right-4 md:-bottom-6 md:right-0 lg:-right-6 bg-white rounded-xl shadow-2xl border border-border p-4 md:p-6 max-w-[200px] md:max-w-[240px]">
+              <p className="text-3xl md:text-4xl font-serif font-bold text-primary">40 ans</p>
+              <p className="text-xs md:text-sm text-muted-foreground font-medium">
                 de passion pour la pêche et le journalisme halieutique
               </p>
             </div>
@@ -42,15 +42,15 @@ const Storytelling = () => {
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
-            className="space-y-6"
+            className="space-y-4 md:space-y-6"
           >
-            <span className="text-primary font-bold tracking-widest uppercase text-sm">
+            <span className="text-primary font-bold tracking-widest uppercase text-xs md:text-sm">
               Le Rédacteur en Chef
             </span>
-            <h2 className="text-4xl md:text-5xl font-serif font-bold text-foreground leading-tight">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif font-bold text-foreground leading-tight">
               Nicolas Béroud,<br />une vie au bord de l'eau
             </h2>
-            <div className="space-y-4 text-muted-foreground leading-relaxed text-lg">
+            <div className="space-y-3 md:space-y-4 text-muted-foreground leading-relaxed text-base md:text-lg">
               <p>
                 Tout a commencé en Corrèze, chez sa grand-mère, face à l'immense lac du Chastang. <strong className="text-foreground">Le jeune Nicolas attrape ses premiers gardons au blé</strong> — et c'est le début d'une passion qui ne le quittera plus.
               </p>
@@ -66,12 +66,12 @@ const Storytelling = () => {
             </div>
 
             {/* Inline stats */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 pt-6 border-t border-border">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 md:gap-6 pt-4 md:pt-6 border-t border-border">
               {stats.map((stat) => (
                 <div key={stat.label} className="text-center">
-                  <stat.icon className="w-6 h-6 mx-auto text-primary mb-2" />
-                  <p className="text-2xl font-bold text-foreground">{stat.value}</p>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">{stat.label}</p>
+                  <stat.icon className="w-5 h-5 md:w-6 md:h-6 mx-auto text-primary mb-1.5 md:mb-2" />
+                  <p className="text-xl md:text-2xl font-bold text-foreground">{stat.value}</p>
+                  <p className="text-[10px] md:text-xs text-muted-foreground uppercase tracking-wide">{stat.label}</p>
                 </div>
               ))}
             </div>

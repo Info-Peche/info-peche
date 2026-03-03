@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
-import logo from "@/assets/info-peche-logo.png";
+const logo = "/images/info-peche-logo.png";
 
 const resourceLinks = [
   { name: "Blog", href: "/blog" },

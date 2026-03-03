@@ -68,7 +68,7 @@ const Hero = () => {
             transition={{ duration: 0.8, delay: 0.5 }}
             className="text-5xl md:text-6xl lg:text-7xl font-serif font-bold mb-8 leading-[1.1] drop-shadow-lg max-w-4xl mx-auto"
           >
-            LE MAGAZINE <span className="text-accent">N°1</span> DE TOUTES LES PÊCHES AU COUP !
+            Le magazine <span className="text-accent">N°1</span> de la pêche au coup depuis 20 ans
           </motion.h1>
 
           <motion.p
@@ -77,7 +77,7 @@ const Hero = () => {
             transition={{ duration: 0.8, delay: 0.7 }}
             className="text-xl md:text-2xl text-white/85 mb-12 max-w-2xl mx-auto font-light drop-shadow-md leading-relaxed"
           >
-            60 bons coins de pêche pour remplir vos bourriches
+            L'expertise technique et la passion au service de votre réussite au bord de l'eau.
           </motion.p>
 
           <motion.div

@@ -58,7 +58,7 @@ const Hero = () => {
               <span className="text-white font-bold text-sm">4.8/5</span>
               <span className="text-white/30 mx-1">•</span>
               <Users className="w-4 h-4 text-white/70" />
-              <span className="text-white/80 text-sm font-medium">20 000 lecteurs passionnés</span>
+              <span className="text-white/80 text-sm font-medium">15 000 lecteurs passionnés</span>
             </div>
           </motion.div>
 

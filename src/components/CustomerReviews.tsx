@@ -62,7 +62,6 @@ const CustomerReviews = () => {
 
     let avatarUrl: string | null = null;
 
-    // Upload avatar if provided
     if (avatarFile) {
       const fileExt = avatarFile.name.split(".").pop();
       const filePath = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
@@ -117,37 +116,37 @@ const CustomerReviews = () => {
   };
 
   return (
-    <section id="avis" className="py-24 bg-secondary/20">
+    <section id="avis" className="py-16 md:py-24 bg-secondary/20">
       <div className="container px-4 mx-auto">
         {/* Header */}
-        <div className="text-center max-w-3xl mx-auto mb-10">
-          <h2 className="text-3xl md:text-4xl font-serif font-bold italic text-foreground mb-2">
+        <div className="text-center max-w-3xl mx-auto mb-8 md:mb-10">
+          <h2 className="text-2xl md:text-3xl lg:text-4xl font-serif font-bold italic text-foreground mb-2">
             Vous en parlez mieux que nous…
           </h2>
-          <p className="text-muted-foreground">
+          <p className="text-sm md:text-base text-muted-foreground">
             Déjà des centaines de lecteurs passionnés partout en France !
           </p>
         </div>
 
         {/* Top bar: rating + CTA */}
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
+        <div className="flex flex-wrap items-center justify-between gap-3 md:gap-4 mb-6 md:mb-8">
           {reviews.length > 0 && (
             <div className="flex items-center gap-2">
               <div className="flex text-accent">
                 {[...Array(5)].map((_, i) => (
                   <Star
                     key={i}
-                    className={`w-5 h-5 ${i < Math.round(avgRating) ? "fill-current" : "text-border"}`}
+                    className={`w-4 h-4 md:w-5 md:h-5 ${i < Math.round(avgRating) ? "fill-current" : "text-border"}`}
                   />
                 ))}
               </div>
-              <span className="font-bold text-foreground">{reviews.length} Avis</span>
+              <span className="font-bold text-foreground text-sm md:text-base">{reviews.length} Avis</span>
             </div>
           )}
           {!showForm && !submitted && (
             <Button
               onClick={() => setShowForm(true)}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-6 text-sm"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-5 md:px-6 text-xs md:text-sm"
             >
               Écrire un avis
             </Button>
@@ -159,7 +158,7 @@ const CustomerReviews = () => {
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="flex items-center justify-center gap-2 text-nature font-semibold mb-8"
+            className="flex items-center justify-center gap-2 text-nature font-semibold mb-8 text-sm md:text-base"
           >
             <CheckCircle className="w-5 h-5" />
             Merci ! Votre avis sera publié après vérification.
@@ -172,9 +171,9 @@ const CustomerReviews = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             onSubmit={handleSubmit}
-            className="max-w-lg mx-auto bg-card border border-border rounded-2xl p-6 text-left space-y-4 mb-10"
+            className="max-w-lg mx-auto bg-card border border-border rounded-2xl p-5 md:p-6 text-left space-y-4 mb-8 md:mb-10"
           >
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium text-foreground mb-1 block">Nom *</label>
                 <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Jean D." required />
@@ -237,9 +236,9 @@ const CustomerReviews = () => {
           </motion.form>
         )}
 
-        {/* Masonry reviews — Lumios style */}
+        {/* Masonry reviews */}
         {reviews.length > 0 && (
-          <div className="columns-2 md:columns-3 lg:columns-4 gap-4">
+          <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4">
             {reviews.map((review, index) => (
               <motion.div
                 key={review.id}
@@ -249,7 +248,6 @@ const CustomerReviews = () => {
                 transition={{ delay: index * 0.06 }}
                 className="break-inside-avoid mb-4 bg-card rounded-xl overflow-hidden border border-border shadow-sm"
               >
-                {/* Photo — natural aspect ratio */}
                 {review.avatar_url && (
                   <img
                     src={review.avatar_url}
@@ -259,7 +257,6 @@ const CustomerReviews = () => {
                   />
                 )}
                 <div className="px-3.5 py-3">
-                  {/* Author + verified badge */}
                   <div className="flex items-center gap-1.5 mb-1.5">
                     <span className="font-semibold text-foreground text-sm">{review.author_name}</span>
                     <span className="text-primary text-xs">✓ Vérifié</span>
@@ -267,7 +264,6 @@ const CustomerReviews = () => {
                   {review.author_location && (
                     <p className="text-muted-foreground text-xs mb-1.5">{review.author_location}</p>
                   )}
-                  {/* Stars */}
                   <div className="flex items-center gap-0.5 mb-2">
                     {[...Array(5)].map((_, i) => (
                       <Star

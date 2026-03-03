@@ -61,6 +61,20 @@ const LatestEdition = () => {
                       src={`https://img.youtube.com/vi/${edition.youtube_video_id}/maxresdefault.jpg`}
                       alt="Vidéo de présentation du magazine Info-Pêche"
                       className="w-full h-auto rounded-xl aspect-video object-cover"
+                      onError={(e) => {
+                        const img = e.currentTarget;
+                        if (img.src.includes("maxresdefault")) {
+                          img.src = `https://img.youtube.com/vi/${edition.youtube_video_id}/hqdefault.jpg`;
+                          return;
+                        }
+                        if (img.src.includes("hqdefault")) {
+                          img.src = `https://img.youtube.com/vi/${edition.youtube_video_id}/mqdefault.jpg`;
+                          return;
+                        }
+                        if (img.src.includes("mqdefault")) {
+                          img.src = `https://img.youtube.com/vi/${edition.youtube_video_id}/default.jpg`;
+                        }
+                      }}
                     />
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="w-20 h-20 bg-primary/90 rounded-full flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform duration-300">

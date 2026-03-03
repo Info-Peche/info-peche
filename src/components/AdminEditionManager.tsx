@@ -98,8 +98,8 @@ const AdminEditionManager = () => {
   };
 
   const extractYoutubeId = (input: string) => {
-    // Accept full URLs or just IDs
-    const match = input.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
+    // Accept full URLs (watch, shorts, live, embed, youtu.be) or just IDs
+    const match = input.match(/(?:youtube\.com\/(?:watch\?v=|shorts\/|live\/|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
     return match ? match[1] : input.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 11);
   };
 
@@ -151,11 +151,14 @@ const AdminEditionManager = () => {
           placeholder="ID ou URL YouTube (ex: gwYLuVXP-Ik)"
         />
         {data.youtube_video_id && (
-          <div className="mt-3 rounded-xl overflow-hidden border border-border aspect-video max-w-sm">
+          <div className="mt-3 rounded-xl overflow-hidden border border-border aspect-video max-w-sm bg-muted">
             <img
               src={`https://img.youtube.com/vi/${data.youtube_video_id}/mqdefault.jpg`}
               alt="Aperçu vidéo"
               className="w-full h-full object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = `https://img.youtube.com/vi/${data.youtube_video_id}/default.jpg`;
+              }}
             />
           </div>
         )}

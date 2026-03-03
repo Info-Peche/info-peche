@@ -36,8 +36,8 @@ const YouTubeSidebar = ({ videoUrl }: YouTubeSidebarProps) => {
 
       {/* Subscribe promo block */}
       <div className="bg-[hsl(0,72%,51%)]/5 border border-[hsl(0,72%,51%)]/20 rounded-xl p-5">
-        <div className="flex items-center gap-2 mb-3">
-          <Youtube className="w-6 h-6 text-[hsl(0,72%,51%)]" />
+        <div className="flex items-center gap-3 mb-3">
+          <img src="/images/logo-youtube-tv.png" alt="Info Pêche YouTube TV" className="w-12 h-12 rounded-full" />
           <h3 className="font-bold text-foreground text-sm">Info Pêche TV</h3>
         </div>
         <p className="text-xs text-muted-foreground mb-4 leading-relaxed">

@@ -58,20 +58,14 @@ const LatestEdition = () => {
 
                   <div className="relative">
                     <img
-                    src={`https://img.youtube.com/vi/${edition.youtube_video_id}/maxresdefault.jpg`}
+                    src={`https://img.youtube.com/vi/${edition.youtube_video_id}/hqdefault.jpg`}
                     alt="Vidéo de présentation du magazine Info-Pêche"
                     className="w-full h-auto rounded-xl aspect-video object-cover"
                     onError={(e) => {
                       const img = e.currentTarget;
-                      if (img.src.includes("maxresdefault")) {
-                        img.src = `https://img.youtube.com/vi/${edition.youtube_video_id}/hqdefault.jpg`;
-                        return;
-                      }
                       if (img.src.includes("hqdefault")) {
                         img.src = `https://img.youtube.com/vi/${edition.youtube_video_id}/mqdefault.jpg`;
-                        return;
-                      }
-                      if (img.src.includes("mqdefault")) {
+                      } else if (img.src.includes("mqdefault")) {
                         img.src = `https://img.youtube.com/vi/${edition.youtube_video_id}/default.jpg`;
                       }
                     }} />

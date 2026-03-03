@@ -1,8 +1,8 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Star, Users } from "lucide-react";
-import heroDesktop from "@/assets/hero-desktop.png";
-import heroMobile from "@/assets/hero-mobile.jpg";
+const heroDesktop = "/images/hero-desktop.jpg";
+const heroMobile = "/images/hero-mobile.jpg";
 
 const Hero = () => {
   return (

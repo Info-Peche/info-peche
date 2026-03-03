@@ -25,8 +25,8 @@ const Index = () => {
         <LatestEdition />
         
         <PricingCards />
-        <Storytelling />
         <ContentHighlights />
+        <Storytelling />
         <CustomerReviews />
         <FinalCTA />
         <FAQ />

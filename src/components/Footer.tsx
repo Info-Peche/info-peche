@@ -12,7 +12,7 @@ const Footer = () => {
               Le magazine de référence pour tous les passionnés de pêche au coup. Techniques, matériel, compétitions.
             </p>
             <div className="flex space-x-4">
-              <a href="https://www.facebook.com/groups/sipacamiens/" target="_blank" rel="noopener noreferrer" className="p-2 bg-white/10 rounded-full hover:bg-primary transition-all">
+              <a href="https://www.facebook.com/infopechemagazine/?locale=fr_FR" target="_blank" rel="noopener noreferrer" className="p-2 bg-white/10 rounded-full hover:bg-primary transition-all">
                 <Facebook className="w-5 h-5" />
               </a>
               <a href="https://www.youtube.com/@infopechemagazine" target="_blank" rel="noopener noreferrer" className="p-2 bg-white/10 rounded-full hover:bg-primary transition-all">

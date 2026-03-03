@@ -273,27 +273,35 @@ const AdminDashboard = () => {
     const priceId = item.price_id || "";
     const issueNum = item.issue_number || name.match(/N°?\s*(\d+)/)?.[1] || "";
 
-    // Blog article — detect by id prefix, price_id (lectureNumero 3€ for blog), or name
-    if (id.startsWith("blog-") || priceId === "price_1T123wKbRd4yKDMH1bI9GQqh" && item.unit_amount === 300 && !issueNum || name.toLowerCase().includes("article blog")) {
+    // Blog article
+    if (id.startsWith("blog-") || (priceId === "price_1T123wKbRd4yKDMH1bI9GQqh" && item.unit_amount === 300 && !issueNum) || name.toLowerCase().includes("article blog")) {
       return "Article blog";
     }
     // Digital single issue
-    if (id.startsWith("digital-") || (priceId === "price_1T123wKbRd4yKDMH1bI9GQqh" && issueNum)) {
+    if (id.startsWith("digital-") || id === "mag-digital" || name.toLowerCase().includes("numérique") || name.toLowerCase().includes("digital")) {
       return issueNum ? `N°${issueNum} (digital)` : "Article digital";
     }
-    if (name.toLowerCase().includes("numérique") || name.toLowerCase().includes("digital")) {
-      return issueNum ? `N°${issueNum} (digital)` : "Article digital";
+    if (priceId === "price_1T123wKbRd4yKDMH1bI9GQqh" && issueNum) {
+      return `N°${issueNum} (digital)`;
     }
-    // Physical single issue — detect by id prefix, price_id, or issue_number presence
+    // Physical single issue
     if (issueNum) return `N°${issueNum} (papier)`;
-    // Fallback with number in name
     const num = name.match(/(\d+)/)?.[1];
     if (num) return `N°${num} (papier)`;
     return name || "—";
   };
 
+  const SUBSCRIPTION_LABELS: Record<string, string> = {
+    "price_1T11hVKbRd4yKDMHHCpMLRc3": "Abo 2 ans",
+    "price_1T11hkKbRd4yKDMH6WlS54AH": "Abo 1 an",
+    "price_1T11i1KbRd4yKDMHppfC8rE9": "Abo 6 mois",
+  };
+
   const getFormulaLabel = (order: Order) => {
-    if (isSubscription(order)) return order.subscription_type || "—";
+    if (isSubscription(order)) {
+      const subType = order.subscription_type || "";
+      return SUBSCRIPTION_LABELS[subType] || subType || "Abonnement";
+    }
     if (order.items && Array.isArray(order.items) && order.items.length > 1) {
       return "Multiples";
     }

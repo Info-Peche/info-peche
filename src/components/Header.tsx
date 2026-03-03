@@ -5,12 +5,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
-import logo from "@/assets/info-peche-logo.jpg";
+const logo = "/images/info-peche-logo.png";
 
 const resourceLinks = [
-  { name: "Blog", href: "/blog" },
-  { name: "Événements", href: "/evenements" },
   { name: "Boutique Archives", href: "/boutique" },
+  { name: "Événements", href: "/evenements" },
+  { name: "Blog", href: "/blog" },
   { name: "Contact", href: "/contact" },
 ];
 
@@ -94,6 +94,13 @@ const Header = () => {
             </a>
           )}
 
+          <Link
+            to="/sipac"
+            className="text-primary hover:text-primary/80 transition-colors font-bold text-sm uppercase tracking-wide"
+          >
+            🎣 SIPAC 2026
+          </Link>
+
           {/* Resources Dropdown */}
           <div ref={dropdownRef} className="relative">
             <button
@@ -118,7 +125,11 @@ const Header = () => {
                       key={link.name}
                       to={link.href}
                       onClick={() => setIsResourcesOpen(false)}
-                      className="block px-4 py-3 text-sm text-foreground/80 hover:bg-muted hover:text-primary transition-colors"
+                      className={`block px-4 py-3 text-sm transition-colors ${
+                        (link as any).highlight
+                          ? "text-primary font-bold bg-primary/5 hover:bg-primary/10"
+                          : "text-foreground/80 hover:bg-muted hover:text-primary"
+                      }`}
                     >
                       {link.name}
                     </Link>
@@ -197,6 +208,14 @@ const Header = () => {
               >
                 Abonnement
               </button>
+
+              <Link
+                to="/sipac"
+                className="text-primary hover:text-primary/80 font-bold p-2"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                🎣 SIPAC 2026
+              </Link>
 
               {/* Mobile Resources Accordion */}
               <button

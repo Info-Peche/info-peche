@@ -21,6 +21,9 @@ import CGV from "./pages/CGV";
 import MagazineViewer from "./pages/MagazineViewer";
 import MonCompte from "./pages/MonCompte";
 import ResetPassword from "./pages/ResetPassword";
+import ScrollToTop from "./components/ScrollToTop";
+import SIPAC from "./pages/SIPAC";
+import SpecimenTrophy from "./pages/SpecimenTrophy";
 
 const queryClient = new QueryClient();
 
@@ -32,11 +35,14 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <ScrollToTop />
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/blog/:slug" element={<BlogArticle />} />
               <Route path="/evenements" element={<Events />} />
+              <Route path="/sipac" element={<SIPAC />} />
+              <Route path="/specimen-trophy" element={<SpecimenTrophy />} />
               <Route path="/boutique" element={<Shop />} />
               <Route path="/commande" element={<Checkout />} />
               <Route path="/commande-confirmee" element={<OrderConfirmation />} />

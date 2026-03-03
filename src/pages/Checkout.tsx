@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Loader2, ShoppingBag, Lock, Package, Truck } from "lucide-react";
+import { ArrowLeft, Loader2, ShoppingBag, Lock, Package, Truck, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,7 +23,7 @@ import {
 } from "@/lib/shipping";
 
 const CheckoutContent = () => {
-  const { items, total } = useCart();
+  const { items, removeItem, updateQuantity, total } = useCart();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -70,8 +70,19 @@ const CheckoutContent = () => {
     setLoading(true);
     try {
       const checkoutItems = items.map((item) => {
-        const product = Object.values(PRODUCTS).find((p) => p.id === item.id) || PRODUCTS.ancienNumero;
+        const isDigital = item.id.startsWith("digital-");
+        const product = isDigital
+          ? PRODUCTS.lectureNumero
+          : Object.values(PRODUCTS).find((p) => p.id === item.id) || PRODUCTS.ancienNumero;
+        
+        // Extract issue_number from item name (e.g. "Info Pêche N°98 (Papier)" → "98")
+        const issueNumMatch = item.name.match(/N°?\s*(\d+)/i) || item.name.match(/(\d+)/);
+        const issueNumber = issueNumMatch ? issueNumMatch[1] : undefined;
+        
         return {
+          id: item.id,
+          name: item.name,
+          issue_number: issueNumber,
           price_id: product.price_id,
           quantity: item.quantity,
           mode: product.mode,
@@ -336,7 +347,17 @@ const CheckoutContent = () => {
                         />
                       )}
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground leading-tight">{item.name}</p>
+                        <div className="flex justify-between items-start">
+                          <p className="text-sm font-medium text-foreground leading-tight">{item.name}</p>
+                          <button
+                            type="button"
+                            onClick={() => removeItem(item.id)}
+                            className="text-muted-foreground hover:text-destructive transition-colors ml-2 shrink-0"
+                            aria-label="Supprimer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                         {item.quantity > 1 && <p className="text-xs text-muted-foreground">×{item.quantity}</p>}
                         <p className="text-sm font-bold text-primary mt-1">
                           {(item.price * item.quantity).toFixed(2)}€
@@ -355,33 +376,37 @@ const CheckoutContent = () => {
                   </div>
                 )}
 
-                {/* Shipping line */}
+                {/* Shipping line - only show if there are physical items */}
                 <div className="border-t border-border pt-4 space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Sous-total</span>
                     <span className="font-medium">{total.toFixed(2)}€</span>
                   </div>
-                  <div className="flex justify-between text-sm items-center">
-                    <span className="text-muted-foreground flex items-center gap-1.5">
-                      <Truck className="w-3.5 h-3.5" /> Livraison
-                    </span>
-                    {onlySubscriptions || physicalCount === 0 ? (
-                      <span className="text-xs font-bold text-primary">OFFERTE</span>
-                    ) : shippingCost === 0 ? (
-                      <span className="text-xs font-bold text-primary">OFFERTE</span>
-                    ) : (
-                      <span className="font-medium">{shippingCost.toFixed(2)}€</span>
-                    )}
-                  </div>
-                  {physicalCount > 0 && !onlySubscriptions && (
-                    <p className="text-[11px] text-muted-foreground">
-                      {physicalCount} magazine{physicalCount > 1 ? "s" : ""} · {form.country === "FR" ? "France" : "International"}
-                    </p>
-                  )}
-                  {onlySubscriptions && (
-                    <p className="text-[11px] text-muted-foreground flex items-center gap-1">
-                      <Package className="w-3 h-3" /> Livraison offerte avec votre abonnement
-                    </p>
+                  {items.some(item => !item.id.startsWith("digital-") && item.id !== "lecture-numero" && item.id !== "pass-15-jours") && (
+                    <>
+                      <div className="flex justify-between text-sm items-center">
+                        <span className="text-muted-foreground flex items-center gap-1.5">
+                          <Truck className="w-3.5 h-3.5" /> Livraison
+                        </span>
+                        {onlySubscriptions || physicalCount === 0 ? (
+                          <span className="text-xs font-bold text-primary">OFFERTE</span>
+                        ) : shippingCost === 0 ? (
+                          <span className="text-xs font-bold text-primary">OFFERTE</span>
+                        ) : (
+                          <span className="font-medium">{shippingCost.toFixed(2)}€</span>
+                        )}
+                      </div>
+                      {physicalCount > 0 && !onlySubscriptions && (
+                        <p className="text-[11px] text-muted-foreground">
+                          {physicalCount} magazine{physicalCount > 1 ? "s" : ""} · {form.country === "FR" ? "France" : "International"}
+                        </p>
+                      )}
+                      {onlySubscriptions && (
+                        <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+                          <Package className="w-3 h-3" /> Livraison offerte avec votre abonnement
+                        </p>
+                      )}
+                    </>
                   )}
                 </div>
 

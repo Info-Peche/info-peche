@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Plus, Minus, ShoppingBag, Trash2, Truck, Star, Shield, CreditCard } from "lucide-react";
+import { X, Plus, Minus, ShoppingBag, Trash2, Truck, Star, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -40,11 +40,13 @@ const SideCart = () => {
               </Button>
             </div>
 
-            {/* Trust banner */}
-            <div className="px-6 py-3 bg-primary/5 border-b border-primary/10 flex items-center gap-3">
-              <Truck className="w-4 h-4 text-primary shrink-0" />
-              <span className="text-xs font-semibold text-primary">Livraison OFFERTE pour tous les abonnements</span>
-            </div>
+            {/* Trust banner - only show shipping mention if there are physical items */}
+            {items.some(item => !item.id.startsWith("digital-") && item.id !== "lecture-numero" && item.id !== "pass-15-jours") && (
+              <div className="px-6 py-3 bg-primary/5 border-b border-primary/10 flex items-center gap-3">
+                <Truck className="w-4 h-4 text-primary shrink-0" />
+                <span className="text-xs font-semibold text-primary">Livraison OFFERTE pour tous les abonnements</span>
+              </div>
+            )}
 
             <ScrollArea className="flex-1 p-6">
               {items.length === 0 ? (
@@ -57,48 +59,62 @@ const SideCart = () => {
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {items.map((item) => (
-                    <motion.div
-                      layout
-                      key={item.id}
-                      className="flex gap-4 p-4 bg-secondary/10 rounded-xl border border-border"
-                    >
-                      {item.image && (
-                        <img 
-                          src={item.image} 
-                          alt={item.name} 
-                          className="w-20 h-20 object-cover rounded-lg bg-white shadow-sm" 
-                        />
-                      )}
-                      <div className="flex-1">
-                        <div className="flex justify-between items-start mb-1">
-                          <h3 className="font-semibold text-sm line-clamp-2">{item.name}</h3>
-                          <button 
-                            onClick={() => removeItem(item.id)}
-                            className="text-muted-foreground hover:text-destructive transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                  <AnimatePresence mode="popLayout">
+                    {items.map((item) => (
+                      <motion.div
+                        key={item.id}
+                        initial={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0, overflow: "hidden", marginBottom: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="flex gap-4 p-4 bg-secondary/10 rounded-xl border border-border"
+                      >
+                        {item.image && (
+                          <img 
+                            src={item.image} 
+                            alt={item.name} 
+                            className="w-20 h-20 object-cover rounded-lg bg-white shadow-sm" 
+                          />
+                        )}
+                        <div className="flex-1">
+                          <div className="flex justify-between items-start mb-1">
+                            <h3 className="font-semibold text-sm line-clamp-2">{item.name}</h3>
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                removeItem(item.id);
+                              }}
+                              className="text-muted-foreground hover:text-destructive transition-colors p-1"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                          <p className="text-primary font-bold mb-3">{item.price.toFixed(2)}€</p>
+                          <div className="flex items-center gap-3">
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                updateQuantity(item.id, item.quantity - 1);
+                              }}
+                              className="p-1 rounded-full hover:bg-secondary transition-colors"
+                            >
+                              <Minus className="w-3 h-3" />
+                            </button>
+                            <span className="text-sm font-medium w-4 text-center">{item.quantity}</span>
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                updateQuantity(item.id, item.quantity + 1);
+                              }}
+                              className="p-1 rounded-full hover:bg-secondary transition-colors"
+                            >
+                              <Plus className="w-3 h-3" />
+                            </button>
+                          </div>
                         </div>
-                        <p className="text-primary font-bold mb-3">{item.price.toFixed(2)}€</p>
-                        <div className="flex items-center gap-3">
-                          <button 
-                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                            className="p-1 rounded-full hover:bg-secondary transition-colors"
-                          >
-                            <Minus className="w-3 h-3" />
-                          </button>
-                          <span className="text-sm font-medium w-4 text-center">{item.quantity}</span>
-                          <button 
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                            className="p-1 rounded-full hover:bg-secondary transition-colors"
-                          >
-                            <Plus className="w-3 h-3" />
-                          </button>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
                 </div>
               )}
             </ScrollArea>
@@ -110,10 +126,6 @@ const SideCart = () => {
                   <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
                     <Star className="w-3.5 h-3.5 text-accent fill-accent shrink-0" />
                     <span><strong className="text-foreground">4.8/5</strong> — Noté par plus de 20 000 lecteurs</span>
-                  </div>
-                  <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
-                    <Shield className="w-3.5 h-3.5 text-primary shrink-0" />
-                    <span>Satisfait ou remboursé — Annulation à tout moment</span>
                   </div>
                   <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
                     <CreditCard className="w-3.5 h-3.5 text-primary shrink-0" />

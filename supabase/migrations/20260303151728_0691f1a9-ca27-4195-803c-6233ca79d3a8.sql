@@ -1,0 +1,1 @@
+UPDATE orders SET items = '[{"name": "Article blog premium", "price_id": "price_1T123wKbRd4yKDMH1bI9GQqh", "quantity": 1, "unit_amount": 300}]'::jsonb WHERE id = '67908ef8-2c23-47f9-88d1-95f69cdc1107';

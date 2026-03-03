@@ -5,18 +5,30 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-
 import SideCart from "@/components/SideCart";
 
 const events = [
   {
-    id: "salon-international-peches-au-coup",
-    title: "Salon International des Pêches au Coup",
-    description: "Le rendez-vous incontournable des passionnés de pêche au coup. Exposants, démonstrations, conférences et rencontres avec les champions.",
-    date: "15–17 Mars 2026",
-    location: "Parc des Expositions, Lyon",
+    id: "sipac-2026",
+    title: "SIPAC 2026 – Salon International des Pêches au Coup",
+    description: "Le rendez-vous incontournable des passionnés de pêche au coup. Exposants, nouveautés, conférences, compétition ALL STAR GAME et rencontres avec les champions.",
+    date: "7–8 Novembre 2026",
+    location: "Mégacité, Amiens",
     image: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=600&h=400&fit=crop",
     status: "À venir",
+    link: "/sipac",
+    featured: true,
+  },
+  {
+    id: "specimen-trophy",
+    title: "Specimen Trophy 2025–2027",
+    description: "Envoyez vos photos de belles prises de poissons blancs spécimens et qualifiez-vous pour la grande finale en mai 2027 !",
+    date: "Juillet 2025 – Mai 2027",
+    location: "Toute la France",
+    image: "/images/specimen-trophy.png",
+    status: "En cours",
+    link: "/specimen-trophy",
+    featured: false,
   },
   {
     id: "coupe-info-peche",
@@ -26,6 +38,8 @@ const events = [
     location: "Lac de Saint-Cassien, Var",
     image: "https://images.unsplash.com/photo-1504309092620-4d0ec726efa4?w=600&h=400&fit=crop",
     status: "À venir",
+    link: null,
+    featured: false,
   },
 ];
 
@@ -58,32 +72,44 @@ const Events = () => {
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.15 }}
+                  className={event.featured ? "md:col-span-2" : ""}
                 >
-                  <Card className="group overflow-hidden border-border/50 hover:shadow-xl transition-all duration-300 h-full">
-                    <div className="relative overflow-hidden">
-                      <img
-                        src={event.image}
-                        alt={event.title}
-                        className="w-full h-52 object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                      <span className="absolute top-3 right-3 bg-accent text-accent-foreground px-3 py-1 rounded-full text-xs font-bold">
-                        {event.status}
-                      </span>
-                    </div>
-                    <CardContent className="p-6">
-                      <h2 className="text-xl font-bold text-foreground mb-3 group-hover:text-primary transition-colors">
-                        {event.title}
-                      </h2>
-                      <p className="text-sm text-muted-foreground mb-4">{event.description}</p>
-                      <div className="flex flex-col gap-2 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-primary" /> {event.date}
-                        </span>
-                        <span className="flex items-center gap-2">
-                          <MapPin className="h-4 w-4 text-primary" /> {event.location}
+                  <Card className={`group overflow-hidden border-border/50 hover:shadow-xl transition-all duration-300 h-full ${event.featured ? "ring-2 ring-primary/30" : ""}`}>
+                    <div className={`${event.featured ? "md:flex" : ""}`}>
+                      <div className={`relative overflow-hidden ${event.featured ? "md:w-1/2" : ""}`}>
+                        <img
+                          src={event.image}
+                          alt={event.title}
+                          className={`w-full object-cover group-hover:scale-105 transition-transform duration-500 ${event.featured ? "h-52 md:h-full" : "h-52"}`}
+                        />
+                        <span className={`absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-bold ${
+                          event.status === "En cours" ? "bg-green-500 text-white" : "bg-accent text-accent-foreground"
+                        }`}>
+                          {event.status}
                         </span>
                       </div>
-                    </CardContent>
+                      <CardContent className={`p-6 ${event.featured ? "md:w-1/2 flex flex-col justify-center" : ""}`}>
+                        <h2 className="text-xl font-bold text-foreground mb-3 group-hover:text-primary transition-colors">
+                          {event.title}
+                        </h2>
+                        <p className="text-sm text-muted-foreground mb-4">{event.description}</p>
+                        <div className="flex flex-col gap-2 text-sm text-muted-foreground mb-4">
+                          <span className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-primary" /> {event.date}
+                          </span>
+                          <span className="flex items-center gap-2">
+                            <MapPin className="h-4 w-4 text-primary" /> {event.location}
+                          </span>
+                        </div>
+                        {event.link && (
+                          <Link to={event.link}>
+                            <Button variant="outline" size="sm" className="border-primary text-primary hover:bg-primary/5">
+                              En savoir plus <ArrowRight className="w-4 h-4 ml-2" />
+                            </Button>
+                          </Link>
+                        )}
+                      </CardContent>
+                    </div>
                   </Card>
                 </motion.div>
               ))}

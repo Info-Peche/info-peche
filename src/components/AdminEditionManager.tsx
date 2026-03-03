@@ -97,9 +97,10 @@ const AdminEditionManager = () => {
     });
   };
 
+  const [thumbError, setThumbError] = useState(false);
+
   const extractYoutubeId = (input: string) => {
-    // Accept full URLs or just IDs
-    const match = input.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
+    const match = input.match(/(?:youtube\.com\/(?:watch\?v=|shorts\/|live\/|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
     return match ? match[1] : input.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 11);
   };
 
@@ -147,16 +148,45 @@ const AdminEditionManager = () => {
         </label>
         <Input
           value={data.youtube_video_id}
-          onChange={(e) => setData((d) => ({ ...d, youtube_video_id: extractYoutubeId(e.target.value) }))}
+          onChange={(e) => {
+            setThumbError(false);
+            setData((d) => ({ ...d, youtube_video_id: extractYoutubeId(e.target.value) }));
+          }}
           placeholder="ID ou URL YouTube (ex: gwYLuVXP-Ik)"
         />
         {data.youtube_video_id && (
-          <div className="mt-3 rounded-xl overflow-hidden border border-border aspect-video max-w-sm">
-            <img
-              src={`https://img.youtube.com/vi/${data.youtube_video_id}/mqdefault.jpg`}
-              alt="Aperçu vidéo"
-              className="w-full h-full object-cover"
-            />
+          <div className="mt-3">
+            {thumbError ? (
+              <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 max-w-sm">
+                <p className="text-sm font-medium text-destructive">⚠️ Miniature indisponible</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  La vidéo YouTube <code className="bg-muted px-1 rounded">{data.youtube_video_id}</code> n'a pas de miniature.
+                  Vérifiez que la vidéo est bien <strong>publiée et publique</strong> sur YouTube.
+                </p>
+                <a
+                  href={`https://www.youtube.com/watch?v=${data.youtube_video_id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-primary underline mt-2 inline-block"
+                >
+                  Vérifier sur YouTube →
+                </a>
+              </div>
+            ) : (
+              <div className="rounded-xl overflow-hidden border border-border aspect-video max-w-sm bg-muted">
+                <img
+                  src={`https://img.youtube.com/vi/${data.youtube_video_id}/mqdefault.jpg`}
+                  alt="Aperçu vidéo"
+                  className="w-full h-full object-cover"
+                  onLoad={(e) => {
+                    const img = e.target as HTMLImageElement;
+                    // YouTube returns a tiny 120x90 grey placeholder for invalid videos
+                    if (img.naturalWidth <= 120) setThumbError(true);
+                  }}
+                  onError={() => setThumbError(true)}
+                />
+              </div>
+            )}
           </div>
         )}
       </div>

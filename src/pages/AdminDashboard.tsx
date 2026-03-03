@@ -365,8 +365,23 @@ const AdminDashboard = () => {
         return order.phone || "—";
       case "paiement_type":
         return <Badge variant="outline" className="text-xs">{getPaymentMethodLabel(order.payment_method)}</Badge>;
-      case "formule":
-        return getFormulaLabel(order);
+      case "formule": {
+        const label = getFormulaLabel(order);
+        const isMultiple = !isSubscription(order) && Array.isArray(order.items) && order.items.length > 1;
+        if (isMultiple) {
+          const isExpanded = expandedOrders.has(order.id);
+          return (
+            <button
+              onClick={() => toggleExpand(order.id)}
+              className="flex items-center gap-1 text-primary hover:underline font-medium"
+            >
+              {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+              {label} ({order.items.length})
+            </button>
+          );
+        }
+        return label;
+      }
       case "total":
         return <span className="font-bold">{(order.total_amount / 100).toFixed(2)}€</span>;
       case "paiement_status":

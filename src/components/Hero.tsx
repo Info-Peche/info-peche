@@ -62,7 +62,7 @@ const Hero = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.5 }}
-            className="text-[2rem] leading-[1.15] sm:text-4xl md:text-5xl lg:text-[3.75rem] font-serif font-bold mb-6 md:mb-8 drop-shadow-lg max-w-3xl mx-auto">
+            className="text-[2rem] leading-[1.15] sm:text-4xl md:text-5xl lg:text-[3.5rem] font-serif font-bold mb-6 md:mb-8 drop-shadow-lg max-w-4xl mx-auto">
             Le magazine <span className="text-accent">N°1</span> de toutes les pêches au coup
           </motion.h1>
 

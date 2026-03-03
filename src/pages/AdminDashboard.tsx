@@ -438,6 +438,7 @@ const AdminDashboard = () => {
             {visibleCols.map(c => (
               <col key={c.key} style={{ width: columnWidths[c.key] }} />
             ))}
+            <col style={{ width: 40 }} />
           </colgroup>
           <thead>
             <tr className="border-b">
@@ -463,28 +464,77 @@ const AdminDashboard = () => {
                   />
                 </th>
               ))}
+              <th className="h-12 px-2 text-center align-middle font-medium text-muted-foreground" style={{ width: 40 }}></th>
             </tr>
           </thead>
           <tbody>
-            {orderList.map(order => (
-              <tr key={order.id} className="border-b transition-colors hover:bg-muted/50">
-                <td className="p-2 align-middle">
-                  <Checkbox
-                    checked={order.is_processed}
-                    onCheckedChange={() => toggleProcessed(order.id, order.is_processed)}
-                  />
-                </td>
-                {visibleCols.map(c => (
-                  <td
-                    key={c.key}
-                    className="px-3 py-2 align-middle text-xs overflow-hidden"
-                    style={{ maxWidth: columnWidths[c.key] }}
-                  >
-                    {renderCellContent(c.key, order)}
-                  </td>
-                ))}
-              </tr>
-            ))}
+            {orderList.map(order => {
+              const isMultiple = !isSubscription(order) && Array.isArray(order.items) && order.items.length > 1;
+              const isExpanded = expandedOrders.has(order.id);
+              return (
+                <>
+                  <tr key={order.id} className="border-b transition-colors hover:bg-muted/50">
+                    <td className="p-2 align-middle">
+                      <Checkbox
+                        checked={order.is_processed}
+                        onCheckedChange={() => toggleProcessed(order.id, order.is_processed)}
+                      />
+                    </td>
+                    {visibleCols.map(c => (
+                      <td
+                        key={c.key}
+                        className="px-3 py-2 align-middle text-xs overflow-hidden"
+                        style={{ maxWidth: columnWidths[c.key] }}
+                      >
+                        {renderCellContent(c.key, order)}
+                      </td>
+                    ))}
+                    <td className="p-1 align-middle text-center">
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <button className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" title="Supprimer">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Supprimer cette commande ?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Commande de {order.first_name} {order.last_name} ({(order.total_amount / 100).toFixed(2)}€). Cette action est irréversible.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Annuler</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => deleteOrder(order.id)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Supprimer
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </td>
+                  </tr>
+                  {isMultiple && isExpanded && (
+                    <tr key={`${order.id}-detail`} className="bg-muted/30 border-b">
+                      <td colSpan={visibleCols.length + 2} className="px-6 py-3">
+                        <div className="text-xs space-y-1.5">
+                          <p className="font-medium text-muted-foreground mb-2">Détail des articles :</p>
+                          {order.items.map((item: any, idx: number) => (
+                            <div key={idx} className="flex items-center gap-3 text-foreground">
+                              <span className="text-muted-foreground">{idx + 1}.</span>
+                              <span className="font-medium">{getItemLabel(item)}</span>
+                              {item.price && <span className="text-muted-foreground">— {typeof item.price === 'number' ? `${item.price.toFixed(2)}€` : item.price}</span>}
+                            </div>
+                          ))}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </>
+              );
+            })}
           </tbody>
         </table>
       </div>

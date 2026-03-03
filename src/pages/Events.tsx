@@ -14,7 +14,7 @@ const events = [
     description: "Le rendez-vous incontournable des passionnés de pêche au coup. Exposants, nouveautés, conférences, compétition ALL STAR GAME et rencontres avec les champions.",
     date: "7–8 Novembre 2026",
     location: "Mégacité, Amiens",
-    image: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=600&h=400&fit=crop",
+    image: "/images/sipac/sipac-logo-official.png",
     status: "À venir",
     link: "/sipac",
     featured: true,

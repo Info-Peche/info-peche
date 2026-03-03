@@ -66,10 +66,13 @@ const Events = () => {
                   <Card className={`group overflow-hidden border-border/50 hover:shadow-xl transition-all duration-300 h-full ${event.featured ? "ring-2 ring-primary/30" : ""}`}>
                     <div className={`${event.featured ? "md:flex" : ""}`}>
                       <div className={`relative overflow-hidden ${event.featured ? "md:w-1/2" : ""}`}>
-                        <img
-                          src={event.image}
-                          alt={event.title}
-                          className={`w-full object-cover group-hover:scale-105 transition-transform duration-500 ${event.featured ? "h-52 md:h-full" : "h-52"}`}
+                        <div className={`w-full flex items-center justify-center bg-white ${event.featured ? "h-52 md:h-full" : "h-52"}`}>
+                          <img
+                            src={event.image}
+                            alt={event.title}
+                            className={`group-hover:scale-105 transition-transform duration-500 ${event.image.includes("logo") ? "max-h-40 md:max-h-52 object-contain p-6" : "w-full h-full object-cover"}`}
+                          />
+                        </div>
                         />
                         <span className={`absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-bold ${
                           event.status === "En cours" ? "bg-green-500 text-white" : "bg-accent text-accent-foreground"

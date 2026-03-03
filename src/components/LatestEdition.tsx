@@ -17,7 +17,7 @@ const LatestEdition = () => {
     name: `Info-Pêche - ${edition.issue_number}`,
     price: 6.50,
     image: edition.cover_image,
-    description: "Le guide ultime pour réussir votre saison de pêche.",
+    description: "Le guide ultime pour réussir votre saison de pêche."
   };
 
   return (
@@ -32,50 +32,50 @@ const LatestEdition = () => {
             whileInView={{ opacity: 1, x: 0, rotate: 0 }}
             transition={{ duration: 0.7 }}
             viewport={{ once: true }}
-            className="flex-1 relative group w-full max-w-xl space-y-6"
-          >
-            {showVideo ? (
-              <div className="space-y-3">
+            className="flex-1 relative group w-full max-w-xl space-y-6">
+
+            {showVideo ?
+            <div className="space-y-3">
                 <div className="relative z-10 rounded-2xl overflow-hidden shadow-2xl border border-border/50 aspect-video">
                   <iframe
-                    src={`https://www.youtube.com/embed/${edition.youtube_video_id}?autoplay=1&rel=0`}
-                    title="Info-Pêche - Feuilletez le dernier numéro"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    className="w-full h-full"
-                  />
+                  src={`https://www.youtube.com/embed/${edition.youtube_video_id}?autoplay=1&rel=0`}
+                  title="Info-Pêche - Feuilletez le dernier numéro"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  className="w-full h-full" />
+
                 </div>
                 <p className="text-sm text-muted-foreground text-center italic">
                   Nicolas, rédacteur en chef, vous présente le dernier numéro d'Info Pêche
                 </p>
-              </div>
-            ) : (
-              <div className="relative">
+              </div> :
+
+            <div className="relative">
                 <div className="absolute inset-4 bg-primary/15 blur-[60px] rounded-full group-hover:bg-primary/25 transition-all duration-700" />
                 <div
-                  className="relative z-10 p-3 bg-card rounded-2xl shadow-2xl border border-border/50 group-hover:shadow-glow-primary transition-all duration-500 cursor-pointer"
-                  onClick={() => setShowVideo(true)}
-                >
+                className="relative z-10 p-3 bg-card rounded-2xl shadow-2xl border border-border/50 group-hover:shadow-glow-primary transition-all duration-500 cursor-pointer"
+                onClick={() => setShowVideo(true)}>
+
                   <div className="relative">
                     <img
-                      src={`https://img.youtube.com/vi/${edition.youtube_video_id}/maxresdefault.jpg`}
-                      alt="Vidéo de présentation du magazine Info-Pêche"
-                      className="w-full h-auto rounded-xl aspect-video object-cover"
-                      onError={(e) => {
-                        const img = e.currentTarget;
-                        if (img.src.includes("maxresdefault")) {
-                          img.src = `https://img.youtube.com/vi/${edition.youtube_video_id}/hqdefault.jpg`;
-                          return;
-                        }
-                        if (img.src.includes("hqdefault")) {
-                          img.src = `https://img.youtube.com/vi/${edition.youtube_video_id}/mqdefault.jpg`;
-                          return;
-                        }
-                        if (img.src.includes("mqdefault")) {
-                          img.src = `https://img.youtube.com/vi/${edition.youtube_video_id}/default.jpg`;
-                        }
-                      }}
-                    />
+                    src={`https://img.youtube.com/vi/${edition.youtube_video_id}/maxresdefault.jpg`}
+                    alt="Vidéo de présentation du magazine Info-Pêche"
+                    className="w-full h-auto rounded-xl aspect-video object-cover"
+                    onError={(e) => {
+                      const img = e.currentTarget;
+                      if (img.src.includes("maxresdefault")) {
+                        img.src = `https://img.youtube.com/vi/${edition.youtube_video_id}/hqdefault.jpg`;
+                        return;
+                      }
+                      if (img.src.includes("hqdefault")) {
+                        img.src = `https://img.youtube.com/vi/${edition.youtube_video_id}/mqdefault.jpg`;
+                        return;
+                      }
+                      if (img.src.includes("mqdefault")) {
+                        img.src = `https://img.youtube.com/vi/${edition.youtube_video_id}/default.jpg`;
+                      }
+                    }} />
+
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="w-20 h-20 bg-primary/90 rounded-full flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform duration-300">
                         <Play className="w-8 h-8 text-primary-foreground ml-1" fill="currentColor" />
@@ -91,17 +91,17 @@ const LatestEdition = () => {
                 </p>
 
                 <motion.div
-                  animate={{ rotate: [10, 14, 10], y: [0, -4, 0] }}
-                  transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                  className="absolute -top-5 -right-5 z-20 bg-accent text-accent-foreground w-24 h-24 rounded-full flex items-center justify-center font-bold shadow-lg shadow-accent/30"
-                >
+                animate={{ rotate: [10, 14, 10], y: [0, -4, 0] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute -top-5 -right-5 z-20 bg-accent text-accent-foreground w-24 h-24 rounded-full flex items-center justify-center font-bold shadow-lg shadow-accent/30">
+
                   <div className="text-center leading-tight p-3">
                     <span className="text-base font-extrabold block">{edition.issue_number}</span>
                     <span className="text-[10px] font-medium block mt-0.5">{edition.issue_period}</span>
                   </div>
                 </motion.div>
               </div>
-            )}
+            }
           </motion.div>
 
           <motion.div
@@ -109,8 +109,8 @@ const LatestEdition = () => {
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
             viewport={{ once: true }}
-            className="flex-1 space-y-8"
-          >
+            className="flex-1 space-y-8">
+
             <div>
               <span className="inline-block py-1.5 px-4 rounded-full bg-primary/10 text-primary font-bold text-xs tracking-widest uppercase mb-5">
                 Actuellement en kiosque
@@ -118,35 +118,35 @@ const LatestEdition = () => {
               <h2 className="text-4xl md:text-5xl font-serif font-bold mb-5 text-foreground leading-tight">
                 L'Édition du Mois
               </h2>
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                Plongez au cœur de l'action avec notre dernier numéro. Des articles exclusifs avec les plus grands champions, des tests impartiaux et des secrets partagés.
+              <p className="text-lg text-muted-foreground leading-relaxed">Plongez au coeur de l’action avec notre dernier numéro. Des articles exclusifs avec les plus
+grands champions, des tests impartiaux et des secrets partagés.
               </p>
             </div>
 
             <div className="space-y-3">
-              {edition.highlights.map((feature, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, x: 20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.4, delay: 0.2 + index * 0.08 }}
-                  viewport={{ once: true }}
-                  className="flex items-center space-x-3 p-3.5 bg-secondary/70 rounded-xl hover:bg-secondary transition-colors group/item"
-                >
+              {edition.highlights.map((feature, index) =>
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, x: 20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.4, delay: 0.2 + index * 0.08 }}
+                viewport={{ once: true }}
+                className="flex items-center space-x-3 p-3.5 bg-secondary/70 rounded-xl hover:bg-secondary transition-colors group/item">
+
                   <div className="bg-primary text-primary-foreground p-1.5 rounded-full shrink-0 group-hover/item:scale-110 transition-transform">
                     <Check className="h-3.5 w-3.5" />
                   </div>
                   <span className="text-foreground font-medium">{feature}</span>
                 </motion.div>
-              ))}
+              )}
             </div>
 
             <div className="pt-4 flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <Button
                 size="lg"
                 className="bg-foreground text-background hover:bg-foreground/90 rounded-full px-10 py-6 text-lg shadow-xl hover:scale-105 transition-all duration-300"
-                onClick={() => addItem(product)}
-              >
+                onClick={() => addItem(product)}>
+
                 <ShoppingCart className="mr-2 h-5 w-5" />
                 Acheter ce numéro — 6,50€
               </Button>
@@ -157,8 +157,8 @@ const LatestEdition = () => {
           </motion.div>
         </div>
       </div>
-    </section>
-  );
+    </section>);
+
 };
 
 export default LatestEdition;

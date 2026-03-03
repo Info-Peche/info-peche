@@ -28,7 +28,7 @@ const Storytelling = () => {
               className="w-full rounded-2xl shadow-xl object-cover aspect-[3/4]"
             />
             {/* Floating stat card */}
-            <div className="absolute -bottom-6 -right-6 bg-white rounded-xl shadow-2xl border border-border p-6 max-w-[240px]">
+            <div className="absolute -bottom-6 right-0 md:-right-6 bg-white rounded-xl shadow-2xl border border-border p-6 max-w-[240px]">
               <p className="text-4xl font-serif font-bold text-primary">40 ans</p>
               <p className="text-sm text-muted-foreground font-medium">
                 de passion pour la pêche et le journalisme halieutique

@@ -98,8 +98,8 @@ const AdminEditionManager = () => {
   };
 
   const extractYoutubeId = (input: string) => {
-    // Accept full URLs or just IDs
-    const match = input.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
+    // Accept full URLs (watch, shorts, live, embed, youtu.be) or just IDs
+    const match = input.match(/(?:youtube\.com\/(?:watch\?v=|shorts\/|live\/|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
     return match ? match[1] : input.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 11);
   };
 

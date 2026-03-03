@@ -7,14 +7,14 @@ import Footer from "@/components/Footer";
 import SideCart from "@/components/SideCart";
 
 const species = [
-  "Gardon (Rutilus rutilus)",
-  "Brème commune (Abramis brama)",
-  "Ide (Leuciscus idus)",
-  "Carassin commun (Carassius carassius)",
-  "Tanche (Tinca tinca)",
-  "Barbeau commun (Barbus barbus)",
-  "Chevesne (Leuciscus cephalus)",
-  "Rotengle (Scardinius erythrophthalmus)",
+  { name: "Gardon", latin: "Rutilus rutilus", image: "/images/fish/gardon.jpg" },
+  { name: "Brème commune", latin: "Abramis brama", image: "/images/fish/breme.jpg" },
+  { name: "Ide", latin: "Leuciscus idus", image: "/images/fish/ide.jpg" },
+  { name: "Carassin commun", latin: "Carassius carassius", image: "/images/fish/carassin.jpg" },
+  { name: "Tanche", latin: "Tinca tinca", image: "/images/fish/tanche.jpg" },
+  { name: "Barbeau commun", latin: "Barbus barbus", image: "/images/fish/barbeau.jpg" },
+  { name: "Chevesne", latin: "Leuciscus cephalus", image: "/images/fish/chevesne.jpg" },
+  { name: "Rotengle", latin: "Scardinius erythrophthalmus", image: "/images/fish/rotengle.jpg" },
 ];
 
 const partners = [
@@ -128,10 +128,17 @@ const SpecimenTrophy = () => {
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {species.map((sp) => (
-                <Card key={sp} className="border-border/50">
+                <Card key={sp.name} className="border-border/50 overflow-hidden group hover:shadow-lg transition-shadow">
+                  <div className="aspect-[4/3] overflow-hidden">
+                    <img
+                      src={sp.image}
+                      alt={sp.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
                   <CardContent className="p-4 text-center">
-                    <p className="text-sm font-semibold text-foreground">{sp.split(" (")[0]}</p>
-                    <p className="text-xs text-muted-foreground italic mt-1">({sp.split("(")[1]}</p>
+                    <p className="text-sm font-semibold text-foreground">{sp.name}</p>
+                    <p className="text-xs text-muted-foreground italic mt-1">({sp.latin})</p>
                   </CardContent>
                 </Card>
               ))}

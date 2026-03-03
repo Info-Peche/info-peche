@@ -8,7 +8,6 @@ import { useAuth } from "@/context/AuthContext";
 const logo = "/images/info-peche-logo.png";
 
 const resourceLinks = [
-  { name: "🎣 SIPAC 2026", href: "/sipac", highlight: true },
   { name: "Specimen Trophy", href: "/specimen-trophy" },
   { name: "Blog", href: "/blog" },
   { name: "Événements", href: "/evenements" },
@@ -86,6 +85,13 @@ const Header = () => {
           >
             Abonnement
           </button>
+
+          <Link
+            to="/sipac"
+            className="text-primary hover:text-primary/80 transition-colors font-bold text-sm uppercase tracking-wide"
+          >
+            🎣 SIPAC 2026
+          </Link>
 
           {isHome && (
             <a
@@ -203,6 +209,14 @@ const Header = () => {
               >
                 Abonnement
               </button>
+
+              <Link
+                to="/sipac"
+                className="text-primary hover:text-primary/80 font-bold p-2"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                🎣 SIPAC 2026
+              </Link>
 
               {/* Mobile Resources Accordion */}
               <button

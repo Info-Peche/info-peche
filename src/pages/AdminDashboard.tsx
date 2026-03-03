@@ -22,7 +22,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, Search, Package, Loader2, Download, Newspaper, RefreshCw, CalendarClock, SlidersHorizontal, FileText, GripVertical, BarChart3, PackageOpen } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { LogOut, Search, Package, Loader2, Download, Newspaper, RefreshCw, CalendarClock, SlidersHorizontal, FileText, GripVertical, BarChart3, PackageOpen, Trash2, ChevronDown, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import AdminEditionManager from "@/components/AdminEditionManager";
 import AdminBlogEditor from "@/components/AdminBlogEditor";
@@ -256,13 +267,63 @@ const AdminDashboard = () => {
 
   const isSubscription = (order: Order) => order.order_type.startsWith("subscription");
 
+  const getItemLabel = (item: any) => {
+    const name = item.name || item.title || "";
+    const id = item.id || "";
+    // Digital single issue
+    if (id.startsWith("digital-")) {
+      const issueNum = item.issue_number || name.match(/N°?\s*(\d+)/)?.[1] || "";
+      return issueNum ? `N°${issueNum} (digital)` : "Article digital";
+    }
+    // Blog article
+    if (id.startsWith("blog-") || name.toLowerCase().includes("article") || name.toLowerCase().includes("blog")) {
+      return "Article blog";
+    }
+    // Physical single issue
+    if (id.startsWith("mag-") || id.startsWith("issue-")) {
+      const issueNum = item.issue_number || name.match(/N°?\s*(\d+)/)?.[1] || name.match(/(\d+)/)?.[1] || "";
+      return issueNum ? `N°${issueNum} (papier)` : "Magazine (papier)";
+    }
+    // Fallback: try to detect from name
+    if (name.toLowerCase().includes("numérique") || name.toLowerCase().includes("digital")) {
+      const num = name.match(/(\d+)/)?.[1];
+      return num ? `N°${num} (digital)` : "Article digital";
+    }
+    const num = name.match(/N°?\s*(\d+)/)?.[1] || name.match(/(\d+)/)?.[1];
+    if (num) return `N°${num} (papier)`;
+    return name || "—";
+  };
+
   const getFormulaLabel = (order: Order) => {
     if (isSubscription(order)) return order.subscription_type || "—";
-    if (order.items && Array.isArray(order.items) && order.items.length > 0) {
-      const issues = order.items.map((item: any) => item.issue_number || item.title || item.name).filter(Boolean);
-      return issues.length > 0 ? `N°${issues.join(", N°")}` : "—";
+    if (order.items && Array.isArray(order.items) && order.items.length > 1) {
+      return "Multiples";
+    }
+    if (order.items && Array.isArray(order.items) && order.items.length === 1) {
+      return getItemLabel(order.items[0]);
     }
     return "—";
+  };
+
+  const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
+
+  const toggleExpand = (orderId: string) => {
+    setExpandedOrders(prev => {
+      const next = new Set(prev);
+      if (next.has(orderId)) next.delete(orderId);
+      else next.add(orderId);
+      return next;
+    });
+  };
+
+  const deleteOrder = async (orderId: string) => {
+    const { error } = await supabase.from("orders").delete().eq("id", orderId);
+    if (error) {
+      toast.error("Erreur lors de la suppression");
+      return;
+    }
+    setOrders(prev => prev.filter(o => o.id !== orderId));
+    toast.success("Commande supprimée");
   };
 
   const getSubscriptionCount = (email: string) =>
@@ -304,8 +365,23 @@ const AdminDashboard = () => {
         return order.phone || "—";
       case "paiement_type":
         return <Badge variant="outline" className="text-xs">{getPaymentMethodLabel(order.payment_method)}</Badge>;
-      case "formule":
-        return getFormulaLabel(order);
+      case "formule": {
+        const label = getFormulaLabel(order);
+        const isMultiple = !isSubscription(order) && Array.isArray(order.items) && order.items.length > 1;
+        if (isMultiple) {
+          const isExpanded = expandedOrders.has(order.id);
+          return (
+            <button
+              onClick={() => toggleExpand(order.id)}
+              className="flex items-center gap-1 text-primary hover:underline font-medium"
+            >
+              {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+              {label} ({order.items.length})
+            </button>
+          );
+        }
+        return label;
+      }
       case "total":
         return <span className="font-bold">{(order.total_amount / 100).toFixed(2)}€</span>;
       case "paiement_status":
@@ -362,6 +438,7 @@ const AdminDashboard = () => {
             {visibleCols.map(c => (
               <col key={c.key} style={{ width: columnWidths[c.key] }} />
             ))}
+            <col style={{ width: 40 }} />
           </colgroup>
           <thead>
             <tr className="border-b">
@@ -387,28 +464,77 @@ const AdminDashboard = () => {
                   />
                 </th>
               ))}
+              <th className="h-12 px-2 text-center align-middle font-medium text-muted-foreground" style={{ width: 40 }}></th>
             </tr>
           </thead>
           <tbody>
-            {orderList.map(order => (
-              <tr key={order.id} className="border-b transition-colors hover:bg-muted/50">
-                <td className="p-2 align-middle">
-                  <Checkbox
-                    checked={order.is_processed}
-                    onCheckedChange={() => toggleProcessed(order.id, order.is_processed)}
-                  />
-                </td>
-                {visibleCols.map(c => (
-                  <td
-                    key={c.key}
-                    className="px-3 py-2 align-middle text-xs overflow-hidden"
-                    style={{ maxWidth: columnWidths[c.key] }}
-                  >
-                    {renderCellContent(c.key, order)}
-                  </td>
-                ))}
-              </tr>
-            ))}
+            {orderList.map(order => {
+              const isMultiple = !isSubscription(order) && Array.isArray(order.items) && order.items.length > 1;
+              const isExpanded = expandedOrders.has(order.id);
+              return (
+                <>
+                  <tr key={order.id} className="border-b transition-colors hover:bg-muted/50">
+                    <td className="p-2 align-middle">
+                      <Checkbox
+                        checked={order.is_processed}
+                        onCheckedChange={() => toggleProcessed(order.id, order.is_processed)}
+                      />
+                    </td>
+                    {visibleCols.map(c => (
+                      <td
+                        key={c.key}
+                        className="px-3 py-2 align-middle text-xs overflow-hidden"
+                        style={{ maxWidth: columnWidths[c.key] }}
+                      >
+                        {renderCellContent(c.key, order)}
+                      </td>
+                    ))}
+                    <td className="p-1 align-middle text-center">
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <button className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" title="Supprimer">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Supprimer cette commande ?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Commande de {order.first_name} {order.last_name} ({(order.total_amount / 100).toFixed(2)}€). Cette action est irréversible.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Annuler</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => deleteOrder(order.id)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Supprimer
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </td>
+                  </tr>
+                  {isMultiple && isExpanded && (
+                    <tr key={`${order.id}-detail`} className="bg-muted/30 border-b">
+                      <td colSpan={visibleCols.length + 2} className="px-6 py-3">
+                        <div className="text-xs space-y-1.5">
+                          <p className="font-medium text-muted-foreground mb-2">Détail des articles :</p>
+                          {order.items.map((item: any, idx: number) => (
+                            <div key={idx} className="flex items-center gap-3 text-foreground">
+                              <span className="text-muted-foreground">{idx + 1}.</span>
+                              <span className="font-medium">{getItemLabel(item)}</span>
+                              {item.price && <span className="text-muted-foreground">— {typeof item.price === 'number' ? `${item.price.toFixed(2)}€` : item.price}</span>}
+                            </div>
+                          ))}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </>
+              );
+            })}
           </tbody>
         </table>
       </div>

@@ -40,7 +40,7 @@ const highlights = [
     icon: Users,
     title: "Échanges & Rencontres",
     description: "Des moments de rencontres et d'échanges privilégiés entre passionnés pendant toute la durée du salon. L'occasion de se retrouver et de partager autour d'une passion commune.",
-    image: null,
+    image: "/images/sipac/echanges.jpg",
   },
 ];
 

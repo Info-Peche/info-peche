@@ -93,10 +93,10 @@ const PricingCards = () => {
             La Boutique Officielle
           </span>
           <h2 className="text-4xl md:text-5xl font-serif font-bold mb-6 text-foreground">
-            Abonnez-vous à la passion
+            La Boutique officielle
           </h2>
           <p className="text-muted-foreground text-lg leading-relaxed">
-            Rejoignez plus de 20 000 lecteurs et recevez chaque numéro directement chez vous.
+            Rejoignez plus de 15 000 lecteurs et recevez chaque numéro directement chez vous.
           </p>
         </motion.div>
 
@@ -120,7 +120,7 @@ const PricingCards = () => {
             ))}
           </div>
           <span className="text-sm text-muted-foreground ml-2">
-            <strong className="text-foreground">+1 200 abonnés</strong> nous font déjà confiance
+            <strong className="text-foreground">3 500 abonnés</strong> nous font déjà confiance
           </span>
         </motion.div>
 

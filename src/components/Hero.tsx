@@ -68,7 +68,7 @@ const Hero = () => {
             transition={{ duration: 0.8, delay: 0.5 }}
             className="text-5xl md:text-6xl lg:text-7xl font-serif font-bold mb-8 leading-[1.1] drop-shadow-lg max-w-4xl mx-auto"
           >
-            Le magazine <span className="text-accent">N°1</span> de la pêche au coup depuis 20 ans
+            LE MAGAZINE <span className="text-accent">N°1</span> DE TOUTES LES PÊCHES AU COUP !
           </motion.h1>
 
           <motion.p
@@ -77,7 +77,7 @@ const Hero = () => {
             transition={{ duration: 0.8, delay: 0.7 }}
             className="text-xl md:text-2xl text-white/85 mb-12 max-w-2xl mx-auto font-light drop-shadow-md leading-relaxed"
           >
-            L'expertise technique et la passion au service de votre réussite au bord de l'eau.
+            60 bons coins de pêche pour remplir vos bourriches
           </motion.p>
 
           <motion.div
@@ -96,8 +96,7 @@ const Hero = () => {
             </Button>
             <Button
               size="lg"
-              variant="outline"
-              className="bg-white/10 hover:bg-white/20 text-white border-white/20 px-10 py-7 text-lg rounded-full w-full sm:w-auto hover:scale-105 transition-all duration-300 font-medium backdrop-blur-sm"
+              className="bg-white text-foreground hover:bg-white/90 border-2 border-white px-10 py-7 text-lg rounded-full w-full sm:w-auto hover:scale-105 transition-all duration-300 font-bold shadow-lg"
               onClick={() => document.getElementById("magazine")?.scrollIntoView({ behavior: "smooth" })}
             >
               Découvrir le dernier numéro

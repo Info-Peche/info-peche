@@ -9,7 +9,7 @@ import {
 const faqs = [
   {
     question: "Combien de numéros par an vais-je recevoir ?",
-    answer: "Info-Pêche est publié 10 fois par an. Avec un abonnement 1 an, vous recevrez donc 10 numéros, et 20 numéros pour un abonnement 2 ans.",
+    answer: "Info-Pêche est publié 6 fois par an. Avec un abonnement 1 an, vous recevrez donc 6 numéros, et 12 numéros pour un abonnement 2 ans.",
   },
   {
     question: "Puis-je offrir un abonnement en cadeau ?",
@@ -29,7 +29,7 @@ const faqs = [
   },
   {
     question: "Comment contacter la rédaction ?",
-    answer: "Vous pouvez nous joindre par email à contact@info-peche.fr ou par téléphone. Notre équipe répond sous 24h en jours ouvrés. Nous sommes aussi actifs sur nos réseaux sociaux (Facebook, Instagram) pour répondre à vos questions.",
+    answer: "Vous pouvez nous joindre par email à contact@info-peche.fr ou par téléphone. Notre équipe répond sous 24h en jours ouvrés. Nous sommes aussi actifs sur nos réseaux sociaux (pages Facebook Info Pêche, Pêche de compétition en Live, Specimen Trophy, SIPAC Amiens) pour répondre à vos questions.",
   },
   {
     question: "Le paiement est-il sécurisé ?",

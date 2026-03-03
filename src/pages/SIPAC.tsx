@@ -203,8 +203,10 @@ const SIPAC = () => {
                       <p>Réduit : <strong className="text-foreground">4€</strong> · Gratuit -12 ans</p>
                       <p className="font-semibold text-foreground text-xs uppercase tracking-wide mt-3 mb-1">Préventes</p>
                       <p>Journée : <strong className="text-foreground">8€</strong> · 2 jours : <strong className="text-foreground">9€</strong></p>
-                      <a href="https://www.sipac-amiens.com/fr" target="_blank" rel="noopener noreferrer" className="inline-block mt-3 text-sm font-semibold text-primary hover:underline">
-                        Acheter ses billets →
+                      <a href="https://www.sipac-amiens.com/fr" target="_blank" rel="noopener noreferrer" className="mt-4 block">
+                        <Button size="sm" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-full shadow-sm">
+                          Acheter ses billets
+                        </Button>
                       </a>
                     </div>
                   </CardContent>

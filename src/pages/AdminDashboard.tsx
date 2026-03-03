@@ -270,26 +270,24 @@ const AdminDashboard = () => {
   const getItemLabel = (item: any) => {
     const name = item.name || item.title || "";
     const id = item.id || "";
-    // Digital single issue
-    if (id.startsWith("digital-")) {
-      const issueNum = item.issue_number || name.match(/N°?\s*(\d+)/)?.[1] || "";
-      return issueNum ? `N°${issueNum} (digital)` : "Article digital";
-    }
-    // Blog article
-    if (id.startsWith("blog-") || name.toLowerCase().includes("article") || name.toLowerCase().includes("blog")) {
+    const priceId = item.price_id || "";
+    const issueNum = item.issue_number || name.match(/N°?\s*(\d+)/)?.[1] || "";
+
+    // Blog article — detect by id prefix, price_id (lectureNumero 3€ for blog), or name
+    if (id.startsWith("blog-") || priceId === "price_1T123wKbRd4yKDMH1bI9GQqh" && item.unit_amount === 300 && !issueNum || name.toLowerCase().includes("article blog")) {
       return "Article blog";
     }
-    // Physical single issue
-    if (id.startsWith("mag-") || id.startsWith("issue-")) {
-      const issueNum = item.issue_number || name.match(/N°?\s*(\d+)/)?.[1] || name.match(/(\d+)/)?.[1] || "";
-      return issueNum ? `N°${issueNum} (papier)` : "Magazine (papier)";
+    // Digital single issue
+    if (id.startsWith("digital-") || (priceId === "price_1T123wKbRd4yKDMH1bI9GQqh" && issueNum)) {
+      return issueNum ? `N°${issueNum} (digital)` : "Article digital";
     }
-    // Fallback: try to detect from name
     if (name.toLowerCase().includes("numérique") || name.toLowerCase().includes("digital")) {
-      const num = name.match(/(\d+)/)?.[1];
-      return num ? `N°${num} (digital)` : "Article digital";
+      return issueNum ? `N°${issueNum} (digital)` : "Article digital";
     }
-    const num = name.match(/N°?\s*(\d+)/)?.[1] || name.match(/(\d+)/)?.[1];
+    // Physical single issue — detect by id prefix, price_id, or issue_number presence
+    if (issueNum) return `N°${issueNum} (papier)`;
+    // Fallback with number in name
+    const num = name.match(/(\d+)/)?.[1];
     if (num) return `N°${num} (papier)`;
     return name || "—";
   };

@@ -1,18 +1,22 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Star, Users } from "lucide-react";
-import heroImage from "@/assets/hero-fishing.jpg";
+import heroDesktop from "@/assets/hero-desktop.jpg";
+import heroMobile from "@/assets/hero-mobile.jpg";
 
 const Hero = () => {
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background Image with Overlay */}
       <div className="absolute inset-0 z-0">
-        <img
-          src={heroImage}
-          alt="Pêcheur au coup au bord d'une rivière paisible"
-          className="w-full h-full object-cover scale-105"
-        />
+        <picture>
+          <source media="(min-width: 768px)" srcSet={heroDesktop} />
+          <img
+            src={heroMobile}
+            alt="Pêcheur au coup en action au bord de l'eau"
+            className="w-full h-full object-cover scale-105"
+          />
+        </picture>
         <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/30 to-black/60" />
       </div>
 

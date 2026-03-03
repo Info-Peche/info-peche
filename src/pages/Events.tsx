@@ -70,7 +70,7 @@ const Events = () => {
                           <img
                             src={event.image}
                             alt={event.title}
-                            className={`group-hover:scale-105 transition-transform duration-500 ${event.image.includes("logo") ? "max-h-40 md:max-h-52 object-contain p-6" : "w-full h-full object-cover"}`}
+                            className={`group-hover:scale-105 transition-transform duration-500 ${event.image.includes("logo") ? "max-h-48 md:max-h-64 object-contain p-3" : "w-full h-full object-cover"}`}
                           />
                         </div>
                         <span className={`absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-bold ${

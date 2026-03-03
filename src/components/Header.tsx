@@ -8,10 +8,9 @@ import { useAuth } from "@/context/AuthContext";
 const logo = "/images/info-peche-logo.png";
 
 const resourceLinks = [
-  { name: "Specimen Trophy", href: "/specimen-trophy" },
-  { name: "Blog", href: "/blog" },
-  { name: "Événements", href: "/evenements" },
   { name: "Boutique Archives", href: "/boutique" },
+  { name: "Événements", href: "/evenements" },
+  { name: "Blog", href: "/blog" },
   { name: "Contact", href: "/contact" },
 ];
 
@@ -86,13 +85,6 @@ const Header = () => {
             Abonnement
           </button>
 
-          <Link
-            to="/sipac"
-            className="text-primary hover:text-primary/80 transition-colors font-bold text-sm uppercase tracking-wide"
-          >
-            🎣 SIPAC 2026
-          </Link>
-
           {isHome && (
             <a
               href="#magazine"
@@ -101,6 +93,13 @@ const Header = () => {
               Le Magazine
             </a>
           )}
+
+          <Link
+            to="/sipac"
+            className="text-primary hover:text-primary/80 transition-colors font-bold text-sm uppercase tracking-wide"
+          >
+            🎣 SIPAC 2026
+          </Link>
 
           {/* Resources Dropdown */}
           <div ref={dropdownRef} className="relative">

@@ -25,7 +25,7 @@ const Storytelling = () => {
             <img
               src={nicolasImage}
               alt="Nicolas Béroud, rédacteur en chef d'Info Pêche, au bord de l'eau"
-              className="w-full rounded-2xl shadow-xl object-cover aspect-[3/4]"
+              className="w-full max-w-sm mx-auto rounded-2xl shadow-xl object-cover aspect-[3/4]"
             />
             {/* Floating stat card */}
             <div className="absolute -bottom-6 right-0 md:-right-6 bg-white rounded-xl shadow-2xl border border-border p-6 max-w-[240px]">

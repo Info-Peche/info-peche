@@ -267,13 +267,63 @@ const AdminDashboard = () => {
 
   const isSubscription = (order: Order) => order.order_type.startsWith("subscription");
 
+  const getItemLabel = (item: any) => {
+    const name = item.name || item.title || "";
+    const id = item.id || "";
+    // Digital single issue
+    if (id.startsWith("digital-")) {
+      const issueNum = item.issue_number || name.match(/N°?\s*(\d+)/)?.[1] || "";
+      return issueNum ? `N°${issueNum} (digital)` : "Article digital";
+    }
+    // Blog article
+    if (id.startsWith("blog-") || name.toLowerCase().includes("article") || name.toLowerCase().includes("blog")) {
+      return "Article blog";
+    }
+    // Physical single issue
+    if (id.startsWith("mag-") || id.startsWith("issue-")) {
+      const issueNum = item.issue_number || name.match(/N°?\s*(\d+)/)?.[1] || name.match(/(\d+)/)?.[1] || "";
+      return issueNum ? `N°${issueNum} (papier)` : "Magazine (papier)";
+    }
+    // Fallback: try to detect from name
+    if (name.toLowerCase().includes("numérique") || name.toLowerCase().includes("digital")) {
+      const num = name.match(/(\d+)/)?.[1];
+      return num ? `N°${num} (digital)` : "Article digital";
+    }
+    const num = name.match(/N°?\s*(\d+)/)?.[1] || name.match(/(\d+)/)?.[1];
+    if (num) return `N°${num} (papier)`;
+    return name || "—";
+  };
+
   const getFormulaLabel = (order: Order) => {
     if (isSubscription(order)) return order.subscription_type || "—";
-    if (order.items && Array.isArray(order.items) && order.items.length > 0) {
-      const issues = order.items.map((item: any) => item.issue_number || item.title || item.name).filter(Boolean);
-      return issues.length > 0 ? `N°${issues.join(", N°")}` : "—";
+    if (order.items && Array.isArray(order.items) && order.items.length > 1) {
+      return "Multiples";
+    }
+    if (order.items && Array.isArray(order.items) && order.items.length === 1) {
+      return getItemLabel(order.items[0]);
     }
     return "—";
+  };
+
+  const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
+
+  const toggleExpand = (orderId: string) => {
+    setExpandedOrders(prev => {
+      const next = new Set(prev);
+      if (next.has(orderId)) next.delete(orderId);
+      else next.add(orderId);
+      return next;
+    });
+  };
+
+  const deleteOrder = async (orderId: string) => {
+    const { error } = await supabase.from("orders").delete().eq("id", orderId);
+    if (error) {
+      toast.error("Erreur lors de la suppression");
+      return;
+    }
+    setOrders(prev => prev.filter(o => o.id !== orderId));
+    toast.success("Commande supprimée");
   };
 
   const getSubscriptionCount = (email: string) =>

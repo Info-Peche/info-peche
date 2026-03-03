@@ -1,4 +1,4 @@
-import { Youtube, Bell, ExternalLink } from "lucide-react";
+import { Youtube, Bell, ExternalLink, Facebook, ThumbsUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const YOUTUBE_CHANNEL = "https://www.youtube.com/InfoPeche";

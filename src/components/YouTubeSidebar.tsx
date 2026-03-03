@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 
 const YOUTUBE_CHANNEL = "https://www.youtube.com/InfoPeche";
 const YOUTUBE_SUBSCRIBE = "https://www.youtube.com/InfoPeche?sub_confirmation=1";
+const FACEBOOK_PAGE = "https://www.facebook.com/infopechemagazine/";
 
 interface YouTubeSidebarProps {
   videoUrl?: string | null;

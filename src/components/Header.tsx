@@ -8,6 +8,8 @@ import { useAuth } from "@/context/AuthContext";
 const logo = "/images/info-peche-logo.png";
 
 const resourceLinks = [
+  { name: "🎣 SIPAC 2026", href: "/sipac", highlight: true },
+  { name: "Specimen Trophy", href: "/specimen-trophy" },
   { name: "Blog", href: "/blog" },
   { name: "Événements", href: "/evenements" },
   { name: "Boutique Archives", href: "/boutique" },
@@ -118,7 +120,11 @@ const Header = () => {
                       key={link.name}
                       to={link.href}
                       onClick={() => setIsResourcesOpen(false)}
-                      className="block px-4 py-3 text-sm text-foreground/80 hover:bg-muted hover:text-primary transition-colors"
+                      className={`block px-4 py-3 text-sm transition-colors ${
+                        (link as any).highlight
+                          ? "text-primary font-bold bg-primary/5 hover:bg-primary/10"
+                          : "text-foreground/80 hover:bg-muted hover:text-primary"
+                      }`}
                     >
                       {link.name}
                     </Link>

@@ -118,7 +118,7 @@ const LatestEdition = () => {
               <h2 className="text-4xl md:text-5xl font-serif font-bold mb-5 text-foreground leading-tight">
                 L'Édition du Mois
               </h2>
-              <p className="text-lg text-muted-foreground leading-relaxed">Plongez au coeur de l’action avec notre dernier numéro. Des articles exclusifs avec les plus
+              <p className="text-lg text-muted-foreground leading-relaxed">Plongez au cœur de l’action avec notre dernier numéro. Des articles exclusifs avec les plus
 grands champions, des tests impartiaux et des secrets partagés.
               </p>
             </div>

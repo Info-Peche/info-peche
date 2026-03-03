@@ -74,7 +74,15 @@ const CheckoutContent = () => {
         const product = isDigital
           ? PRODUCTS.lectureNumero
           : Object.values(PRODUCTS).find((p) => p.id === item.id) || PRODUCTS.ancienNumero;
+        
+        // Extract issue_number from item name (e.g. "Info Pêche N°98 (Papier)" → "98")
+        const issueNumMatch = item.name.match(/N°?\s*(\d+)/i) || item.name.match(/(\d+)/);
+        const issueNumber = issueNumMatch ? issueNumMatch[1] : undefined;
+        
         return {
+          id: item.id,
+          name: item.name,
+          issue_number: issueNumber,
           price_id: product.price_id,
           quantity: item.quantity,
           mode: product.mode,

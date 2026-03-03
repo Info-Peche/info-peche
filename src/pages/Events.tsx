@@ -30,17 +30,6 @@ const events = [
     link: "/specimen-trophy",
     featured: false,
   },
-  {
-    id: "coupe-info-peche",
-    title: "Coupe Info Pêche 2026",
-    description: "Notre compétition annuelle ouverte à tous les abonnés. Convivialité, bonne humeur et lots exceptionnels à gagner.",
-    date: "20–21 Juin 2026",
-    location: "Lac de Saint-Cassien, Var",
-    image: "https://images.unsplash.com/photo-1504309092620-4d0ec726efa4?w=600&h=400&fit=crop",
-    status: "À venir",
-    link: null,
-    featured: false,
-  },
 ];
 
 const Events = () => {

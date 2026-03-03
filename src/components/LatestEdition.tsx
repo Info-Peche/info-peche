@@ -105,7 +105,7 @@ const LatestEdition = () => {
                 L'Édition du Mois
               </h2>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Plongez au cœur de l'action avec notre dernier numéro. Des articles exclusifs rédigés par les plus grands champions, des tests impartiaux et des secrets bien gardés.
+                Plongez au cœur de l'action avec notre dernier numéro. Des articles exclusifs avec les plus grands champions, des tests impartiaux et des secrets partagés.
               </p>
             </div>
 

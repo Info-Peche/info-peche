@@ -78,7 +78,7 @@ const PricingCards = () => {
 
 
   return (
-    <section id="subscribe" className="py-28 bg-gradient-to-b from-secondary/50 via-background to-background relative overflow-hidden">
+    <section id="subscribe" className="py-16 md:py-28 bg-gradient-to-b from-secondary/50 via-background to-background relative overflow-hidden">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px]" />
 
       <div className="container px-4 mx-auto relative z-10">
@@ -87,16 +87,15 @@ const PricingCards = () => {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}
-          className="text-center max-w-3xl mx-auto mb-6">
+          className="text-center max-w-3xl mx-auto mb-4 md:mb-6">
 
-          <span className="text-primary font-bold tracking-widest uppercase text-xs mb-3 block">
+          <span className="text-primary font-bold tracking-widest uppercase text-[10px] md:text-xs mb-2 md:mb-3 block">
             La Boutique Officielle
           </span>
-          <h2 className="text-4xl md:text-5xl font-serif font-bold mb-6 text-foreground">
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif font-bold mb-4 md:mb-6 text-foreground">
             La Boutique officielle
           </h2>
-          <p className="text-muted-foreground text-lg leading-relaxed">Rejoignez plus de 15 000 lecteurs et recevez chaque numéro directement chez vous.
-
+          <p className="text-muted-foreground text-base md:text-lg leading-relaxed">Rejoignez plus de 15 000 lecteurs et recevez chaque numéro directement chez vous.
           </p>
         </motion.div>
 
@@ -106,7 +105,7 @@ const PricingCards = () => {
           whileInView={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.2 }}
           viewport={{ once: true }}
-          className="flex items-center justify-center gap-2 mb-14">
+          className="flex items-center justify-center gap-2 mb-8 md:mb-14">
 
           <div className="flex -space-x-2">
             {(avatars.length > 0 ? avatars : Array(5).fill(null)).slice(0, 5).map((url, i) =>
@@ -124,7 +123,7 @@ const PricingCards = () => {
           </span>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 max-w-6xl mx-auto items-start">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5 max-w-6xl mx-auto items-start">
           {cards.map((product, index) => {
             const Icon = product.icon;
             const isSubscription = "interval" in product;
@@ -143,7 +142,7 @@ const PricingCards = () => {
 
                 {/* Top badge */}
                 {product.badge &&
-                <div className={`text-center py-2.5 text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-1.5 ${
+                <div className={`text-center py-1.5 md:py-2.5 text-[10px] md:text-xs font-bold uppercase tracking-wider md:tracking-widest flex items-center justify-center gap-1 md:gap-1.5 ${
                 product.highlight ?
                 "bg-primary text-primary-foreground" :
                 "bg-amber-500/10 text-amber-600"}`
@@ -155,14 +154,14 @@ const PricingCards = () => {
 
                 {/* Magazine cover visual */}
                 {isSubscription ?
-                <div className="px-4 pt-5 pb-2">
+                <div className="px-2 pt-3 pb-1 md:px-4 md:pt-5 md:pb-2">
                     <MagazineFanVisual
                     count={product.id === "abo-2-ans" ? 12 : product.id === "abo-1-an" ? 6 : 3} />
 
                   </div> :
                 coverImage ?
-                <div className="px-6 pt-5 pb-2 flex justify-center">
-                    <div className="relative w-28 h-36 rounded-lg overflow-hidden shadow-lg border border-border/30 group">
+                <div className="px-3 pt-3 pb-1 md:px-6 md:pt-5 md:pb-2 flex justify-center">
+                    <div className="relative w-20 h-28 md:w-28 md:h-36 rounded-lg overflow-hidden shadow-lg border border-border/30 group">
                       <img
                       src={coverImage}
                       alt={`Couverture ${edition?.issue_number || "Info Pêche"}`}
@@ -175,23 +174,23 @@ const PricingCards = () => {
                 {/* Gradient accent */}
                 <div className={`h-1 bg-gradient-to-r ${product.accentClass}`} />
 
-                <div className="px-6 pt-4 pb-6 flex flex-col flex-1">
+                <div className="px-3 pt-3 pb-4 md:px-6 md:pt-4 md:pb-6 flex flex-col flex-1">
                   {/* Icon + name */}
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${product.iconBg}`}>
-                      <Icon className="w-5 h-5" />
+                  <div className="flex items-center gap-2 md:gap-3 mb-2 md:mb-3">
+                    <div className={`w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl flex items-center justify-center shrink-0 ${product.iconBg}`}>
+                      <Icon className="w-4 h-4 md:w-5 md:h-5" />
                     </div>
                     <div>
-                      <h3 className="text-sm font-bold text-foreground leading-tight">{product.name}</h3>
+                      <h3 className="text-xs md:text-sm font-bold text-foreground leading-tight">{product.name}</h3>
                     </div>
                   </div>
 
-                  <p className="text-xs text-muted-foreground mb-4 leading-relaxed">{product.description}</p>
+                  <p className="text-[10px] md:text-xs text-muted-foreground mb-2 md:mb-4 leading-relaxed hidden sm:block">{product.description}</p>
 
                   {/* Price block */}
-                  <div className="mb-5 pb-4 border-b border-border">
-                    <div className="flex items-end gap-1.5">
-                      <span className={`text-4xl font-serif font-bold tracking-tight ${product.highlight ? "text-primary" : "text-foreground"}`}>
+                  <div className="mb-3 md:mb-5 pb-3 md:pb-4 border-b border-border">
+                    <div className="flex items-end gap-1">
+                      <span className={`text-2xl md:text-4xl font-serif font-bold tracking-tight ${product.highlight ? "text-primary" : "text-foreground"}`}>
                         {product.price}€
                       </span>
                       {isSubscription &&
@@ -211,7 +210,7 @@ const PricingCards = () => {
                   </div>
 
                   {/* Features */}
-                  <ul className="space-y-2.5 mb-6 flex-1">
+                  <ul className="space-y-1.5 md:space-y-2.5 mb-4 md:mb-6 flex-1 hidden sm:block">
                     {product.features.map((feature, idx) =>
                     <li key={idx} className="flex items-start gap-2.5">
                         <div className={`mt-0.5 rounded-full p-0.5 shrink-0 ${product.checkColor}`}>
@@ -224,7 +223,7 @@ const PricingCards = () => {
 
                   {/* CTA */}
                   <Button
-                    className={`w-full py-5 rounded-xl font-bold transition-all duration-300 ${
+                    className={`w-full py-3 md:py-5 rounded-lg md:rounded-xl text-xs md:text-sm font-bold transition-all duration-300 ${
                     product.highlight ?
                     "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20 hover:scale-[1.02] hover:shadow-xl hover:shadow-primary/30" :
                     product.badge ?
@@ -254,7 +253,7 @@ const PricingCards = () => {
           whileInView={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.5 }}
           viewport={{ once: true }}
-          className="flex flex-wrap items-center justify-center gap-6 mt-12 text-xs text-muted-foreground">
+          className="flex flex-wrap items-center justify-center gap-4 md:gap-6 mt-8 md:mt-12 text-[10px] md:text-xs text-muted-foreground">
 
           <span className="flex items-center gap-1.5">🔒 Paiement 100% sécurisé</span>
           <span className="flex items-center gap-1.5">📦 Livraison soignée</span>

@@ -16,7 +16,7 @@ import JsonLd from "@/components/JsonLd";
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-background font-sans selection:bg-accent/30">
+    <div className="min-h-screen bg-background font-sans selection:bg-accent/30 overflow-x-hidden">
       <JsonLd />
       <Header />
       <main>

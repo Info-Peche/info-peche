@@ -588,6 +588,9 @@ const AdminDashboard = () => {
             <TabsTrigger value="blog" className="gap-2">
               <FileText className="w-4 h-4" /> Blog
             </TabsTrigger>
+            <TabsTrigger value="reviews" className="gap-2">
+              <MessageSquare className="w-4 h-4" /> Avis
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="analytics">

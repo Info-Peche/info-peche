@@ -33,12 +33,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { LogOut, Search, Package, Loader2, Download, Newspaper, RefreshCw, CalendarClock, SlidersHorizontal, FileText, GripVertical, BarChart3, PackageOpen, Trash2, ChevronDown, ChevronRight } from "lucide-react";
+import { LogOut, Search, Package, Loader2, Download, Newspaper, RefreshCw, CalendarClock, SlidersHorizontal, FileText, GripVertical, BarChart3, PackageOpen, Trash2, ChevronDown, ChevronRight, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import AdminEditionManager from "@/components/AdminEditionManager";
 import AdminBlogEditor from "@/components/AdminBlogEditor";
 import AdminAnalytics from "@/components/AdminAnalytics";
 import AdminStockManager from "@/components/AdminStockManager";
+import AdminReviewManager from "@/components/AdminReviewManager";
 
 type Order = {
   id: string;
@@ -587,6 +588,9 @@ const AdminDashboard = () => {
             <TabsTrigger value="blog" className="gap-2">
               <FileText className="w-4 h-4" /> Blog
             </TabsTrigger>
+            <TabsTrigger value="reviews" className="gap-2">
+              <MessageSquare className="w-4 h-4" /> Avis
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="analytics">
@@ -603,6 +607,10 @@ const AdminDashboard = () => {
 
           <TabsContent value="blog">
             <AdminBlogEditor />
+          </TabsContent>
+
+          <TabsContent value="reviews">
+            <AdminReviewManager />
           </TabsContent>
 
           <TabsContent value="orders">

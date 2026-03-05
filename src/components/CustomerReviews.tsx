@@ -48,11 +48,7 @@ const CustomerReviews = () => {
   }, []);
 
   const avgRating =
-    reviews.length > 0
-      ? Math.round(
-          (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length) * 10
-        ) / 10
-      : 0;
+    reviews.length > 0 ? Math.round((reviews.reduce((s, r) => s + r.rating, 0) / reviews.length) * 10) / 10 : 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,14 +61,10 @@ const CustomerReviews = () => {
     if (avatarFile) {
       const fileExt = avatarFile.name.split(".").pop();
       const filePath = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
-      const { error: uploadError } = await supabase.storage
-        .from("review-avatars")
-        .upload(filePath, avatarFile);
+      const { error: uploadError } = await supabase.storage.from("review-avatars").upload(filePath, avatarFile);
 
       if (!uploadError) {
-        const { data: urlData } = supabase.storage
-          .from("review-avatars")
-          .getPublicUrl(filePath);
+        const { data: urlData } = supabase.storage.from("review-avatars").getPublicUrl(filePath);
         avatarUrl = urlData.publicUrl;
       }
     }
@@ -124,7 +116,7 @@ const CustomerReviews = () => {
             Vous en parlez mieux que nous…
           </h2>
           <p className="text-sm md:text-base text-muted-foreground">
-            Déjà des centaines de lecteurs passionnés partout en France !
+            Des milliers de lecteurs passionnés partout en France... et dans le monde !
           </p>
         </div>
 
@@ -180,7 +172,11 @@ const CustomerReviews = () => {
               </div>
               <div>
                 <label className="text-sm font-medium text-foreground mb-1 block">Département</label>
-                <Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Loire-Atlantique (44)" />
+                <Input
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder="Loire-Atlantique (44)"
+                />
               </div>
             </div>
 
@@ -199,11 +195,22 @@ const CustomerReviews = () => {
                     <Camera className="w-5 h-5 text-muted-foreground" />
                   )}
                 </div>
-                <button type="button" onClick={() => fileInputRef.current?.click()} className="text-sm text-primary hover:underline">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="text-sm text-primary hover:underline"
+                >
                   {avatarPreview ? "Changer" : "Ajouter une photo"}
                 </button>
                 {avatarPreview && (
-                  <button type="button" onClick={() => { setAvatarFile(null); setAvatarPreview(null); }} className="text-sm text-muted-foreground hover:text-destructive">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAvatarFile(null);
+                      setAvatarPreview(null);
+                    }}
+                    className="text-sm text-muted-foreground hover:text-destructive"
+                  >
                     Supprimer
                   </button>
                 )}
@@ -214,8 +221,17 @@ const CustomerReviews = () => {
               <label className="text-sm font-medium text-foreground mb-1 block">Note *</label>
               <div className="flex gap-1">
                 {[1, 2, 3, 4, 5].map((star) => (
-                  <button key={star} type="button" onClick={() => setRating(star)} onMouseEnter={() => setHoverRating(star)} onMouseLeave={() => setHoverRating(0)} className="p-0.5">
-                    <Star className={`w-6 h-6 transition-colors ${star <= (hoverRating || rating) ? "text-accent fill-current" : "text-border"}`} />
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setRating(star)}
+                    onMouseEnter={() => setHoverRating(star)}
+                    onMouseLeave={() => setHoverRating(0)}
+                    className="p-0.5"
+                  >
+                    <Star
+                      className={`w-6 h-6 transition-colors ${star <= (hoverRating || rating) ? "text-accent fill-current" : "text-border"}`}
+                    />
                   </button>
                 ))}
               </div>
@@ -223,12 +239,24 @@ const CustomerReviews = () => {
 
             <div>
               <label className="text-sm font-medium text-foreground mb-1 block">Votre avis *</label>
-              <Textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="Partagez votre expérience avec Info Pêche..." rows={4} required />
+              <Textarea
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                placeholder="Partagez votre expérience avec Info Pêche..."
+                rows={4}
+                required
+              />
             </div>
 
             <div className="flex gap-3 justify-end">
-              <Button type="button" variant="ghost" onClick={() => setShowForm(false)}>Annuler</Button>
-              <Button type="submit" disabled={loading} className="bg-primary text-primary-foreground hover:bg-primary/90">
+              <Button type="button" variant="ghost" onClick={() => setShowForm(false)}>
+                Annuler
+              </Button>
+              <Button
+                type="submit"
+                disabled={loading}
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
+              >
                 <Send className="w-4 h-4 mr-2" />
                 {loading ? "Envoi…" : "Envoyer"}
               </Button>
@@ -272,9 +300,7 @@ const CustomerReviews = () => {
                       />
                     ))}
                   </div>
-                  <p className="text-foreground text-[13px] leading-relaxed">
-                    {review.review_text}
-                  </p>
+                  <p className="text-foreground text-[13px] leading-relaxed">{review.review_text}</p>
                 </div>
               </motion.div>
             ))}

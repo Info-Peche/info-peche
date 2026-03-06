@@ -219,6 +219,7 @@ const AdminBlogEditor = () => {
   const [imageRefMap, setImageRefMap] = useState<Record<string, string>>({});
   const [uploadingRef, setUploadingRef] = useState<string | null>(null);
   const [bulkUploading, setBulkUploading] = useState(false);
+  const [generatingKeyPoints, setGeneratingKeyPoints] = useState(false);
 
   // Detect image references from raw text
   const detectedImageRefs = (() => {
@@ -358,8 +359,29 @@ const AdminBlogEditor = () => {
     e.target.value = "";
   };
 
+  // Generate key points via AI
+  const generateKeyPoints = async (contentText: string) => {
+    if (!title.trim()) return;
+    setGeneratingKeyPoints(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-key-points", {
+        body: { content: contentText, title: title.trim() },
+      });
+      if (error) throw error;
+      if (data?.key_points && Array.isArray(data.key_points)) {
+        setKeyPoints(data.key_points);
+        toast.success("Points clés générés par l'IA !");
+      }
+    } catch (e: any) {
+      console.error("Key points generation error:", e);
+      toast.error("Impossible de générer les points clés : " + (e?.message || "erreur inconnue"));
+    } finally {
+      setGeneratingKeyPoints(false);
+    }
+  };
+
   // Transition from import → editor: convert raw text + images to HTML
-  const proceedToEditor = () => {
+  const proceedToEditor = async () => {
     const unmapped = detectedImageRefs.filter(r => !imageRefMap[r]);
     if (unmapped.length > 0) {
       const proceed = confirm(`${unmapped.length} image(s) non importée(s) : ${unmapped.join(", ")}. Les références seront supprimées. Continuer ?`);
@@ -368,7 +390,9 @@ const AdminBlogEditor = () => {
     const html = convertRawToHtml(rawText, imageRefMap);
     setHtmlContent(html);
     setEditStep("editor");
-    toast.success("Contenu importé ! Vous pouvez maintenant le peaufiner dans l'éditeur visuel.");
+    toast.success("Contenu importé ! Génération des points clés en cours…");
+    // Generate key points in background
+    generateKeyPoints(rawText);
   };
 
   const handleSave = async () => {
@@ -540,24 +564,11 @@ const AdminBlogEditor = () => {
               </CardContent>
             </Card>
 
-            {/* Key Points - L'essentiel */}
+            {/* Info about auto-generated key points */}
             <Card className="border-primary/20 bg-primary/5">
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  📌 L'essentiel de l'article
-                  <span className="text-xs font-normal text-muted-foreground ml-2">Un point par ligne</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Textarea
-                  value={keyPoints.join("\n")}
-                  onChange={e => setKeyPoints(e.target.value.split("\n"))}
-                  placeholder={"Résumez l'article en quelques points clés (un par ligne) :\n\nEx : La pêche au feeder est une technique polyvalente adaptée à tous les niveaux.\nEx : Le choix du montage dépend du courant et de la profondeur du poste."}
-                  rows={5}
-                  className="leading-relaxed"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Ce bloc s'affichera en haut de l'article sous forme de résumé « L'essentiel ».
+              <CardContent className="p-4">
+                <p className="text-sm text-muted-foreground flex items-center gap-2">
+                  ✨ Les points clés « L'essentiel de l'article » seront <strong>générés automatiquement par l'IA</strong> lors du passage à l'éditeur.
                 </p>
               </CardContent>
             </Card>
@@ -818,8 +829,18 @@ const AdminBlogEditor = () => {
                 {/* Key Points */}
                 <Card className="border-primary/20 bg-primary/5">
                   <CardHeader>
-                    <CardTitle className="text-base flex items-center gap-2">
-                      📌 L'essentiel de l'article
+                    <CardTitle className="text-base flex items-center gap-2 justify-between">
+                      <span className="flex items-center gap-2">📌 L'essentiel de l'article</span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => generateKeyPoints(htmlContent.replace(/<[^>]*>/g, " "))}
+                        disabled={generatingKeyPoints}
+                        className="text-xs gap-1"
+                      >
+                        {generatingKeyPoints ? <Loader2 className="w-3 h-3 animate-spin" /> : <span>✨</span>}
+                        {generatingKeyPoints ? "Génération…" : "Régénérer avec l'IA"}
+                      </Button>
                     </CardTitle>
                   </CardHeader>
                   <CardContent>

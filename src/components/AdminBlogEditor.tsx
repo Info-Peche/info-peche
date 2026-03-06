@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from "react";
+import { useState } from "react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,7 +16,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import {
   Plus, ArrowLeft, Trash2, Image as ImageIcon, Upload, Loader2,
-  Eye, Edit, Save, FileText, CalendarIcon
+  Eye, Edit, Save, FileText, CalendarIcon, UploadCloud, X, ArrowRight,
+  ImagePlus, FileDown
 } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -38,84 +39,17 @@ type BlogArticle = {
   related_issue_id: string | null;
 };
 
+// "import" = paste raw text + image URL map, "editor" = TipTap WYSIWYG
+type EditStep = "import" | "editor";
+
 const CATEGORIES = ["Technique", "Compétition", "Matériel", "Débutant", "Reportage", "Famille"];
 
 const generateSlug = (title: string) =>
   title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
-/**
- * Convert legacy markdown-like content to HTML for TipTap
- */
-const convertLegacyToHtml = (content: string): string => {
-  // If content already looks like HTML, return as-is
-  if (content.trim().startsWith("<") && (content.includes("</p>") || content.includes("</h2>"))) {
-    return content;
-  }
-
-  // Strip existing TOC
-  let text = content.replace(/\[TOC\][\s\S]*?\[\/TOC\]\n*/g, "");
-
-  // Convert :::conseil and :::encadre blocks
-  text = text.replace(/:::(conseil|encadre)\s+(.+?)\n([\s\S]*?):::/g, (_, type, title, body) => {
-    const label = type === "conseil" ? "Le conseil du prof" : "Encadré";
-    const emoji = type === "conseil" ? "🎓" : "📋";
-    const cleanBody = body.trim().replace(/\[IMAGE\]\(.*?\)\{.*?\}/g, "").trim();
-    return `<div class="encadre-block encadre-${type}" data-type="${type}"><div class="encadre-header"><span>${emoji} ${label}</span></div><div class="encadre-body"><h4>${title.trim()}</h4><p>${cleanBody}</p></div></div>`;
-  });
-
-  // Convert [IMAGE] blocks
-  text = text.replace(/\[IMAGE\]\((.*?)\)\{caption:(.*?)(?:\|layout:([\w-]+))?(?:\|size:(\d+))?\}/g, (_, src, caption) => {
-    return `<img src="${src}" alt="${caption?.trim() || ""}" />`;
-  });
-
-  // Convert line by line
-  const lines = text.split("\n");
-  let html = "";
-  let inList = false;
-  let listType = "";
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (!line) {
-      if (inList) { html += listType === "ul" ? "</ul>" : "</ol>"; inList = false; }
-      continue;
-    }
-
-    // Headings
-    if (line.startsWith("#### ")) { if (inList) { html += listType === "ul" ? "</ul>" : "</ol>"; inList = false; } html += `<h4>${line.slice(5)}</h4>`; continue; }
-    if (line.startsWith("### ")) { if (inList) { html += listType === "ul" ? "</ul>" : "</ol>"; inList = false; } html += `<h3>${line.slice(4)}</h3>`; continue; }
-    if (line.startsWith("## ")) { if (inList) { html += listType === "ul" ? "</ul>" : "</ol>"; inList = false; } html += `<h2>${line.slice(3)}</h2>`; continue; }
-
-    // Blockquote
-    if (line.startsWith("> ")) { if (inList) { html += listType === "ul" ? "</ul>" : "</ol>"; inList = false; } html += `<blockquote><p>${line.slice(2)}</p></blockquote>`; continue; }
-
-    // Bullet list
-    if (line.startsWith("- ")) {
-      if (!inList || listType !== "ul") { if (inList) html += listType === "ul" ? "</ul>" : "</ol>"; html += "<ul>"; inList = true; listType = "ul"; }
-      html += `<li>${formatInline(line.slice(2))}</li>`;
-      continue;
-    }
-
-    // Numbered list
-    const numMatch = line.match(/^(\d+)\.\s(.+)/);
-    if (numMatch) {
-      if (!inList || listType !== "ol") { if (inList) html += listType === "ul" ? "</ul>" : "</ol>"; html += "<ol>"; inList = true; listType = "ol"; }
-      html += `<li>${formatInline(numMatch[2])}</li>`;
-      continue;
-    }
-
-    if (inList) { html += listType === "ul" ? "</ul>" : "</ol>"; inList = false; }
-
-    // Regular paragraph (skip if it's already an HTML block)
-    if (line.startsWith("<")) { html += line; }
-    else { html += `<p>${formatInline(line)}</p>`; }
-  }
-
-  if (inList) html += listType === "ul" ? "</ul>" : "</ol>";
-
-  return html;
-};
+const normalizeForMatch = (name: string) =>
+  name.toLowerCase().replace(/\.(jpg|jpeg|png|gif|webp|avif)$/i, "").replace(/[\s_\-]+/g, "").trim();
 
 const formatInline = (text: string): string => {
   return text
@@ -123,9 +57,143 @@ const formatInline = (text: string): string => {
     .replace(/\*(.*?)\*/g, "<em>$1</em>");
 };
 
+/**
+ * Convert raw pasted text (from Notion/Word) + image URL map into HTML for TipTap
+ */
+const convertRawToHtml = (rawText: string, imageMap: Record<string, string>): string => {
+  let text = rawText;
+
+  // Replace image references with actual <img> tags
+  for (const [refName, url] of Object.entries(imageMap)) {
+    const escapedRef = refName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // Match (refName) optionally followed by caption text on the same line
+    const captionRegex = new RegExp(`\\(${escapedRef}\\)\\s*([^\\n(]*)`, 'g');
+    text = text.replace(captionRegex, (_, captionRaw) => {
+      const caption = captionRaw?.trim() || "";
+      return `\n\n<figure><img src="${url}" alt="${caption}" />${caption ? `<figcaption>${caption}</figcaption>` : ""}</figure>\n\n`;
+    });
+  }
+
+  // Remove unmapped image refs
+  text = text.replace(/\([^)]*(?:IMG|DSC|P\d|_BGN|DSCN|DSCF|KKM)[^)]*\)\s*[^\n(]*/gi, '');
+
+  // Convert :::conseil and :::encadre blocks
+  text = text.replace(/:::(conseil|encadre)\s+(.+?)\n([\s\S]*?):::/g, (_, type, title, body) => {
+    const label = type === "conseil" ? "Le conseil du prof" : "Encadré";
+    const emoji = type === "conseil" ? "🎓" : "📋";
+    const cleanBody = body.trim();
+    return `<div class="encadre-block encadre-${type}" data-type="${type}"><div class="encadre-header"><span>${emoji} ${label}</span></div><div class="encadre-body"><h4>${title.trim()}</h4><p>${cleanBody}</p></div></div>`;
+  });
+
+  // Fix inline numbered lists: "1. text 2. text 3. text" on single line → separate lines
+  text = text.replace(/^(.+?)(\s+\d+\.\s)/gm, (match, first, rest) => {
+    if (/^\d+\.\s/.test(first)) return match;
+    return first + "\n" + rest.trim();
+  });
+  // Split "1. text 2. text" into lines
+  text = text.replace(/(\d+)\.\s+/g, '\n$1. ');
+  text = text.replace(/^\n/, '');
+
+  // Convert line by line to HTML
+  const lines = text.split("\n");
+  let html = "";
+  let inList = false;
+  let listType = "";
+
+  for (const line of lines) {
+    const t = line.trim();
+    if (!t) {
+      if (inList) { html += listType === "ul" ? "</ul>" : "</ol>"; inList = false; }
+      continue;
+    }
+
+    // Already HTML
+    if (t.startsWith("<")) { if (inList) { html += listType === "ul" ? "</ul>" : "</ol>"; inList = false; } html += t; continue; }
+
+    // Headings
+    if (t.startsWith("#### ")) { if (inList) { html += listType === "ul" ? "</ul>" : "</ol>"; inList = false; } html += `<h4>${t.slice(5)}</h4>`; continue; }
+    if (t.startsWith("### ")) { if (inList) { html += listType === "ul" ? "</ul>" : "</ol>"; inList = false; } html += `<h3>${t.slice(4)}</h3>`; continue; }
+    if (t.startsWith("## ")) { if (inList) { html += listType === "ul" ? "</ul>" : "</ol>"; inList = false; } html += `<h2>${t.slice(3)}</h2>`; continue; }
+
+    // Blockquote
+    if (t.startsWith("> ")) { if (inList) { html += listType === "ul" ? "</ul>" : "</ol>"; inList = false; } html += `<blockquote><p>${t.slice(2)}</p></blockquote>`; continue; }
+
+    // Bullet list
+    if (t.startsWith("- ")) {
+      if (!inList || listType !== "ul") { if (inList) html += listType === "ul" ? "</ul>" : "</ol>"; html += "<ul>"; inList = true; listType = "ul"; }
+      html += `<li>${formatInline(t.slice(2))}</li>`; continue;
+    }
+
+    // Numbered list
+    const numMatch = t.match(/^(\d+)\.\s(.+)/);
+    if (numMatch) {
+      if (!inList || listType !== "ol") { if (inList) html += listType === "ul" ? "</ul>" : "</ol>"; html += "<ol>"; inList = true; listType = "ol"; }
+      html += `<li>${formatInline(numMatch[2])}</li>`; continue;
+    }
+
+    if (inList) { html += listType === "ul" ? "</ul>" : "</ol>"; inList = false; }
+    html += `<p>${formatInline(t)}</p>`;
+  }
+  if (inList) html += listType === "ul" ? "</ul>" : "</ol>";
+
+  return html;
+};
+
+/**
+ * Convert legacy stored content (markdown + [IMAGE] tags) to HTML
+ */
+const convertLegacyToHtml = (content: string): string => {
+  if (content.trim().startsWith("<") && (content.includes("</p>") || content.includes("</h2>"))) {
+    return content;
+  }
+  let text = content.replace(/\[TOC\][\s\S]*?\[\/TOC\]\n*/g, "");
+
+  // :::conseil/encadre blocks
+  text = text.replace(/:::(conseil|encadre)\s+(.+?)\n([\s\S]*?):::/g, (_, type, title, body) => {
+    const label = type === "conseil" ? "Le conseil du prof" : "Encadré";
+    const emoji = type === "conseil" ? "🎓" : "📋";
+    const cleanBody = body.trim().replace(/\[IMAGE\]\(.*?\)\{.*?\}/g, "").trim();
+    return `<div class="encadre-block encadre-${type}" data-type="${type}"><div class="encadre-header"><span>${emoji} ${label}</span></div><div class="encadre-body"><h4>${title.trim()}</h4><p>${cleanBody}</p></div></div>`;
+  });
+
+  // [IMAGE] blocks
+  text = text.replace(/\[IMAGE\]\((.*?)\)\{caption:(.*?)(?:\|layout:([\w-]+))?(?:\|size:(\d+))?\}/g, (_, src, caption) => {
+    return `<figure><img src="${src}" alt="${caption?.trim() || ""}" />${caption?.trim() ? `<figcaption>${caption.trim()}</figcaption>` : ""}</figure>`;
+  });
+
+  const lines = text.split("\n");
+  let html = "";
+  let inList = false;
+  let listType = "";
+
+  for (const line of lines) {
+    const t = line.trim();
+    if (!t) { if (inList) { html += listType === "ul" ? "</ul>" : "</ol>"; inList = false; } continue; }
+    if (t.startsWith("<")) { if (inList) { html += listType === "ul" ? "</ul>" : "</ol>"; inList = false; } html += t; continue; }
+    if (t.startsWith("#### ")) { if (inList) { html += listType === "ul" ? "</ul>" : "</ol>"; inList = false; } html += `<h4>${t.slice(5)}</h4>`; continue; }
+    if (t.startsWith("### ")) { if (inList) { html += listType === "ul" ? "</ul>" : "</ol>"; inList = false; } html += `<h3>${t.slice(4)}</h3>`; continue; }
+    if (t.startsWith("## ")) { if (inList) { html += listType === "ul" ? "</ul>" : "</ol>"; inList = false; } html += `<h2>${t.slice(3)}</h2>`; continue; }
+    if (t.startsWith("> ")) { if (inList) { html += listType === "ul" ? "</ul>" : "</ol>"; inList = false; } html += `<blockquote><p>${t.slice(2)}</p></blockquote>`; continue; }
+    if (t.startsWith("- ")) {
+      if (!inList || listType !== "ul") { if (inList) html += listType === "ul" ? "</ul>" : "</ol>"; html += "<ul>"; inList = true; listType = "ul"; }
+      html += `<li>${formatInline(t.slice(2))}</li>`; continue;
+    }
+    const numM = t.match(/^(\d+)\.\s(.+)/);
+    if (numM) {
+      if (!inList || listType !== "ol") { if (inList) html += listType === "ul" ? "</ul>" : "</ol>"; html += "<ol>"; inList = true; listType = "ol"; }
+      html += `<li>${formatInline(numM[2])}</li>`; continue;
+    }
+    if (inList) { html += listType === "ul" ? "</ul>" : "</ol>"; inList = false; }
+    html += `<p>${formatInline(t)}</p>`;
+  }
+  if (inList) html += listType === "ul" ? "</ul>" : "</ol>";
+  return html;
+};
+
 const AdminBlogEditor = () => {
   const queryClient = useQueryClient();
   const [view, setView] = useState<"list" | "edit">("list");
+  const [editStep, setEditStep] = useState<EditStep>("import");
   const [editingArticle, setEditingArticle] = useState<BlogArticle | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -143,6 +211,27 @@ const AdminBlogEditor = () => {
   const [previewMode, setPreviewMode] = useState(false);
   const [relatedIssueId, setRelatedIssueId] = useState<string | null>(null);
   const [publishedAt, setPublishedAt] = useState<Date>(new Date());
+
+  // Import step state
+  const [rawText, setRawText] = useState("");
+  const [imageRefMap, setImageRefMap] = useState<Record<string, string>>({});
+  const [uploadingRef, setUploadingRef] = useState<string | null>(null);
+  const [bulkUploading, setBulkUploading] = useState(false);
+
+  // Detect image references from raw text
+  const detectedImageRefs = (() => {
+    const refs = new Set<string>();
+    const matches = rawText.matchAll(/\(([^)]+)\)/g);
+    for (const m of matches) {
+      const inner = m[1].trim();
+      if (inner.length < 3) continue;
+      if (/^\d+$/.test(inner)) continue;
+      if (/^[a-zéèêëàâùûîïôöç\s,.']+$/i.test(inner) && !inner.includes('_') && !inner.includes('-') && !inner.includes('.')) continue;
+      const isFileLike = /[_\-.]/.test(inner) || /\.(jpg|jpeg|png|gif|webp|avif)$/i.test(inner) || /^(IMG|P\d|_|DSC|DSCN|DSCF|BGN|KKM)/i.test(inner);
+      if (isFileLike) refs.add(inner);
+    }
+    return Array.from(refs);
+  })();
 
   const { data: articles, isLoading } = useQuery({
     queryKey: ["admin-blog-articles"],
@@ -173,9 +262,10 @@ const AdminBlogEditor = () => {
 
   const resetForm = () => {
     setTitle(""); setSlug(""); setExcerpt(""); setCategory("Technique"); setAuthor("Info Pêche");
-    setIsFree(false); setCoverImage(null); setHtmlContent("");
+    setIsFree(false); setCoverImage(null); setHtmlContent(""); setRawText("");
     setRelatedIssueId(null); setPreviewMode(false);
     setAuthorId(null); setPublishedAt(new Date());
+    setImageRefMap({}); setEditStep("import");
   };
 
   const openEditor = (article?: BlogArticle) => {
@@ -186,13 +276,17 @@ const AdminBlogEditor = () => {
       setIsFree(article.is_free); setCoverImage(article.cover_image);
       setPublishedAt(article.published_at ? new Date(article.published_at) : new Date());
       const matchedAuthor = authors?.find(a => a.name === article.author);
-      if (matchedAuthor) setAuthorId(matchedAuthor.id);
-      else setAuthorId(null);
-      // Convert legacy content to HTML if needed
+      if (matchedAuthor) setAuthorId(matchedAuthor.id); else setAuthorId(null);
       setHtmlContent(convertLegacyToHtml(article.content));
       setRelatedIssueId(article.related_issue_id);
+      setRawText("");
+      setImageRefMap({});
+      // Existing article → go straight to editor
+      setEditStep("editor");
     } else {
       setEditingArticle(null); resetForm();
+      // New article → start with import step
+      setEditStep("import");
     }
     setView("edit");
   };
@@ -202,9 +296,9 @@ const AdminBlogEditor = () => {
     if (!editingArticle) setSlug(generateSlug(val));
   };
 
-  const uploadImage = async (file: File): Promise<string | null> => {
+  const uploadImage = async (file: File, purpose: string): Promise<string | null> => {
     const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-    const path = `cover/${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
+    const path = `${purpose}/${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
     const { error } = await supabase.storage.from("blog-images").upload(path, file, { cacheControl: "3600", upsert: false });
     if (error) { toast.error("Erreur upload : " + error.message); return null; }
     const { data: { publicUrl } } = supabase.storage.from("blog-images").getPublicUrl(path);
@@ -215,47 +309,89 @@ const AdminBlogEditor = () => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploadingCover(true);
-    const url = await uploadImage(file);
+    const url = await uploadImage(file, "cover");
     if (url) setCoverImage(url);
     setUploadingCover(false);
   };
 
+  const handleRefImageUpload = async (refName: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingRef(refName);
+    const url = await uploadImage(file, "article");
+    if (url) setImageRefMap(prev => ({ ...prev, [refName]: url }));
+    setUploadingRef(null);
+  };
+
+  const handleBulkImageImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    setBulkUploading(true);
+    const newMap: Record<string, string> = { ...imageRefMap };
+    const unmatched: string[] = [];
+
+    for (const file of Array.from(files)) {
+      const fileNorm = normalizeForMatch(file.name);
+      let matchedRef: string | null = null;
+      for (const ref of detectedImageRefs) {
+        if (newMap[ref]) continue;
+        const refNorm = normalizeForMatch(ref);
+        if (fileNorm === refNorm || fileNorm.includes(refNorm) || refNorm.includes(fileNorm)) {
+          matchedRef = ref; break;
+        }
+      }
+      const url = await uploadImage(file, "article");
+      if (url) {
+        if (matchedRef) newMap[matchedRef] = url;
+        else unmatched.push(file.name);
+      }
+    }
+
+    setImageRefMap(newMap);
+    setBulkUploading(false);
+    const matched = Object.keys(newMap).length - Object.keys(imageRefMap).length;
+    if (matched > 0) toast.success(`${matched} image(s) associée(s) automatiquement`);
+    if (unmatched.length > 0) toast.warning(`${unmatched.length} fichier(s) non associé(s) : ${unmatched.join(", ")}`);
+    e.target.value = "";
+  };
+
+  // Transition from import → editor: convert raw text + images to HTML
+  const proceedToEditor = () => {
+    const unmapped = detectedImageRefs.filter(r => !imageRefMap[r]);
+    if (unmapped.length > 0) {
+      const proceed = confirm(`${unmapped.length} image(s) non importée(s) : ${unmapped.join(", ")}. Les références seront supprimées. Continuer ?`);
+      if (!proceed) return;
+    }
+    const html = convertRawToHtml(rawText, imageRefMap);
+    setHtmlContent(html);
+    setEditStep("editor");
+    toast.success("Contenu importé ! Vous pouvez maintenant le peaufiner dans l'éditeur visuel.");
+  };
+
   const handleSave = async () => {
     if (!title.trim() || !slug.trim() || !excerpt.trim()) {
-      toast.error("Titre, slug et chapeau sont obligatoires");
-      return;
+      toast.error("Titre, slug et chapeau sont obligatoires"); return;
     }
     setSaving(true);
-
     const selectedAuthor = authors?.find(a => a.id === authorId);
     const authorName = selectedAuthor?.name || author;
-
     const articleData = {
-      title: title.trim(),
-      slug: slug.trim(),
-      excerpt: excerpt.trim(),
-      content: htmlContent,
-      cover_image: coverImage,
-      category,
-      author: authorName,
-      is_free: isFree,
-      related_issue_id: relatedIssueId,
+      title: title.trim(), slug: slug.trim(), excerpt: excerpt.trim(),
+      content: htmlContent, cover_image: coverImage, category,
+      author: authorName, is_free: isFree, related_issue_id: relatedIssueId,
       published_at: publishedAt.toISOString(),
     };
-
     let error;
     if (editingArticle) {
       ({ error } = await supabase.from("blog_articles").update(articleData).eq("id", editingArticle.id));
     } else {
       ({ error } = await supabase.from("blog_articles").insert(articleData));
     }
-    if (error) {
-      toast.error("Erreur : " + error.message);
-    } else {
+    if (error) toast.error("Erreur : " + error.message);
+    else {
       toast.success(editingArticle ? "Article mis à jour" : "Article créé");
       queryClient.invalidateQueries({ queryKey: ["admin-blog-articles"] });
-      setView("list");
-      resetForm();
+      setView("list"); resetForm();
     }
     setSaving(false);
   };
@@ -277,7 +413,6 @@ const AdminBlogEditor = () => {
             <Plus className="w-4 h-4" /> Nouvel article
           </Button>
         </div>
-
         {isLoading ? (
           <div className="flex items-center justify-center py-12"><Loader2 className="w-6 h-6 animate-spin" /></div>
         ) : (
@@ -322,6 +457,7 @@ const AdminBlogEditor = () => {
   // ===== EDIT VIEW =====
   return (
     <div className="space-y-6">
+      {/* Top bar */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="sm" onClick={() => { setView("list"); resetForm(); }}>
           <ArrowLeft className="w-4 h-4 mr-2" /> Retour
@@ -329,33 +465,42 @@ const AdminBlogEditor = () => {
         <h2 className="text-xl font-bold flex-1">
           {editingArticle ? "Modifier l'article" : "Nouvel article"}
         </h2>
-        <Button variant="outline" size="sm" onClick={() => setPreviewMode(!previewMode)}>
-          {previewMode ? <Edit className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
-          {previewMode ? "Éditer" : "Aperçu"}
-        </Button>
-        <Button onClick={handleSave} disabled={saving}>
-          {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-          Enregistrer
-        </Button>
+
+        {/* Step indicator */}
+        <div className="hidden md:flex items-center gap-2 text-sm">
+          <span className={cn("px-3 py-1 rounded-full font-medium transition-colors", editStep === "import" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground cursor-pointer")}
+            onClick={() => editStep === "editor" && !editingArticle && setEditStep("import")}>
+            ① Import
+          </span>
+          <ArrowRight className="w-4 h-4 text-muted-foreground" />
+          <span className={cn("px-3 py-1 rounded-full font-medium transition-colors", editStep === "editor" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>
+            ② Édition
+          </span>
+        </div>
+
+        {editStep === "editor" && (
+          <>
+            <Button variant="outline" size="sm" onClick={() => setPreviewMode(!previewMode)}>
+              {previewMode ? <Edit className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
+              {previewMode ? "Éditer" : "Aperçu"}
+            </Button>
+            <Button onClick={handleSave} disabled={saving}>
+              {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+              Enregistrer
+            </Button>
+          </>
+        )}
       </div>
 
-      {previewMode ? (
-        <Card>
-          <CardContent className="p-8 max-w-3xl mx-auto">
-            {coverImage && <img src={coverImage} alt={title} className="w-full aspect-[16/9] object-cover rounded-xl mb-8" />}
-            <h1 className="text-3xl font-bold mb-4 font-[Playfair_Display]">{title || "Sans titre"}</h1>
-            <p className="text-lg text-muted-foreground italic mb-8 border-l-4 border-primary pl-4">{excerpt}</p>
-            <div className="article-html-content" dangerouslySetInnerHTML={{ __html: htmlContent }} />
-          </CardContent>
-        </Card>
-      ) : (
+      {/* ===== IMPORT STEP ===== */}
+      {editStep === "import" && (
         <div className="grid lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
             {/* Title */}
             <Card>
               <CardHeader><CardTitle className="text-base">① Titre de l'article</CardTitle></CardHeader>
               <CardContent className="space-y-3">
-                <Input value={title} onChange={e => handleTitleChange(e.target.value)} placeholder="Titre de l'article" className="text-lg font-semibold" />
+                <Input value={title} onChange={e => handleTitleChange(e.target.value)} placeholder="Collez le titre de l'article ici" className="text-lg font-semibold" />
                 <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground">Slug (URL)</Label>
                   <Input value={slug} onChange={e => setSlug(e.target.value)} placeholder="slug-automatique" className="font-mono text-sm" />
@@ -387,23 +532,103 @@ const AdminBlogEditor = () => {
             <Card>
               <CardHeader><CardTitle className="text-base">③ Introduction / Chapeau</CardTitle></CardHeader>
               <CardContent>
-                <Textarea value={excerpt} onChange={e => setExcerpt(e.target.value)} placeholder="Introduction de l'article..." rows={4} className="leading-relaxed" />
+                <Textarea value={excerpt} onChange={e => setExcerpt(e.target.value)} placeholder="Collez l'introduction de l'article ici..." rows={4} className="leading-relaxed" />
               </CardContent>
             </Card>
 
-            {/* Body - TipTap WYSIWYG */}
+            {/* Raw body text */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">④ Corps de l'article (éditeur visuel)</CardTitle>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <FileDown className="w-4 h-4" /> ④ Corps de l'article (texte brut)
+                </CardTitle>
               </CardHeader>
-              <CardContent>
-                <TipTapEditor
-                  content={htmlContent}
-                  onChange={setHtmlContent}
-                  placeholder="Commencez à écrire le contenu de l'article..."
+              <CardContent className="space-y-3">
+                <p className="text-xs text-muted-foreground">
+                  Collez le texte brut depuis Notion, Word ou Google Docs. Utilisez <code className="bg-muted px-1 rounded">## Titre</code> pour les sections, <code className="bg-muted px-1 rounded">### Sous-titre</code> pour les sous-sections.
+                  Les références d'images comme <code className="bg-muted px-1 rounded">(IMG_4076)</code> seront détectées automatiquement.
+                </p>
+                <Textarea
+                  value={rawText}
+                  onChange={e => setRawText(e.target.value)}
+                  placeholder="Collez le texte brut du corps de l'article ici..."
+                  rows={20}
+                  className="font-mono text-sm leading-relaxed"
                 />
               </CardContent>
             </Card>
+
+            {/* Image References Panel */}
+            {detectedImageRefs.length > 0 && (
+              <Card className="border-amber-500/50 bg-amber-50/30 dark:bg-amber-950/10">
+                <CardHeader>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <ImagePlus className="w-4 h-4 text-amber-600" /> ⑤ Images détectées dans le texte
+                    <Badge variant="outline" className="ml-auto text-amber-700 border-amber-300">
+                      {detectedImageRefs.filter(r => imageRefMap[r]).length}/{detectedImageRefs.length}
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <p className="text-xs text-muted-foreground flex-1">
+                      Références d'images détectées. Importez toutes les photos d'un coup ou une par une.
+                    </p>
+                    <label>
+                      <Button variant="default" size="sm" className="gap-2 flex-shrink-0" asChild disabled={bulkUploading}>
+                        <span>
+                          {bulkUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <UploadCloud className="w-4 h-4" />}
+                          Importer toutes les photos
+                        </span>
+                      </Button>
+                      <input type="file" accept="image/*" multiple className="hidden" onChange={handleBulkImageImport} />
+                    </label>
+                  </div>
+                  {detectedImageRefs.map(refName => (
+                    <div key={refName} className="flex items-center gap-3 p-3 bg-background rounded-lg border border-border">
+                      <div className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-muted flex items-center justify-center">
+                        {imageRefMap[refName] ? (
+                          <img src={imageRefMap[refName]} alt={refName} className="w-full h-full object-cover" />
+                        ) : (
+                          <ImageIcon className="w-6 h-6 text-muted-foreground" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-mono font-medium truncate">{refName}</p>
+                        {imageRefMap[refName] ? (
+                          <p className="text-xs text-green-600 flex items-center gap-1">✅ Importée</p>
+                        ) : (
+                          <p className="text-xs text-amber-600">En attente d'import</p>
+                        )}
+                      </div>
+                      <div className="flex gap-2 flex-shrink-0">
+                        {imageRefMap[refName] && (
+                          <Button variant="ghost" size="sm" className="h-8 text-destructive" onClick={() => setImageRefMap(prev => { const copy = { ...prev }; delete copy[refName]; return copy; })}>
+                            <X className="w-4 h-4" />
+                          </Button>
+                        )}
+                        <label>
+                          <Button variant={imageRefMap[refName] ? "outline" : "default"} size="sm" className="h-8 text-xs gap-1" asChild disabled={uploadingRef === refName}>
+                            <span>
+                              {uploadingRef === refName ? <Loader2 className="w-3 h-3 animate-spin" /> : <UploadCloud className="w-3 h-3" />}
+                              {imageRefMap[refName] ? "Remplacer" : "Importer"}
+                            </span>
+                          </Button>
+                          <input type="file" accept="image/*" className="hidden" onChange={e => handleRefImageUpload(refName, e)} />
+                        </label>
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Proceed button */}
+            <div className="flex justify-end">
+              <Button size="lg" className="gap-2" onClick={proceedToEditor} disabled={!rawText.trim() && !title.trim()}>
+                Passer à l'éditeur visuel <ArrowRight className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
 
           {/* Sidebar */}
@@ -426,9 +651,7 @@ const AdminBlogEditor = () => {
                     const a = authors?.find(a => a.id === v);
                     if (a) setAuthor(a.name);
                   }}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choisir un auteur" />
-                    </SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder="Choisir un auteur" /></SelectTrigger>
                     <SelectContent>
                       {authors?.map(a => (
                         <SelectItem key={a.id} value={a.id}>
@@ -444,9 +667,7 @@ const AdminBlogEditor = () => {
                       <SelectItem value="custom">✏️ Saisie libre</SelectItem>
                     </SelectContent>
                   </Select>
-                  {!authorId && (
-                    <Input value={author} onChange={e => setAuthor(e.target.value)} placeholder="Nom de l'auteur" className="mt-2" />
-                  )}
+                  {!authorId && <Input value={author} onChange={e => setAuthor(e.target.value)} placeholder="Nom de l'auteur" className="mt-2" />}
                 </div>
                 <div className="space-y-2">
                   <Label>Date de publication</Label>
@@ -458,13 +679,7 @@ const AdminBlogEditor = () => {
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={publishedAt}
-                        onSelect={(d) => d && setPublishedAt(d)}
-                        initialFocus
-                        className={cn("p-3 pointer-events-auto")}
-                      />
+                      <Calendar mode="single" selected={publishedAt} onSelect={(d) => d && setPublishedAt(d)} initialFocus className={cn("p-3 pointer-events-auto")} />
                     </PopoverContent>
                   </Popover>
                 </div>
@@ -479,30 +694,202 @@ const AdminBlogEditor = () => {
                   </Select>
                 </div>
                 <div className="flex items-center gap-3 pt-2">
-                  <Checkbox id="is_free" checked={isFree} onCheckedChange={(checked) => setIsFree(checked === true)} />
-                  <Label htmlFor="is_free" className="cursor-pointer">Article en accès libre</Label>
+                  <Checkbox id="is_free_import" checked={isFree} onCheckedChange={(checked) => setIsFree(checked === true)} />
+                  <Label htmlFor="is_free_import" className="cursor-pointer">Article en accès libre</Label>
                 </div>
                 <p className="text-xs text-muted-foreground">{isFree ? "✅ Accessible à tout le monde" : "🔒 Réservé aux abonnés"}</p>
               </CardContent>
             </Card>
 
-            {/* Quick guide */}
             <Card>
-              <CardHeader><CardTitle className="text-base">Guide rapide</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-base">Guide d'import</CardTitle></CardHeader>
               <CardContent className="text-xs text-muted-foreground space-y-2">
-                <p><strong>Éditeur WYSIWYG :</strong></p>
-                <ul className="list-disc ml-4 space-y-1">
-                  <li>Utilisez la toolbar pour formater le texte</li>
-                  <li>Cliquez 📷 pour insérer des images</li>
-                  <li>Cliquez ▶️ pour insérer des vidéos YouTube</li>
-                  <li>🎓 pour un bloc « Conseil du prof »</li>
-                  <li>📦 pour un bloc « Encadré »</li>
-                  <li>Sélectionnez du texte pour le mettre en forme</li>
-                </ul>
+                <p><strong>Workflow :</strong></p>
+                <ol className="list-decimal ml-4 space-y-1">
+                  <li>Collez le titre</li>
+                  <li>Chargez l'image cover</li>
+                  <li>Collez l'intro (chapeau)</li>
+                  <li>Collez le texte brut du corps</li>
+                  <li>Importez les images référencées</li>
+                  <li>Cliquez « Passer à l'éditeur visuel »</li>
+                </ol>
+                <div className="border-t border-border pt-2 mt-3">
+                  <p><strong>Mise en forme :</strong></p>
+                  <p><code className="bg-muted px-1 rounded">## Titre</code> → Section H2</p>
+                  <p><code className="bg-muted px-1 rounded">### Sous-titre</code> → Section H3</p>
+                  <p><code className="bg-muted px-1 rounded">**texte**</code> → <strong>Gras</strong></p>
+                  <p><code className="bg-muted px-1 rounded">*texte*</code> → <em>Italique</em></p>
+                  <p><code className="bg-muted px-1 rounded">- item</code> → Liste à puces</p>
+                  <p><code className="bg-muted px-1 rounded">&gt; citation</code> → Citation</p>
+                  <div className="border-t border-border pt-2 mt-3">
+                    <p><strong>Blocs spéciaux :</strong></p>
+                    <p><code className="bg-muted px-1 rounded">:::conseil TITRE</code></p>
+                    <p><code className="bg-muted px-1 rounded">:::encadre TITRE</code></p>
+                    <p>→ Encadrés éditoriaux</p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
         </div>
+      )}
+
+      {/* ===== EDITOR STEP ===== */}
+      {editStep === "editor" && (
+        <>
+          {previewMode ? (
+            <Card>
+              <CardContent className="p-8 max-w-3xl mx-auto">
+                {coverImage && <img src={coverImage} alt={title} className="w-full aspect-[16/9] object-cover rounded-xl mb-8" />}
+                <h1 className="text-3xl font-bold mb-4 font-[Playfair_Display]">{title || "Sans titre"}</h1>
+                <p className="text-lg text-muted-foreground italic mb-8 border-l-4 border-primary pl-4">{excerpt}</p>
+                <div className="article-html-content" dangerouslySetInnerHTML={{ __html: htmlContent }} />
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 space-y-6">
+                {/* Title (editable) */}
+                <Card>
+                  <CardHeader><CardTitle className="text-base">Titre</CardTitle></CardHeader>
+                  <CardContent className="space-y-3">
+                    <Input value={title} onChange={e => handleTitleChange(e.target.value)} placeholder="Titre" className="text-lg font-semibold" />
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Slug</Label>
+                      <Input value={slug} onChange={e => setSlug(e.target.value)} className="font-mono text-sm" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Cover (editable) */}
+                <Card>
+                  <CardHeader><CardTitle className="text-base flex items-center gap-2"><ImageIcon className="w-4 h-4" /> Image de couverture</CardTitle></CardHeader>
+                  <CardContent>
+                    {coverImage ? (
+                      <div className="relative">
+                        <img src={coverImage} alt="" className="w-full aspect-[16/9] object-cover rounded-lg" />
+                        <Button variant="destructive" size="sm" className="absolute top-2 right-2" onClick={() => setCoverImage(null)}><Trash2 className="w-4 h-4" /></Button>
+                      </div>
+                    ) : (
+                      <label className="flex flex-col items-center justify-center border-2 border-dashed border-border rounded-lg p-6 cursor-pointer hover:border-primary/50 transition-colors">
+                        {uploadingCover ? <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /> : (
+                          <><Upload className="w-6 h-6 text-muted-foreground mb-1" /><span className="text-sm text-muted-foreground">Charger l'image cover</span></>
+                        )}
+                        <input type="file" accept="image/*" className="hidden" onChange={handleCoverUpload} />
+                      </label>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Intro */}
+                <Card>
+                  <CardHeader><CardTitle className="text-base">Introduction / Chapeau</CardTitle></CardHeader>
+                  <CardContent>
+                    <Textarea value={excerpt} onChange={e => setExcerpt(e.target.value)} placeholder="Introduction..." rows={3} className="leading-relaxed" />
+                  </CardContent>
+                </Card>
+
+                {/* TipTap WYSIWYG Editor */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Corps de l'article (éditeur visuel)</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <TipTapEditor
+                      content={htmlContent}
+                      onChange={setHtmlContent}
+                      placeholder="Commencez à écrire..."
+                    />
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Sidebar */}
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader><CardTitle className="text-base">Paramètres</CardTitle></CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Catégorie</Label>
+                      <Select value={category} onValueChange={setCategory}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>{CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Auteur</Label>
+                      <Select value={authorId || "custom"} onValueChange={v => {
+                        if (v === "custom") { setAuthorId(null); return; }
+                        setAuthorId(v);
+                        const a = authors?.find(a => a.id === v);
+                        if (a) setAuthor(a.name);
+                      }}>
+                        <SelectTrigger><SelectValue placeholder="Choisir un auteur" /></SelectTrigger>
+                        <SelectContent>
+                          {authors?.map(a => (
+                            <SelectItem key={a.id} value={a.id}>
+                              <span className="flex items-center gap-2">
+                                <Avatar className="w-5 h-5">
+                                  <AvatarImage src={a.photo_url || undefined} />
+                                  <AvatarFallback className="text-[10px]">{a.name[0]}</AvatarFallback>
+                                </Avatar>
+                                {a.name}
+                              </span>
+                            </SelectItem>
+                          ))}
+                          <SelectItem value="custom">✏️ Saisie libre</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {!authorId && <Input value={author} onChange={e => setAuthor(e.target.value)} placeholder="Nom de l'auteur" className="mt-2" />}
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Date de publication</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !publishedAt && "text-muted-foreground")}>
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {publishedAt ? format(publishedAt, "dd MMMM yyyy", { locale: fr }) : "Choisir une date"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar mode="single" selected={publishedAt} onSelect={(d) => d && setPublishedAt(d)} initialFocus className={cn("p-3 pointer-events-auto")} />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Numéro associé</Label>
+                      <Select value={relatedIssueId || "none"} onValueChange={v => setRelatedIssueId(v === "none" ? null : v)}>
+                        <SelectTrigger><SelectValue placeholder="Aucun" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Aucun</SelectItem>
+                          {issues?.map(issue => <SelectItem key={issue.id} value={issue.id}>N°{issue.issue_number} – {issue.title}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-center gap-3 pt-2">
+                      <Checkbox id="is_free_edit" checked={isFree} onCheckedChange={(checked) => setIsFree(checked === true)} />
+                      <Label htmlFor="is_free_edit" className="cursor-pointer">Article en accès libre</Label>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{isFree ? "✅ Accessible à tout le monde" : "🔒 Réservé aux abonnés"}</p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader><CardTitle className="text-base">Guide éditeur</CardTitle></CardHeader>
+                  <CardContent className="text-xs text-muted-foreground space-y-2">
+                    <ul className="list-disc ml-4 space-y-1">
+                      <li>Toolbar pour formater le texte</li>
+                      <li>📷 pour insérer des images</li>
+                      <li>▶️ pour insérer des vidéos YouTube</li>
+                      <li>🎓 bloc « Conseil du prof »</li>
+                      <li>📦 bloc « Encadré »</li>
+                    </ul>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

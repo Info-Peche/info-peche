@@ -189,11 +189,20 @@ const AdminBlogEditor = () => {
     },
   });
 
+  const { data: authors } = useQuery({
+    queryKey: ["blog-authors"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("blog_authors").select("*").order("created_at", { ascending: true });
+      if (error) throw error;
+      return data as { id: string; name: string; photo_url: string | null; description: string | null; external_url: string | null }[];
+    },
+  });
+
   const resetForm = () => {
     setTitle(""); setSlug(""); setExcerpt(""); setCategory("Technique"); setAuthor("Info Pêche");
     setIsFree(false); setCoverImage(null); setContentBlocks([{ id: generateId(), type: "text", content: "" }]);
     setRelatedIssueId(null); setPreviewMode(false); setTocEntries([]); setIncludeToc(true);
-    setImageRefMap({});
+    setImageRefMap({}); setAuthorId(null); setPublishedAt(new Date());
   };
 
   const openEditor = (article?: BlogArticle) => {
@@ -202,6 +211,11 @@ const AdminBlogEditor = () => {
       setTitle(article.title); setSlug(article.slug); setExcerpt(article.excerpt);
       setCategory(article.category || "Technique"); setAuthor(article.author || "Info Pêche");
       setIsFree(article.is_free); setCoverImage(article.cover_image);
+      setPublishedAt(article.published_at ? new Date(article.published_at) : new Date());
+      // Match author by name
+      const matchedAuthor = authors?.find(a => a.name === article.author);
+      if (matchedAuthor) setAuthorId(matchedAuthor.id);
+      else setAuthorId(null);
       // Strip existing TOC from content before parsing
       const contentWithoutToc = article.content.replace(/\[TOC\][\s\S]*?\[\/TOC\]\n*/g, "");
       setContentBlocks(parseContentToBlocks(contentWithoutToc));

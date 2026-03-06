@@ -37,6 +37,7 @@ type BlogArticle = {
   published_at: string | null;
   paywall_preview_length: number | null;
   related_issue_id: string | null;
+  key_points: string[] | null;
 };
 
 // "import" = paste raw text + image URL map, "editor" = TipTap WYSIWYG
@@ -211,6 +212,7 @@ const AdminBlogEditor = () => {
   const [previewMode, setPreviewMode] = useState(false);
   const [relatedIssueId, setRelatedIssueId] = useState<string | null>(null);
   const [publishedAt, setPublishedAt] = useState<Date>(new Date());
+  const [keyPoints, setKeyPoints] = useState<string[]>([]);
 
   // Import step state
   const [rawText, setRawText] = useState("");
@@ -264,7 +266,7 @@ const AdminBlogEditor = () => {
     setTitle(""); setSlug(""); setExcerpt(""); setCategory("Technique"); setAuthor("Info Pêche");
     setIsFree(false); setCoverImage(null); setHtmlContent(""); setRawText("");
     setRelatedIssueId(null); setPreviewMode(false);
-    setAuthorId(null); setPublishedAt(new Date());
+    setAuthorId(null); setPublishedAt(new Date()); setKeyPoints([]);
     setImageRefMap({}); setEditStep("import");
   };
 
@@ -279,6 +281,7 @@ const AdminBlogEditor = () => {
       if (matchedAuthor) setAuthorId(matchedAuthor.id); else setAuthorId(null);
       setHtmlContent(convertLegacyToHtml(article.content));
       setRelatedIssueId(article.related_issue_id);
+      setKeyPoints(article.key_points || []);
       setRawText("");
       setImageRefMap({});
       // Existing article → go straight to editor
@@ -380,6 +383,7 @@ const AdminBlogEditor = () => {
       content: htmlContent, cover_image: coverImage, category,
       author: authorName, is_free: isFree, related_issue_id: relatedIssueId,
       published_at: publishedAt.toISOString(),
+      key_points: keyPoints.filter(p => p.trim()),
     };
     let error;
     if (editingArticle) {
@@ -533,6 +537,28 @@ const AdminBlogEditor = () => {
               <CardHeader><CardTitle className="text-base">③ Introduction / Chapeau</CardTitle></CardHeader>
               <CardContent>
                 <Textarea value={excerpt} onChange={e => setExcerpt(e.target.value)} placeholder="Collez l'introduction de l'article ici..." rows={4} className="leading-relaxed" />
+              </CardContent>
+            </Card>
+
+            {/* Key Points - L'essentiel */}
+            <Card className="border-primary/20 bg-primary/5">
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  📌 L'essentiel de l'article
+                  <span className="text-xs font-normal text-muted-foreground ml-2">Un point par ligne</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Textarea
+                  value={keyPoints.join("\n")}
+                  onChange={e => setKeyPoints(e.target.value.split("\n"))}
+                  placeholder={"Résumez l'article en quelques points clés (un par ligne) :\n\nEx : La pêche au feeder est une technique polyvalente adaptée à tous les niveaux.\nEx : Le choix du montage dépend du courant et de la profondeur du poste."}
+                  rows={5}
+                  className="leading-relaxed"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Ce bloc s'affichera en haut de l'article sous forme de résumé « L'essentiel ».
+                </p>
               </CardContent>
             </Card>
 
@@ -786,6 +812,24 @@ const AdminBlogEditor = () => {
                   <CardHeader><CardTitle className="text-base">Introduction / Chapeau</CardTitle></CardHeader>
                   <CardContent>
                     <Textarea value={excerpt} onChange={e => setExcerpt(e.target.value)} placeholder="Introduction..." rows={3} className="leading-relaxed" />
+                  </CardContent>
+                </Card>
+
+                {/* Key Points */}
+                <Card className="border-primary/20 bg-primary/5">
+                  <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      📌 L'essentiel de l'article
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Textarea
+                      value={keyPoints.join("\n")}
+                      onChange={e => setKeyPoints(e.target.value.split("\n"))}
+                      placeholder="Un point clé par ligne..."
+                      rows={4}
+                      className="leading-relaxed"
+                    />
                   </CardContent>
                 </Card>
 

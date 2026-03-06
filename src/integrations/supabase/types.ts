@@ -24,6 +24,7 @@ export type Database = {
           excerpt: string
           id: string
           is_free: boolean
+          key_points: string[] | null
           paywall_preview_length: number | null
           published_at: string | null
           related_issue_id: string | null
@@ -40,6 +41,7 @@ export type Database = {
           excerpt: string
           id?: string
           is_free?: boolean
+          key_points?: string[] | null
           paywall_preview_length?: number | null
           published_at?: string | null
           related_issue_id?: string | null
@@ -56,6 +58,7 @@ export type Database = {
           excerpt?: string
           id?: string
           is_free?: boolean
+          key_points?: string[] | null
           paywall_preview_length?: number | null
           published_at?: string | null
           related_issue_id?: string | null

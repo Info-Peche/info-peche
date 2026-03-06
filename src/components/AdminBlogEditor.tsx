@@ -86,14 +86,8 @@ const convertRawToHtml = (rawText: string, imageMap: Record<string, string>): st
     return `<div class="encadre-block encadre-${type}" data-type="${type}"><div class="encadre-header"><span>${emoji} ${label}</span></div><div class="encadre-body"><h4>${title.trim()}</h4><p>${cleanBody}</p></div></div>`;
   });
 
-  // Fix inline numbered lists: "1. text 2. text 3. text" on single line → separate lines
-  text = text.replace(/^(.+?)(\s+\d+\.\s)/gm, (match, first, rest) => {
-    if (/^\d+\.\s/.test(first)) return match;
-    return first + "\n" + rest.trim();
-  });
-  // Split "1. text 2. text" into lines
-  text = text.replace(/(\d+)\.\s+/g, '\n$1. ');
-  text = text.replace(/^\n/, '');
+
+
 
   // Convert line by line to HTML
   const lines = text.split("\n");

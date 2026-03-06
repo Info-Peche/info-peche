@@ -462,7 +462,7 @@ const BlogArticle = () => {
 
                 {/* Sidebar */}
                 <aside className="hidden lg:block">
-                  <div className="sticky top-28 space-y-6">
+                  <div className="sticky top-28 space-y-6 max-h-[calc(100vh-8rem)] overflow-y-auto scrollbar-thin">
                     {toc.length > 0 && !showPaywall && (
                       <nav className="bg-muted/30 border border-border/50 rounded-xl p-5">
                         <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Dans cet article</h3>

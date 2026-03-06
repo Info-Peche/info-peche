@@ -219,6 +219,7 @@ const AdminBlogEditor = () => {
   const [imageRefMap, setImageRefMap] = useState<Record<string, string>>({});
   const [uploadingRef, setUploadingRef] = useState<string | null>(null);
   const [bulkUploading, setBulkUploading] = useState(false);
+  const [generatingKeyPoints, setGeneratingKeyPoints] = useState(false);
 
   // Detect image references from raw text
   const detectedImageRefs = (() => {

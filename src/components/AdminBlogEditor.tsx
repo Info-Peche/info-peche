@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,10 +10,15 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
 import {
   Plus, ArrowLeft, Trash2, Image as ImageIcon, Upload, Loader2,
   Eye, Edit, Save, FileText, Bold, Italic, Heading2, Heading3, List,
-  ImagePlus, X, UploadCloud, ListOrdered, GripVertical, ChevronUp, ChevronDown
+  ImagePlus, X, UploadCloud, ListOrdered, GripVertical, ChevronUp, ChevronDown,
+  CalendarIcon
 } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -127,6 +134,7 @@ const AdminBlogEditor = () => {
   const [slug, setSlug] = useState("");
   const [excerpt, setExcerpt] = useState("");
   const [category, setCategory] = useState("Technique");
+  const [authorId, setAuthorId] = useState<string | null>(null);
   const [author, setAuthor] = useState("Info Pêche");
   const [isFree, setIsFree] = useState(false);
   const [coverImage, setCoverImage] = useState<string | null>(null);
@@ -136,6 +144,7 @@ const AdminBlogEditor = () => {
   ]);
   const [previewMode, setPreviewMode] = useState(false);
   const [relatedIssueId, setRelatedIssueId] = useState<string | null>(null);
+  const [publishedAt, setPublishedAt] = useState<Date>(new Date());
 
   // TOC
   const [tocEntries, setTocEntries] = useState<TocEntry[]>([]);
@@ -180,11 +189,20 @@ const AdminBlogEditor = () => {
     },
   });
 
+  const { data: authors } = useQuery({
+    queryKey: ["blog-authors"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("blog_authors").select("*").order("created_at", { ascending: true });
+      if (error) throw error;
+      return data as { id: string; name: string; photo_url: string | null; description: string | null; external_url: string | null }[];
+    },
+  });
+
   const resetForm = () => {
     setTitle(""); setSlug(""); setExcerpt(""); setCategory("Technique"); setAuthor("Info Pêche");
     setIsFree(false); setCoverImage(null); setContentBlocks([{ id: generateId(), type: "text", content: "" }]);
     setRelatedIssueId(null); setPreviewMode(false); setTocEntries([]); setIncludeToc(true);
-    setImageRefMap({});
+    setImageRefMap({}); setAuthorId(null); setPublishedAt(new Date());
   };
 
   const openEditor = (article?: BlogArticle) => {
@@ -193,6 +211,11 @@ const AdminBlogEditor = () => {
       setTitle(article.title); setSlug(article.slug); setExcerpt(article.excerpt);
       setCategory(article.category || "Technique"); setAuthor(article.author || "Info Pêche");
       setIsFree(article.is_free); setCoverImage(article.cover_image);
+      setPublishedAt(article.published_at ? new Date(article.published_at) : new Date());
+      // Match author by name
+      const matchedAuthor = authors?.find(a => a.name === article.author);
+      if (matchedAuthor) setAuthorId(matchedAuthor.id);
+      else setAuthorId(null);
       // Strip existing TOC from content before parsing
       const contentWithoutToc = article.content.replace(/\[TOC\][\s\S]*?\[\/TOC\]\n*/g, "");
       setContentBlocks(parseContentToBlocks(contentWithoutToc));
@@ -320,10 +343,14 @@ const AdminBlogEditor = () => {
       content = tocMd + "\n\n" + content;
     }
 
+    // Resolve author name from selected author
+    const selectedAuthor = authors?.find(a => a.id === authorId);
+    const authorName = selectedAuthor?.name || author;
+
     const articleData = {
       title: title.trim(), slug: slug.trim(), excerpt: excerpt.trim(), content, cover_image: coverImage,
-      category, author, is_free: isFree, related_issue_id: relatedIssueId,
-      published_at: editingArticle?.published_at || new Date().toISOString(),
+      category, author: authorName, is_free: isFree, related_issue_id: relatedIssueId,
+      published_at: publishedAt.toISOString(),
     };
     let error;
     if (editingArticle) {
@@ -694,7 +721,53 @@ const AdminBlogEditor = () => {
                 </div>
                 <div className="space-y-2">
                   <Label>Auteur</Label>
-                  <Input value={author} onChange={e => setAuthor(e.target.value)} />
+                  <Select value={authorId || "custom"} onValueChange={v => {
+                    if (v === "custom") { setAuthorId(null); return; }
+                    setAuthorId(v);
+                    const a = authors?.find(a => a.id === v);
+                    if (a) setAuthor(a.name);
+                  }}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choisir un auteur" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {authors?.map(a => (
+                        <SelectItem key={a.id} value={a.id}>
+                          <span className="flex items-center gap-2">
+                            <Avatar className="w-5 h-5">
+                              <AvatarImage src={a.photo_url || undefined} />
+                              <AvatarFallback className="text-[10px]">{a.name[0]}</AvatarFallback>
+                            </Avatar>
+                            {a.name}
+                          </span>
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="custom">✏️ Saisie libre</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {!authorId && (
+                    <Input value={author} onChange={e => setAuthor(e.target.value)} placeholder="Nom de l'auteur" className="mt-2" />
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label>Date de publication</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !publishedAt && "text-muted-foreground")}>
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {publishedAt ? format(publishedAt, "dd MMMM yyyy", { locale: fr }) : "Choisir une date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={publishedAt}
+                        onSelect={(d) => d && setPublishedAt(d)}
+                        initialFocus
+                        className={cn("p-3 pointer-events-auto")}
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 <div className="space-y-2">
                   <Label>Numéro associé</Label>

@@ -721,7 +721,53 @@ const AdminBlogEditor = () => {
                 </div>
                 <div className="space-y-2">
                   <Label>Auteur</Label>
-                  <Input value={author} onChange={e => setAuthor(e.target.value)} />
+                  <Select value={authorId || "custom"} onValueChange={v => {
+                    if (v === "custom") { setAuthorId(null); return; }
+                    setAuthorId(v);
+                    const a = authors?.find(a => a.id === v);
+                    if (a) setAuthor(a.name);
+                  }}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choisir un auteur" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {authors?.map(a => (
+                        <SelectItem key={a.id} value={a.id}>
+                          <span className="flex items-center gap-2">
+                            <Avatar className="w-5 h-5">
+                              <AvatarImage src={a.photo_url || undefined} />
+                              <AvatarFallback className="text-[10px]">{a.name[0]}</AvatarFallback>
+                            </Avatar>
+                            {a.name}
+                          </span>
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="custom">✏️ Saisie libre</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {!authorId && (
+                    <Input value={author} onChange={e => setAuthor(e.target.value)} placeholder="Nom de l'auteur" className="mt-2" />
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label>Date de publication</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !publishedAt && "text-muted-foreground")}>
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {publishedAt ? format(publishedAt, "dd MMMM yyyy", { locale: fr }) : "Choisir une date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={publishedAt}
+                        onSelect={(d) => d && setPublishedAt(d)}
+                        initialFocus
+                        className={cn("p-3 pointer-events-auto")}
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 <div className="space-y-2">
                   <Label>Numéro associé</Label>

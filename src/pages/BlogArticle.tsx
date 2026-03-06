@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Lock, Calendar, User, Clock, Crown, LogIn, ListOrdered } from "lucide-react";
+import { ArrowLeft, Lock, Calendar, User, Clock, Crown, LogIn, ListOrdered, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -298,45 +298,62 @@ const BlogArticle = () => {
                     </div>
                   )}
 
-                  {/* Excerpt */}
-                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="mb-10 pb-8 border-b border-border">
+                  {/* L'essentiel de l'article */}
+                  {article.key_points && article.key_points.length > 0 && article.key_points.some((p: string) => p.trim()) && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.3 }}
+                      className="mb-8 bg-primary/5 border border-primary/15 rounded-2xl p-6 md:p-8"
+                    >
+                      <h2 className="text-sm font-bold uppercase tracking-wider text-primary mb-4 flex items-center gap-2">
+                        <Info className="w-4 h-4" /> L'essentiel de l'article
+                      </h2>
+                      <ul className="space-y-3">
+                        {(article.key_points as string[]).filter((p: string) => p.trim()).map((point: string, i: number) => (
+                          <li key={i} className="flex gap-3 items-start text-[0.95rem] leading-relaxed text-foreground/85">
+                            <span className="mt-1.5 w-2 h-2 rounded-full bg-primary flex-shrink-0" />
+                            <span dangerouslySetInnerHTML={{ __html: point.replace(/\*\*(.*?)\*\*/g, "<strong class='text-foreground'>$1</strong>") }} />
+                          </li>
+                        ))}
+                      </ul>
+                    </motion.div>
+                  )}
+
+                  {/* Excerpt / Chapeau */}
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }} className="mb-10 pb-8 border-b border-border">
                     <p className="text-xl md:text-2xl leading-relaxed text-foreground/70 font-[Playfair_Display] italic">
                       {article.excerpt}
                     </p>
                   </motion.div>
 
-                  {/* TOC */}
+                  {/* Mini-sommaire */}
                   {toc.length > 0 && !showPaywall && (
                     <motion.nav
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.35 }}
-                      className="bg-muted/40 border border-border/60 rounded-2xl p-6 md:p-8 mb-12"
+                      transition={{ delay: 0.4 }}
+                      className="bg-muted/30 border border-border/50 rounded-2xl p-6 md:p-8 mb-12"
                     >
-                      <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-5 flex items-center gap-2">
-                        <ListOrdered className="w-4 h-4" /> Sommaire
+                      <h2 className="text-2xl font-bold text-foreground mb-5 font-[Playfair_Display]">
+                        Mini-sommaire
                       </h2>
-                      <ol className="space-y-2.5">
-                        {toc.map((item, i) => {
-                          const h2Index = toc.filter((t, j) => t.level === 2 && j <= i).length;
-                          return (
-                            <li key={i} className={`${item.level === 3 ? "ml-6" : ""}`}>
-                              <a
-                                href={`#${item.anchor}`}
-                                className={`group flex items-center gap-2 text-sm hover:text-primary transition-colors ${
-                                  item.level === 2 ? "font-medium text-foreground" : "text-muted-foreground"
-                                }`}
-                              >
-                                {item.level === 2 && (
-                                  <span className="text-primary font-bold text-xs w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                                    {h2Index}
-                                  </span>
-                                )}
-                                <span className="group-hover:underline underline-offset-2">{item.text}</span>
-                              </a>
-                            </li>
-                          );
-                        })}
+                      <ol className="space-y-2">
+                        {toc.filter(t => t.level === 2).map((item, i) => (
+                          <li key={i}>
+                            <a
+                              href={`#${item.anchor}`}
+                              className="group flex items-center gap-3 text-[0.95rem] hover:text-primary transition-colors py-1"
+                            >
+                              <span className="text-primary font-bold text-sm w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                {i + 1}
+                              </span>
+                              <span className="group-hover:underline underline-offset-2 text-foreground font-medium">
+                                {item.text}
+                              </span>
+                            </a>
+                          </li>
+                        ))}
                       </ol>
                     </motion.nav>
                   )}

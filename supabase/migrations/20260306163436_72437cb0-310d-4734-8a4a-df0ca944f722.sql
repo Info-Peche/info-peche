@@ -1,0 +1,1 @@
+ALTER TABLE public.blog_articles ADD COLUMN key_points text[] DEFAULT '{}'::text[];

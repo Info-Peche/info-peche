@@ -141,6 +141,21 @@ const AdminBlogEditor = () => {
   const [tocEntries, setTocEntries] = useState<TocEntry[]>([]);
   const [includeToc, setIncludeToc] = useState(true);
 
+  // Image references mapping: filename -> uploaded URL
+  const [imageRefMap, setImageRefMap] = useState<Record<string, string>>({});
+  const [uploadingRef, setUploadingRef] = useState<string | null>(null);
+
+  // Detect image references like (nom_image.jpg) in text blocks
+  const detectedImageRefs = (() => {
+    const refs = new Set<string>();
+    for (const block of contentBlocks) {
+      if (block.type !== "text") continue;
+      const matches = block.content.matchAll(/\(([^)]+\.(?:jpg|jpeg|png|gif|webp|avif))\)/gi);
+      for (const m of matches) refs.add(m[1]);
+    }
+    return Array.from(refs);
+  })();
+
   // Auto-update TOC when content blocks change
   useEffect(() => {
     const entries = extractTocFromBlocks(contentBlocks);

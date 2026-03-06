@@ -829,8 +829,18 @@ const AdminBlogEditor = () => {
                 {/* Key Points */}
                 <Card className="border-primary/20 bg-primary/5">
                   <CardHeader>
-                    <CardTitle className="text-base flex items-center gap-2">
-                      📌 L'essentiel de l'article
+                    <CardTitle className="text-base flex items-center gap-2 justify-between">
+                      <span className="flex items-center gap-2">📌 L'essentiel de l'article</span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => generateKeyPoints(htmlContent.replace(/<[^>]*>/g, " "))}
+                        disabled={generatingKeyPoints}
+                        className="text-xs gap-1"
+                      >
+                        {generatingKeyPoints ? <Loader2 className="w-3 h-3 animate-spin" /> : <span>✨</span>}
+                        {generatingKeyPoints ? "Génération…" : "Régénérer avec l'IA"}
+                      </Button>
                     </CardTitle>
                   </CardHeader>
                   <CardContent>

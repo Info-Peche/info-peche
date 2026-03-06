@@ -184,6 +184,7 @@ const AdminBlogEditor = () => {
     setTitle(""); setSlug(""); setExcerpt(""); setCategory("Technique"); setAuthor("Info Pêche");
     setIsFree(false); setCoverImage(null); setContentBlocks([{ id: generateId(), type: "text", content: "" }]);
     setRelatedIssueId(null); setPreviewMode(false); setTocEntries([]); setIncludeToc(true);
+    setImageRefMap({});
   };
 
   const openEditor = (article?: BlogArticle) => {

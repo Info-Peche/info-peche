@@ -724,7 +724,7 @@ const AdminBlogEditor = () => {
                   <li>Chargez l'image cover</li>
                   <li>Collez l'intro</li>
                   <li>Collez le texte brut du corps</li>
-                  <li>Insérez les photos entre les blocs</li>
+                  <li>Importez les images référencées <code className="bg-muted px-1 rounded">(photo.jpg)</code></li>
                 </ol>
                 <div className="border-t border-border pt-2 mt-3">
                   <p><strong>Mise en forme :</strong></p>

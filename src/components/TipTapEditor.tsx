@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import BaseImage from "@tiptap/extension-image";
@@ -12,13 +12,14 @@ import {
   Heading2, Heading3, Heading4, List, ListOrdered, Quote,
   Image as ImageIcon, Youtube as YoutubeIcon, Highlighter,
   AlignLeft, AlignCenter, AlignRight, Undo, Redo, Minus,
-  Box, GraduationCap, Type, Settings2,
+  Box, GraduationCap, Type, Settings2, Upload,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
@@ -74,8 +75,19 @@ const LAYOUTS = [
   { value: "full", label: "Pleine largeur" },
 ];
 
+const SIZE_PRESETS = [
+  { value: 25, label: "25%" },
+  { value: 33, label: "33%" },
+  { value: 50, label: "50%" },
+  { value: 75, label: "75%" },
+  { value: 100, label: "100%" },
+];
+
 const TipTapEditor = ({ content, onChange, placeholder }: TipTapEditorProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const encadreFileInputRef = useRef<HTMLInputElement>(null);
+
+  // Image detail dialog
   const [imageDialog, setImageDialog] = useState<{
     pos: number;
     attrs: Record<string, any>;
@@ -84,6 +96,20 @@ const TipTapEditor = ({ content, onChange, placeholder }: TipTapEditorProps) => 
   const [imgCaption, setImgCaption] = useState("");
   const [imgWidth, setImgWidth] = useState(100);
   const [imgLayout, setImgLayout] = useState("center");
+
+  // Encadré/Conseil dialog
+  const [encadreDialog, setEncadreDialog] = useState<{
+    type: "conseil" | "encadre";
+  } | null>(null);
+  const [encadreTitle, setEncadreTitle] = useState("");
+  const [encadreText, setEncadreText] = useState("");
+  const [encadreImageUrl, setEncadreImageUrl] = useState("");
+  const [encadreImageCaption, setEncadreImageCaption] = useState("");
+  const [encadreUploading, setEncadreUploading] = useState(false);
+
+  // Selected image quick-resize bar
+  const [selectedImagePos, setSelectedImagePos] = useState<number | null>(null);
+  const [selectedImageWidth, setSelectedImageWidth] = useState<number>(100);
 
   const editor = useEditor({
     extensions: [
@@ -127,6 +153,37 @@ const TipTapEditor = ({ content, onChange, placeholder }: TipTapEditorProps) => 
       },
     },
   });
+
+  // Track image selection for inline resize bar
+  useEffect(() => {
+    if (!editor) return;
+    const handleSelection = () => {
+      const { selection } = editor.state;
+      const node = editor.state.doc.nodeAt(selection.from);
+      if (node?.type.name === "image") {
+        setSelectedImagePos(selection.from);
+        setSelectedImageWidth(node.attrs.width || 100);
+      } else {
+        setSelectedImagePos(null);
+      }
+    };
+    editor.on("selectionUpdate", handleSelection);
+    return () => { editor.off("selectionUpdate", handleSelection); };
+  }, [editor]);
+
+  const applyQuickResize = (size: number) => {
+    if (!editor || selectedImagePos === null) return;
+    const node = editor.state.doc.nodeAt(selectedImagePos);
+    if (node?.type.name === "image") {
+      editor.view.dispatch(
+        editor.state.tr.setNodeMarkup(selectedImagePos, undefined, {
+          ...node.attrs,
+          width: size >= 100 ? null : size,
+        })
+      );
+      setSelectedImageWidth(size);
+    }
+  };
 
   const saveImageAttrs = () => {
     if (!editor || !imageDialog) return;
@@ -190,22 +247,54 @@ const TipTapEditor = ({ content, onChange, placeholder }: TipTapEditorProps) => 
     if (url) editor.commands.setYoutubeVideo({ src: url });
   }, [editor]);
 
-  const insertEncadre = useCallback(
-    (type: "conseil" | "encadre") => {
-      if (!editor) return;
-      const label = type === "conseil" ? "Le conseil du prof" : "Encadré";
-      const emoji = type === "conseil" ? "🎓" : "📋";
-      const html = `<div class="encadre-block encadre-${type}" data-type="${type}">
+  // Open encadré dialog
+  const openEncadreDialog = useCallback((type: "conseil" | "encadre") => {
+    setEncadreTitle("");
+    setEncadreText("");
+    setEncadreImageUrl("");
+    setEncadreImageCaption("");
+    setEncadreDialog({ type });
+  }, []);
+
+  const handleEncadreImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setEncadreUploading(true);
+    const url = await uploadImage(file);
+    if (url) setEncadreImageUrl(url);
+    setEncadreUploading(false);
+    e.target.value = "";
+  };
+
+  const insertEncadreBlock = () => {
+    if (!editor || !encadreDialog) return;
+    const { type } = encadreDialog;
+    const label = type === "conseil" ? "Le conseil du prof" : "Encadré";
+    const emoji = type === "conseil" ? "🎓" : "📋";
+
+    const imgHtml = encadreImageUrl
+      ? `<figure class="encadre-figure"><img src="${encadreImageUrl}" alt="${encadreImageCaption || encadreTitle}" />${encadreImageCaption ? `<figcaption>${encadreImageCaption}</figcaption>` : ""}</figure>`
+      : "";
+
+    const bodyParagraphs = encadreText
+      .split("\n")
+      .filter(l => l.trim())
+      .map(l => `<p>${l}</p>`)
+      .join("");
+
+    const html = `<div class="encadre-block encadre-${type}" data-type="${type}">
       <div class="encadre-header"><span>${emoji} ${label}</span></div>
       <div class="encadre-body">
-        <h4>Titre de l'encadré</h4>
-        <p>Contenu de l'encadré…</p>
+        <h4>${encadreTitle || "Titre"}</h4>
+        ${imgHtml}
+        ${bodyParagraphs || "<p>Contenu…</p>"}
       </div>
     </div><p></p>`;
-      editor.chain().focus().insertContent(html).run();
-    },
-    [editor]
-  );
+
+    editor.chain().focus().insertContent(html).run();
+    setEncadreDialog(null);
+    toast.success("Bloc inséré");
+  };
 
   if (!editor) return null;
 
@@ -233,9 +322,9 @@ const TipTapEditor = ({ content, onChange, placeholder }: TipTapEditorProps) => 
   );
 
   return (
-    <div className="tiptap-wrapper border border-border rounded-lg overflow-hidden bg-background">
-      {/* Toolbar */}
-      <div className="tiptap-toolbar flex flex-wrap items-center gap-0.5 p-2 border-b border-border bg-muted/30 sticky top-0 z-10">
+    <div className="tiptap-wrapper border border-border rounded-lg bg-background">
+      {/* Sticky Toolbar - uses position:sticky relative to viewport */}
+      <div className="tiptap-toolbar flex flex-wrap items-center gap-0.5 p-2 border-b border-border bg-muted/95 backdrop-blur-sm sticky top-0 z-50 shadow-sm">
         <TB onClick={() => editor.chain().focus().toggleBold().run()} isActive={editor.isActive("bold")} title="Gras">
           <Bold className="w-4 h-4" />
         </TB>
@@ -305,10 +394,10 @@ const TipTapEditor = ({ content, onChange, placeholder }: TipTapEditorProps) => 
 
         <Separator orientation="vertical" className="h-6 mx-1" />
 
-        <TB onClick={() => insertEncadre("conseil")} title="Conseil du prof">
+        <TB onClick={() => openEncadreDialog("conseil")} title="Conseil du prof">
           <GraduationCap className="w-4 h-4" />
         </TB>
-        <TB onClick={() => insertEncadre("encadre")} title="Encadré">
+        <TB onClick={() => openEncadreDialog("encadre")} title="Encadré">
           <Box className="w-4 h-4" />
         </TB>
 
@@ -322,11 +411,24 @@ const TipTapEditor = ({ content, onChange, placeholder }: TipTapEditorProps) => 
         </TB>
       </div>
 
-      {/* Image editing hint */}
-      {editor.isActive("image") && (
-        <div className="px-3 py-1.5 bg-accent/30 border-b border-border text-xs text-muted-foreground flex items-center gap-2">
-          <Settings2 className="w-3.5 h-3.5" />
-          Double-cliquez sur l'image pour modifier ses propriétés (dimensions, habillage, légende, alt SEO)
+      {/* Quick image resize bar - shown when an image is selected */}
+      {selectedImagePos !== null && (
+        <div className="px-3 py-2 bg-accent/40 border-b border-border flex items-center gap-2 flex-wrap sticky top-[44px] z-40">
+          <Settings2 className="w-3.5 h-3.5 text-muted-foreground" />
+          <span className="text-xs text-muted-foreground mr-1">Taille :</span>
+          {SIZE_PRESETS.map((s) => (
+            <Button
+              key={s.value}
+              variant={selectedImageWidth === s.value || (s.value === 100 && !selectedImageWidth) ? "default" : "outline"}
+              size="sm"
+              className="h-7 px-2.5 text-xs"
+              onClick={() => applyQuickResize(s.value)}
+            >
+              {s.label}
+            </Button>
+          ))}
+          <Separator orientation="vertical" className="h-5 mx-1" />
+          <span className="text-xs text-muted-foreground">Double-clic → légende, alt, habillage</span>
         </div>
       )}
 
@@ -341,7 +443,7 @@ const TipTapEditor = ({ content, onChange, placeholder }: TipTapEditorProps) => 
         onChange={onFileSelected}
       />
 
-      {/* Image Edit Dialog */}
+      {/* Image Detail Dialog (double-click) */}
       <Dialog open={!!imageDialog} onOpenChange={(o) => !o && setImageDialog(null)}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
@@ -407,6 +509,92 @@ const TipTapEditor = ({ content, onChange, placeholder }: TipTapEditorProps) => 
               Annuler
             </Button>
             <Button onClick={saveImageAttrs}>Appliquer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Encadré / Conseil Dialog */}
+      <Dialog open={!!encadreDialog} onOpenChange={(o) => !o && setEncadreDialog(null)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {encadreDialog?.type === "conseil" ? (
+                <><GraduationCap className="w-5 h-5 text-primary" /> Le conseil du prof</>
+              ) : (
+                <><Box className="w-5 h-5 text-accent-foreground" /> Encadré</>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">Titre du bloc</Label>
+              <Input
+                value={encadreTitle}
+                onChange={(e) => setEncadreTitle(e.target.value)}
+                placeholder="Ex: L'astuce du montage en ligne"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">Contenu</Label>
+              <Textarea
+                value={encadreText}
+                onChange={(e) => setEncadreText(e.target.value)}
+                placeholder="Texte du bloc…"
+                rows={5}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Image (optionnel)</Label>
+              {encadreImageUrl ? (
+                <div className="relative">
+                  <img src={encadreImageUrl} alt="" className="w-full max-h-40 object-contain rounded-lg bg-muted" />
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="absolute top-2 right-2 h-7 text-xs"
+                    onClick={() => setEncadreImageUrl("")}
+                  >
+                    Supprimer
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full h-20 border-dashed flex flex-col gap-1"
+                  onClick={() => encadreFileInputRef.current?.click()}
+                  disabled={encadreUploading}
+                >
+                  <Upload className="w-5 h-5 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">
+                    {encadreUploading ? "Upload en cours…" : "Ajouter une image"}
+                  </span>
+                </Button>
+              )}
+              <input
+                ref={encadreFileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleEncadreImageUpload}
+              />
+              {encadreImageUrl && (
+                <Input
+                  value={encadreImageCaption}
+                  onChange={(e) => setEncadreImageCaption(e.target.value)}
+                  placeholder="Légende de l'image"
+                  className="mt-2"
+                />
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEncadreDialog(null)}>
+              Annuler
+            </Button>
+            <Button onClick={insertEncadreBlock} disabled={!encadreTitle.trim()}>
+              Insérer le bloc
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

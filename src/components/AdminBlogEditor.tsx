@@ -153,17 +153,36 @@ const AdminBlogEditor = () => {
   // Image references mapping: filename -> uploaded URL
   const [imageRefMap, setImageRefMap] = useState<Record<string, string>>({});
   const [uploadingRef, setUploadingRef] = useState<string | null>(null);
+  const [bulkUploading, setBulkUploading] = useState(false);
 
-  // Detect image references like (nom_image.jpg) in text blocks
+  // Detect image references in text blocks
+  // Matches (content) where content contains _, -, . or looks like a filename
   const detectedImageRefs = (() => {
     const refs = new Set<string>();
     for (const block of contentBlocks) {
       if (block.type !== "text") continue;
-      const matches = block.content.matchAll(/\(([^)]+\.(?:jpg|jpeg|png|gif|webp|avif))\)/gi);
-      for (const m of matches) refs.add(m[1]);
+      // Match parenthesized content that looks like image refs:
+      // - contains underscore, hyphen, or dot (file-like)
+      // - starts with IMG_, P0, _BGN, etc.
+      // - has a file extension
+      const matches = block.content.matchAll(/\(([^)]+)\)/g);
+      for (const m of matches) {
+        const inner = m[1].trim();
+        // Skip very short refs, pure numbers, or things that look like normal text
+        if (inner.length < 3) continue;
+        if (/^\d+$/.test(inner)) continue; // pure number like (30)
+        if (/^[a-zéèêëàâùûîïôöç\s,.']+$/i.test(inner) && !inner.includes('_') && !inner.includes('-') && !inner.includes('.')) continue; // normal french text
+        // Accept if it has file-like characters
+        const isFileLike = /[_\-.]/.test(inner) || /\.(jpg|jpeg|png|gif|webp|avif)$/i.test(inner) || /^(IMG|P\d|_|DSC|DSCN|DSCF|BGN|KKM)/i.test(inner);
+        if (isFileLike) refs.add(inner);
+      }
     }
     return Array.from(refs);
   })();
+
+  // Normalize a name for fuzzy matching (lowercase, strip extension, replace separators)
+  const normalizeForMatch = (name: string) =>
+    name.toLowerCase().replace(/\.(jpg|jpeg|png|gif|webp|avif)$/i, "").replace(/[\s_\-]+/g, "").trim();
 
   // Auto-update TOC when content blocks change
   useEffect(() => {

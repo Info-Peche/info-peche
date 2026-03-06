@@ -277,6 +277,45 @@ const AdminBlogEditor = () => {
     setUploadingRef(null);
   };
 
+  // Bulk import: upload multiple files and auto-match to detected refs
+  const handleBulkImageImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    setBulkUploading(true);
+    const newMap: Record<string, string> = { ...imageRefMap };
+    const unmatched: string[] = [];
+    
+    for (const file of Array.from(files)) {
+      const fileNorm = normalizeForMatch(file.name);
+      let matchedRef: string | null = null;
+      for (const ref of detectedImageRefs) {
+        if (newMap[ref]) continue;
+        const refNorm = normalizeForMatch(ref);
+        if (fileNorm === refNorm || fileNorm.includes(refNorm) || refNorm.includes(fileNorm)) {
+          matchedRef = ref;
+          break;
+        }
+      }
+      
+      const url = await uploadImage(file, "article");
+      if (url) {
+        if (matchedRef) {
+          newMap[matchedRef] = url;
+        } else {
+          unmatched.push(file.name);
+        }
+      }
+    }
+    
+    setImageRefMap(newMap);
+    setBulkUploading(false);
+    
+    const matched = Object.keys(newMap).length - Object.keys(imageRefMap).length;
+    if (matched > 0) toast.success(`${matched} image(s) associée(s) automatiquement`);
+    if (unmatched.length > 0) toast.warning(`${unmatched.length} fichier(s) non associé(s) : ${unmatched.join(", ")}`);
+    e.target.value = "";
+  };
+
   const addImageBlock = async (e: React.ChangeEvent<HTMLInputElement>, afterIndex: number) => {
     const files = e.target.files;
     if (!files) return;

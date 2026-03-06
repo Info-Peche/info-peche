@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,10 +10,15 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
 import {
   Plus, ArrowLeft, Trash2, Image as ImageIcon, Upload, Loader2,
   Eye, Edit, Save, FileText, Bold, Italic, Heading2, Heading3, List,
-  ImagePlus, X, UploadCloud, ListOrdered, GripVertical, ChevronUp, ChevronDown
+  ImagePlus, X, UploadCloud, ListOrdered, GripVertical, ChevronUp, ChevronDown,
+  CalendarIcon
 } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";

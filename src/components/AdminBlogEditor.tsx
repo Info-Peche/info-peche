@@ -540,6 +540,28 @@ const AdminBlogEditor = () => {
               </CardContent>
             </Card>
 
+            {/* Key Points - L'essentiel */}
+            <Card className="border-primary/20 bg-primary/5">
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  📌 L'essentiel de l'article
+                  <span className="text-xs font-normal text-muted-foreground ml-2">Un point par ligne</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Textarea
+                  value={keyPoints.join("\n")}
+                  onChange={e => setKeyPoints(e.target.value.split("\n"))}
+                  placeholder={"Résumez l'article en quelques points clés (un par ligne) :\n\nEx : La pêche au feeder est une technique polyvalente adaptée à tous les niveaux.\nEx : Le choix du montage dépend du courant et de la profondeur du poste."}
+                  rows={5}
+                  className="leading-relaxed"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Ce bloc s'affichera en haut de l'article sous forme de résumé « L'essentiel ».
+                </p>
+              </CardContent>
+            </Card>
+
             {/* Raw body text */}
             <Card>
               <CardHeader>

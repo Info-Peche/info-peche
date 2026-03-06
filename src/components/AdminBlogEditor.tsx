@@ -58,6 +58,13 @@ const formatInline = (text: string): string => {
     .replace(/\*(.*?)\*/g, "<em>$1</em>");
 };
 
+const escapeHtmlAttr = (value: string): string =>
+  value
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+
 /**
  * Convert raw pasted text (from Notion/Word) + image URL map into HTML for TipTap
  */
@@ -67,11 +74,12 @@ const convertRawToHtml = (rawText: string, imageMap: Record<string, string>): st
   // Replace image references with actual <img> tags
   for (const [refName, url] of Object.entries(imageMap)) {
     const escapedRef = refName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    // Match (refName) optionally followed by caption text on the same line
-    const captionRegex = new RegExp(`\\(${escapedRef}\\)\\s*([^\\n]*)`, 'g');
+    // Match (refName) with optional inner spaces, followed by the caption on the same line
+    const captionRegex = new RegExp(`\\(\\s*${escapedRef}\\s*\\)\\s*([^\\n\\r]*)`, 'gi');
     text = text.replace(captionRegex, (_, captionRaw) => {
       const caption = captionRaw?.trim() || "";
-      return `\n\n<figure><img src="${url}" alt="${caption}" />${caption ? `<figcaption>${caption}</figcaption>` : ""}</figure>\n\n`;
+      const safeCaption = escapeHtmlAttr(caption);
+      return `\n\n<img src="${url}" alt="${safeCaption}" data-caption="${safeCaption}" />\n\n`;
     });
   }
 
@@ -153,7 +161,9 @@ const convertLegacyToHtml = (content: string): string => {
 
   // [IMAGE] blocks
   text = text.replace(/\[IMAGE\]\((.*?)\)\{caption:(.*?)(?:\|layout:([\w-]+))?(?:\|size:(\d+))?\}/g, (_, src, caption) => {
-    return `<figure><img src="${src}" alt="${caption?.trim() || ""}" />${caption?.trim() ? `<figcaption>${caption.trim()}</figcaption>` : ""}</figure>`;
+    const cleanCaption = caption?.trim() || "";
+    const safeCaption = escapeHtmlAttr(cleanCaption);
+    return `<img src="${src}" alt="${safeCaption}" data-caption="${safeCaption}" />`;
   });
 
   const lines = text.split("\n");

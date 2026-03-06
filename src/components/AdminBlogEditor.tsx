@@ -74,11 +74,12 @@ const convertRawToHtml = (rawText: string, imageMap: Record<string, string>): st
   // Replace image references with actual <img> tags
   for (const [refName, url] of Object.entries(imageMap)) {
     const escapedRef = refName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    // Match (refName) optionally followed by caption text on the same line
-    const captionRegex = new RegExp(`\\(${escapedRef}\\)\\s*([^\\n]*)`, 'g');
+    // Match (refName) with optional inner spaces, followed by the caption on the same line
+    const captionRegex = new RegExp(`\\(\\s*${escapedRef}\\s*\\)\\s*([^\\n\\r]*)`, 'gi');
     text = text.replace(captionRegex, (_, captionRaw) => {
       const caption = captionRaw?.trim() || "";
-      return `\n\n<figure><img src="${url}" alt="${caption}" />${caption ? `<figcaption>${caption}</figcaption>` : ""}</figure>\n\n`;
+      const safeCaption = escapeHtmlAttr(caption);
+      return `\n\n<img src="${url}" alt="${safeCaption}" data-caption="${safeCaption}" />\n\n`;
     });
   }
 

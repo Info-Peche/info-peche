@@ -359,8 +359,29 @@ const AdminBlogEditor = () => {
     e.target.value = "";
   };
 
+  // Generate key points via AI
+  const generateKeyPoints = async (contentText: string) => {
+    if (!title.trim()) return;
+    setGeneratingKeyPoints(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-key-points", {
+        body: { content: contentText, title: title.trim() },
+      });
+      if (error) throw error;
+      if (data?.key_points && Array.isArray(data.key_points)) {
+        setKeyPoints(data.key_points);
+        toast.success("Points clés générés par l'IA !");
+      }
+    } catch (e: any) {
+      console.error("Key points generation error:", e);
+      toast.error("Impossible de générer les points clés : " + (e?.message || "erreur inconnue"));
+    } finally {
+      setGeneratingKeyPoints(false);
+    }
+  };
+
   // Transition from import → editor: convert raw text + images to HTML
-  const proceedToEditor = () => {
+  const proceedToEditor = async () => {
     const unmapped = detectedImageRefs.filter(r => !imageRefMap[r]);
     if (unmapped.length > 0) {
       const proceed = confirm(`${unmapped.length} image(s) non importée(s) : ${unmapped.join(", ")}. Les références seront supprimées. Continuer ?`);
@@ -369,7 +390,9 @@ const AdminBlogEditor = () => {
     const html = convertRawToHtml(rawText, imageRefMap);
     setHtmlContent(html);
     setEditStep("editor");
-    toast.success("Contenu importé ! Vous pouvez maintenant le peaufiner dans l'éditeur visuel.");
+    toast.success("Contenu importé ! Génération des points clés en cours…");
+    // Generate key points in background
+    generateKeyPoints(rawText);
   };
 
   const handleSave = async () => {

@@ -376,18 +376,19 @@
   border-radius: 1rem;
   overflow: hidden;
   margin: 2.5rem 0;
-  border: 1px solid hsl(var(--border));
+  border: 2px solid hsl(var(--border));
   clear: both;
+  box-shadow: 0 2px 12px hsl(var(--foreground) / 0.04);
 }
 
 .article-html-content .encadre-conseil {
-  background: hsl(var(--primary) / 0.05);
-  border-color: hsl(var(--primary) / 0.2);
+  background: linear-gradient(135deg, hsl(var(--primary) / 0.03), hsl(var(--primary) / 0.08));
+  border-color: hsl(var(--primary) / 0.25);
 }
 
 .article-html-content .encadre-encadre {
-  background: hsl(var(--accent) / 0.1);
-  border-color: hsl(var(--accent) / 0.3);
+  background: linear-gradient(135deg, hsl(var(--accent) / 0.05), hsl(var(--accent) / 0.12));
+  border-color: hsl(var(--accent) / 0.35);
 }
 
 .article-html-content .encadre-header {
@@ -399,7 +400,7 @@
 }
 
 .article-html-content .encadre-conseil .encadre-header {
-  background: hsl(var(--primary) / 0.1);
+  background: hsl(var(--primary) / 0.12);
   color: hsl(var(--primary));
 }
 
@@ -417,6 +418,29 @@
   font-size: 1.3rem;
   margin-top: 0;
   margin-bottom: 1rem;
+}
+
+.article-html-content .encadre-figure,
+.article-html-content .encadre-body figure {
+  margin: 1rem 0;
+  text-align: center;
+}
+
+.article-html-content .encadre-figure img,
+.article-html-content .encadre-body figure img {
+  max-width: 100%;
+  border-radius: 0.5rem;
+  margin: 0 auto;
+  display: block;
+  box-shadow: 0 2px 8px hsl(var(--foreground) / 0.06);
+}
+
+.article-html-content .encadre-figure figcaption,
+.article-html-content .encadre-body figure figcaption {
+  font-size: 0.78rem;
+  color: hsl(var(--muted-foreground) / 0.7);
+  font-style: italic;
+  margin-top: 0.4rem;
 }
 
 .article-html-content mark {

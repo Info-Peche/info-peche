@@ -161,7 +161,9 @@ const convertLegacyToHtml = (content: string): string => {
 
   // [IMAGE] blocks
   text = text.replace(/\[IMAGE\]\((.*?)\)\{caption:(.*?)(?:\|layout:([\w-]+))?(?:\|size:(\d+))?\}/g, (_, src, caption) => {
-    return `<figure><img src="${src}" alt="${caption?.trim() || ""}" />${caption?.trim() ? `<figcaption>${caption.trim()}</figcaption>` : ""}</figure>`;
+    const cleanCaption = caption?.trim() || "";
+    const safeCaption = escapeHtmlAttr(cleanCaption);
+    return `<img src="${src}" alt="${safeCaption}" data-caption="${safeCaption}" />`;
   });
 
   const lines = text.split("\n");

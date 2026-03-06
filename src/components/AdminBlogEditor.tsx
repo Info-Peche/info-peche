@@ -289,8 +289,30 @@ const AdminBlogEditor = () => {
 
   const handleSave = async () => {
     if (!title.trim() || !slug.trim() || !excerpt.trim()) { toast.error("Titre, slug et chapeau sont obligatoires"); return; }
+    // Check unmapped image refs
+    const unmapped = detectedImageRefs.filter(r => !imageRefMap[r]);
+    if (unmapped.length > 0) {
+      const proceed = confirm(`${unmapped.length} image(s) non importée(s) : ${unmapped.join(", ")}. Les références seront supprimées. Continuer ?`);
+      if (!proceed) return;
+    }
     setSaving(true);
-    let content = blocksToContent(contentBlocks);
+    
+    // Replace image refs with uploaded URLs or remove them
+    let processedBlocks = contentBlocks.map(block => {
+      if (block.type !== "text") return block;
+      let text = block.content;
+      for (const [refName, url] of Object.entries(imageRefMap)) {
+        // Replace (refName) with an image block marker
+        text = text.replace(new RegExp(`\\(${refName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\)`, 'g'), `\n\n[IMAGE](${url}){caption:}\n\n`);
+      }
+      // Remove unmapped refs
+      for (const ref of unmapped) {
+        text = text.replace(new RegExp(`\\(${ref.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\)`, 'g'), '');
+      }
+      return { ...block, content: text };
+    });
+    
+    let content = blocksToContent(processedBlocks);
     
     // Prepend TOC if enabled
     if (includeToc && tocEntries.length > 0) {

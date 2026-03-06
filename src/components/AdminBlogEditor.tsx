@@ -38,11 +38,15 @@ type BlogArticle = {
   related_issue_id: string | null;
 };
 
+type ImageLayout = "full" | "float-left" | "float-right";
+
 type ContentBlock = {
   id: string;
   type: "text" | "image";
   content: string;
   caption?: string;
+  layout?: ImageLayout;
+  size?: number; // percentage width for floating images (20-50)
 };
 
 type TocEntry = {
@@ -68,13 +72,17 @@ const generateAnchor = (text: string) =>
 const parseContentToBlocks = (content: string): ContentBlock[] => {
   if (!content) return [{ id: generateId(), type: "text", content: "" }];
   const blocks: ContentBlock[] = [];
-  const imageRegex = /\[IMAGE\]\((.*?)\)\{caption:(.*?)\}/g;
+  const imageRegex = /\[IMAGE\]\((.*?)\)\{caption:(.*?)(?:\|layout:([\w-]+))?(?:\|size:(\d+))?\}/g;
   let lastIndex = 0;
   let match;
   while ((match = imageRegex.exec(content)) !== null) {
     const textBefore = content.substring(lastIndex, match.index).trim();
     if (textBefore) blocks.push({ id: generateId(), type: "text", content: textBefore });
-    blocks.push({ id: generateId(), type: "image", content: match[1], caption: match[2] });
+    blocks.push({
+      id: generateId(), type: "image", content: match[1], caption: match[2],
+      layout: (match[3] as ImageLayout) || "full",
+      size: match[4] ? parseInt(match[4]) : 35,
+    });
     lastIndex = match.index + match[0].length;
   }
   const remaining = content.substring(lastIndex).trim();
@@ -86,7 +94,11 @@ const parseContentToBlocks = (content: string): ContentBlock[] => {
 const blocksToContent = (blocks: ContentBlock[]): string => {
   return blocks
     .map(b => {
-      if (b.type === "image") return `[IMAGE](${b.content}){caption:${b.caption || ""}}`;
+      if (b.type === "image") {
+        const layout = b.layout || "full";
+        const size = b.size || 35;
+        return `[IMAGE](${b.content}){caption:${b.caption || ""}|layout:${layout}|size:${size}}`;
+      }
       return b.content;
     })
     .join("\n\n");
@@ -322,7 +334,7 @@ const AdminBlogEditor = () => {
     const newBlocks: ContentBlock[] = [];
     for (const file of Array.from(files)) {
       const url = await uploadImage(file, "article");
-      if (url) newBlocks.push({ id: generateId(), type: "image", content: url, caption: "" });
+      if (url) newBlocks.push({ id: generateId(), type: "image", content: url, caption: "", layout: "full", size: 35 });
     }
     if (newBlocks.length > 0) {
       setContentBlocks(prev => { const copy = [...prev]; copy.splice(afterIndex + 1, 0, ...newBlocks); return copy; });
@@ -388,7 +400,7 @@ const AdminBlogEditor = () => {
         const captionRegex = new RegExp(`\\(${escapedRef}\\)\\s*([^\\n(]*)`, 'g');
         text = text.replace(captionRegex, (_, captionRaw) => {
           const caption = captionRaw?.trim() || "";
-          return `\n\n[IMAGE](${url}){caption:${caption}}\n\n`;
+          return `\n\n[IMAGE](${url}){caption:${caption}|layout:float-left|size:35}\n\n`;
         });
       }
       // Remove unmapped refs (and their trailing caption text)
@@ -665,8 +677,42 @@ const AdminBlogEditor = () => {
                       />
                     ) : (
                       <div className="space-y-3">
-                        <img src={block.content} alt={block.caption || ""} className="w-full max-h-72 object-contain rounded-lg bg-muted" />
+                        <div className={cn(
+                          "bg-muted rounded-lg overflow-hidden",
+                          block.layout === "float-left" || block.layout === "float-right" ? "max-w-[200px]" : ""
+                        )}>
+                          <img src={block.content} alt={block.caption || ""} className="w-full max-h-72 object-contain" />
+                        </div>
                         <Input value={block.caption || ""} onChange={e => updateBlock(block.id, { caption: e.target.value })} placeholder="Légende de l'image (optionnel)" className="text-sm" />
+                        <div className="flex items-center gap-4 flex-wrap">
+                          <div className="flex items-center gap-2">
+                            <Label className="text-xs text-muted-foreground whitespace-nowrap">Habillage :</Label>
+                            <Select value={block.layout || "full"} onValueChange={(v) => updateBlock(block.id, { layout: v as ImageLayout })}>
+                              <SelectTrigger className="h-8 w-[160px] text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="full">Pleine largeur</SelectItem>
+                                <SelectItem value="float-left">Habillage gauche</SelectItem>
+                                <SelectItem value="float-right">Habillage droite</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          {(block.layout === "float-left" || block.layout === "float-right") && (
+                            <div className="flex items-center gap-2">
+                              <Label className="text-xs text-muted-foreground whitespace-nowrap">Taille : {block.size || 35}%</Label>
+                              <input
+                                type="range"
+                                min={20}
+                                max={50}
+                                step={5}
+                                value={block.size || 35}
+                                onChange={e => updateBlock(block.id, { size: parseInt(e.target.value) })}
+                                className="w-24 accent-primary"
+                              />
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )}
 
@@ -887,6 +933,12 @@ const AdminBlogEditor = () => {
                   <p><code className="bg-muted px-1 rounded">*texte*</code> → <em>Italique</em></p>
                   <p><code className="bg-muted px-1 rounded">- item</code> → Liste à puces</p>
                   <p><code className="bg-muted px-1 rounded">&gt; citation</code> → Citation</p>
+                  <div className="border-t border-border pt-2 mt-3">
+                    <p><strong>Blocs spéciaux :</strong></p>
+                    <p><code className="bg-muted px-1 rounded">:::conseil TITRE</code></p>
+                    <p><code className="bg-muted px-1 rounded">:::encadre TITRE</code></p>
+                    <p>→ Encadrés éditoriaux avec titre/texte/image</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>

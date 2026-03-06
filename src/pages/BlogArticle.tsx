@@ -80,8 +80,8 @@ const BlogArticle = () => {
         .replace(/\*\*(.*?)\*\*/g, "<strong class='text-foreground font-semibold'>$1</strong>")
         .replace(/\*(.*?)\*/g, "<em>$1</em>");
 
-    // Pre-process: protect :::conseil blocks by replacing inner \n\n with a placeholder
-    const protectedText = cleanText.replace(/:::conseil\s+[\s\S]*?:::/g, (match) => 
+    // Pre-process: protect :::conseil and :::encadre blocks
+    const protectedText = cleanText.replace(/:::(conseil|encadre)\s+[\s\S]*?:::/g, (match) => 
       match.replace(/\n\n/g, "\n%%KEEP%%\n")
     );
 
@@ -91,48 +91,70 @@ const BlogArticle = () => {
       const trimmed = paragraph.trim();
       if (!trimmed) return null;
 
-      // "Le conseil du prof" block: :::conseil TITRE\nTexte...\n[IMAGE](url){caption:...}\n:::
-      const conseilMatch = trimmed.match(/^:::conseil\s+(.+?)\n([\s\S]*?):::$/);
+      // "Le conseil du prof" / "Encadré" block: :::conseil TITRE\nTexte...\n::: OR :::encadre TITRE\nTexte...\n:::
+      const conseilMatch = trimmed.match(/^:::(conseil|encadre)\s+(.+?)\n([\s\S]*?):::$/);
       if (conseilMatch) {
-        const conseilTitle = conseilMatch[1].trim();
-        const conseilBody = conseilMatch[2].trim();
-        // Extract image if present inside the block
-        const conseilImgMatch = conseilBody.match(/\[IMAGE\]\((.*?)\)\{caption:(.*?)\}/);
+        const blockType = conseilMatch[1];
+        const conseilTitle = conseilMatch[2].trim();
+        const conseilBody = conseilMatch[3].trim();
+        // Extract image(s) if present inside the block
+        const conseilImgMatch = conseilBody.match(/\[IMAGE\]\((.*?)\)\{caption:(.*?)(?:\|layout:([\w-]+))?(?:\|size:(\d+))?\}/);
         const conseilText = conseilBody.replace(/\[IMAGE\]\(.*?\)\{caption:.*?\}/, "").trim();
+        const isConseil = blockType === "conseil";
         return (
-          <div key={i} className="my-10 bg-primary/5 border border-primary/20 rounded-2xl overflow-hidden clear-both">
-            <div className="bg-primary/10 px-6 py-3 flex items-center gap-3">
-              <span className="text-2xl">🎓</span>
-              <span className="text-sm font-bold uppercase tracking-wider text-primary">Le conseil du prof</span>
+          <div key={i} className={`my-10 border rounded-2xl overflow-hidden clear-both ${isConseil ? 'bg-primary/5 border-primary/20' : 'bg-accent/30 border-accent/50'}`}>
+            <div className={`px-6 py-3 flex items-center gap-3 ${isConseil ? 'bg-primary/10' : 'bg-accent/40'}`}>
+              <span className="text-2xl">{isConseil ? '🎓' : '📋'}</span>
+              <span className={`text-sm font-bold uppercase tracking-wider ${isConseil ? 'text-primary' : 'text-foreground'}`}>
+                {isConseil ? 'Le conseil du prof' : 'Encadré'}
+              </span>
             </div>
             <div className="p-6 md:p-8">
               <h4 className="text-xl md:text-2xl font-bold text-foreground font-[Playfair_Display] mb-4">{conseilTitle}</h4>
-              <p className="text-[1.05rem] leading-[1.85] text-foreground/85 mb-4" dangerouslySetInnerHTML={{ __html: formatInlineHtml(conseilText) }} />
-              {conseilImgMatch && (
-                <figure className="mt-4">
-                  <div className="overflow-hidden rounded-xl shadow-md">
-                    <img src={conseilImgMatch[1]} alt={conseilImgMatch[2]?.trim() || ""} className="w-full max-h-[400px] object-cover" loading="lazy" />
-                  </div>
-                  {conseilImgMatch[2]?.trim() && (
-                    <figcaption className="mt-2 text-xs text-muted-foreground italic text-center">{conseilImgMatch[2].trim()}</figcaption>
+              {conseilImgMatch && (conseilImgMatch[3] === "float-left" || conseilImgMatch[3] === "float-right") ? (
+                <div className="overflow-hidden">
+                  <figure className={`my-2 ${conseilImgMatch[3] === "float-left" ? "md:float-left md:mr-5 md:mb-3" : "md:float-right md:ml-5 md:mb-3"}`}
+                    style={{ width: `${conseilImgMatch[4] || 35}%` }}>
+                    <div className="overflow-hidden rounded-lg shadow-md">
+                      <img src={conseilImgMatch[1]} alt={conseilImgMatch[2]?.trim() || ""} className="w-full object-cover" loading="lazy" />
+                    </div>
+                    {conseilImgMatch[2]?.trim() && (
+                      <figcaption className="mt-1.5 text-[11px] text-muted-foreground italic text-center leading-tight">{conseilImgMatch[2].trim()}</figcaption>
+                    )}
+                  </figure>
+                  <div className="text-[1.05rem] leading-[1.85] text-foreground/85" dangerouslySetInnerHTML={{ __html: formatInlineHtml(conseilText) }} />
+                </div>
+              ) : (
+                <>
+                  <p className="text-[1.05rem] leading-[1.85] text-foreground/85 mb-4" dangerouslySetInnerHTML={{ __html: formatInlineHtml(conseilText) }} />
+                  {conseilImgMatch && (
+                    <figure className="mt-4">
+                      <div className="overflow-hidden rounded-xl shadow-md">
+                        <img src={conseilImgMatch[1]} alt={conseilImgMatch[2]?.trim() || ""} className="w-full max-h-[400px] object-cover" loading="lazy" />
+                      </div>
+                      {conseilImgMatch[2]?.trim() && (
+                        <figcaption className="mt-2 text-xs text-muted-foreground italic text-center">{conseilImgMatch[2].trim()}</figcaption>
+                      )}
+                    </figure>
                   )}
-                </figure>
+                </>
               )}
             </div>
           </div>
         );
       }
 
-      // Image block with varied layouts
-      const imgMatch = trimmed.match(/^\[IMAGE\]\((.*?)\)\{caption:(.*?)\}$/);
+      // Image block with layout metadata
+      const imgMatch = trimmed.match(/^\[IMAGE\]\((.*?)\)\{caption:(.*?)(?:\|layout:([\w-]+))?(?:\|size:(\d+))?\}$/);
       if (imgMatch) {
         imageCounter++;
-        const layout = imageCounter % 3; // 0=full, 1=float-left, 2=float-right
         const caption = imgMatch[2]?.trim();
+        const layout = imgMatch[3] || "full";
+        const size = imgMatch[4] ? parseInt(imgMatch[4]) : 35;
 
-        if (layout === 1) {
+        if (layout === "float-left") {
           return (
-            <figure key={i} className="md:float-left md:w-[35%] md:mr-6 md:mb-3 my-6 md:my-1">
+            <figure key={i} className="md:float-left md:mr-6 md:mb-3 my-6 md:my-1" style={{ width: `${size}%` }}>
               <div className="overflow-hidden rounded-lg shadow-md">
                 <img src={imgMatch[1]} alt={caption || ""} className="w-full object-cover" loading="lazy" />
               </div>
@@ -144,9 +166,9 @@ const BlogArticle = () => {
             </figure>
           );
         }
-        if (layout === 2) {
+        if (layout === "float-right") {
           return (
-            <figure key={i} className="md:float-right md:w-[35%] md:ml-6 md:mb-3 my-6 md:my-1">
+            <figure key={i} className="md:float-right md:ml-6 md:mb-3 my-6 md:my-1" style={{ width: `${size}%` }}>
               <div className="overflow-hidden rounded-lg shadow-md">
                 <img src={imgMatch[1]} alt={caption || ""} className="w-full object-cover" loading="lazy" />
               </div>
@@ -158,7 +180,7 @@ const BlogArticle = () => {
             </figure>
           );
         }
-        // Full width (layout === 0)
+        // Full width
         return (
           <figure key={i} className="my-10 md:my-14 clear-both">
             <div className="overflow-hidden rounded-xl shadow-md">

@@ -343,10 +343,14 @@ const AdminBlogEditor = () => {
       content = tocMd + "\n\n" + content;
     }
 
+    // Resolve author name from selected author
+    const selectedAuthor = authors?.find(a => a.id === authorId);
+    const authorName = selectedAuthor?.name || author;
+
     const articleData = {
       title: title.trim(), slug: slug.trim(), excerpt: excerpt.trim(), content, cover_image: coverImage,
-      category, author, is_free: isFree, related_issue_id: relatedIssueId,
-      published_at: editingArticle?.published_at || new Date().toISOString(),
+      category, author: authorName, is_free: isFree, related_issue_id: relatedIssueId,
+      published_at: publishedAt.toISOString(),
     };
     let error;
     if (editingArticle) {

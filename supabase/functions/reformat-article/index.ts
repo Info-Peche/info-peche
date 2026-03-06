@@ -41,6 +41,11 @@ Tu dois reformater ce texte en article de blog avec une mise en page parfaite en
   Texte du conseil...
   (REF_IMAGE) Légende de l'image
   :::
+- IMPORTANT : Quand tu trouves un bloc "Encadré" ou "ENCADRÉ" suivi d'un titre et d'un texte, formate-le EXACTEMENT comme un conseil du prof mais avec le tag encadre :
+  :::encadre TITRE DE L'ENCADRÉ
+  Texte de l'encadré...
+  (REF_IMAGE) Légende de l'image
+  :::
 - Supprime tout contenu publicitaire, références de produits commerciaux hors-sujet, numéros de page, URLs du magazine
 - Garde le ton éditorial original et ne rajoute PAS d'information inventée
 - Retourne UNIQUEMENT le texte reformaté en Markdown, sans commentaire ni explication.`;

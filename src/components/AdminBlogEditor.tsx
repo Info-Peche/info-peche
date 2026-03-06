@@ -907,19 +907,15 @@ const AdminBlogEditor = () => {
                   </CardContent>
                 </Card>
 
-                {/* TipTap WYSIWYG Editor */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">Corps de l'article (éditeur visuel)</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <TipTapEditor
-                      content={htmlContent}
-                      onChange={setHtmlContent}
-                      placeholder="Commencez à écrire..."
-                    />
-                  </CardContent>
-                </Card>
+                {/* TipTap WYSIWYG Editor - no Card wrapper to allow sticky toolbar */}
+                <div>
+                  <h3 className="text-base font-semibold mb-3">Corps de l'article (éditeur visuel)</h3>
+                  <TipTapEditor
+                    content={htmlContent}
+                    onChange={setHtmlContent}
+                    placeholder="Commencez à écrire..."
+                  />
+                </div>
               </div>
 
               {/* Sidebar */}

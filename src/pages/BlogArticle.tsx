@@ -80,9 +80,48 @@ const BlogArticle = () => {
         .replace(/\*\*(.*?)\*\*/g, "<strong class='text-foreground font-semibold'>$1</strong>")
         .replace(/\*(.*?)\*/g, "<em>$1</em>");
 
-    return cleanText.split("\n\n").map((paragraph, i) => {
+    // Pre-process: protect :::conseil blocks by replacing inner \n\n with a placeholder
+    const protectedText = cleanText.replace(/:::conseil\s+[\s\S]*?:::/g, (match) => 
+      match.replace(/\n\n/g, "\n%%KEEP%%\n")
+    );
+
+    return protectedText.split("\n\n").map((rawParagraph, i) => {
+      // Restore protected newlines
+      const paragraph = rawParagraph.replace(/\n%%KEEP%%\n/g, "\n\n");
       const trimmed = paragraph.trim();
       if (!trimmed) return null;
+
+      // "Le conseil du prof" block: :::conseil TITRE\nTexte...\n[IMAGE](url){caption:...}\n:::
+      const conseilMatch = trimmed.match(/^:::conseil\s+(.+?)\n([\s\S]*?):::$/);
+      if (conseilMatch) {
+        const conseilTitle = conseilMatch[1].trim();
+        const conseilBody = conseilMatch[2].trim();
+        // Extract image if present inside the block
+        const conseilImgMatch = conseilBody.match(/\[IMAGE\]\((.*?)\)\{caption:(.*?)\}/);
+        const conseilText = conseilBody.replace(/\[IMAGE\]\(.*?\)\{caption:.*?\}/, "").trim();
+        return (
+          <div key={i} className="my-10 bg-primary/5 border border-primary/20 rounded-2xl overflow-hidden clear-both">
+            <div className="bg-primary/10 px-6 py-3 flex items-center gap-3">
+              <span className="text-2xl">🎓</span>
+              <span className="text-sm font-bold uppercase tracking-wider text-primary">Le conseil du prof</span>
+            </div>
+            <div className="p-6 md:p-8">
+              <h4 className="text-xl md:text-2xl font-bold text-foreground font-[Playfair_Display] mb-4">{conseilTitle}</h4>
+              <p className="text-[1.05rem] leading-[1.85] text-foreground/85 mb-4" dangerouslySetInnerHTML={{ __html: formatInlineHtml(conseilText) }} />
+              {conseilImgMatch && (
+                <figure className="mt-4">
+                  <div className="overflow-hidden rounded-xl shadow-md">
+                    <img src={conseilImgMatch[1]} alt={conseilImgMatch[2]?.trim() || ""} className="w-full max-h-[400px] object-cover" loading="lazy" />
+                  </div>
+                  {conseilImgMatch[2]?.trim() && (
+                    <figcaption className="mt-2 text-xs text-muted-foreground italic text-center">{conseilImgMatch[2].trim()}</figcaption>
+                  )}
+                </figure>
+              )}
+            </div>
+          </div>
+        );
+      }
 
       // Image block with varied layouts
       const imgMatch = trimmed.match(/^\[IMAGE\]\((.*?)\)\{caption:(.*?)\}$/);
@@ -93,12 +132,12 @@ const BlogArticle = () => {
 
         if (layout === 1) {
           return (
-            <figure key={i} className="md:float-left md:w-[45%] md:mr-8 md:mb-4 my-8 md:my-2">
-              <div className="overflow-hidden rounded-xl shadow-md">
+            <figure key={i} className="md:float-left md:w-[35%] md:mr-6 md:mb-3 my-6 md:my-1">
+              <div className="overflow-hidden rounded-lg shadow-md">
                 <img src={imgMatch[1]} alt={caption || ""} className="w-full object-cover" loading="lazy" />
               </div>
               {caption && (
-                <figcaption className="mt-2 text-xs text-muted-foreground italic text-center">
+                <figcaption className="mt-1.5 text-[11px] text-muted-foreground italic text-center leading-tight">
                   {caption}
                 </figcaption>
               )}
@@ -107,12 +146,12 @@ const BlogArticle = () => {
         }
         if (layout === 2) {
           return (
-            <figure key={i} className="md:float-right md:w-[45%] md:ml-8 md:mb-4 my-8 md:my-2">
-              <div className="overflow-hidden rounded-xl shadow-md">
+            <figure key={i} className="md:float-right md:w-[35%] md:ml-6 md:mb-3 my-6 md:my-1">
+              <div className="overflow-hidden rounded-lg shadow-md">
                 <img src={imgMatch[1]} alt={caption || ""} className="w-full object-cover" loading="lazy" />
               </div>
               {caption && (
-                <figcaption className="mt-2 text-xs text-muted-foreground italic text-center">
+                <figcaption className="mt-1.5 text-[11px] text-muted-foreground italic text-center leading-tight">
                   {caption}
                 </figcaption>
               )}

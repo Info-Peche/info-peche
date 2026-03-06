@@ -683,9 +683,20 @@ const AdminBlogEditor = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <p className="text-xs text-muted-foreground">
-                    Les références <code className="bg-muted px-1 rounded">(nom_image.jpg)</code> trouvées dans votre texte sont listées ci-dessous. Importez chaque image correspondante.
-                  </p>
+                  <div className="flex items-center gap-3">
+                    <p className="text-xs text-muted-foreground flex-1">
+                      Références d'images détectées dans le texte. Importez toutes les photos d'un coup ou une par une.
+                    </p>
+                    <label>
+                      <Button variant="default" size="sm" className="gap-2 flex-shrink-0" asChild disabled={bulkUploading}>
+                        <span>
+                          {bulkUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <UploadCloud className="w-4 h-4" />}
+                          Importer toutes les photos
+                        </span>
+                      </Button>
+                      <input type="file" accept="image/*" multiple className="hidden" onChange={handleBulkImageImport} />
+                    </label>
+                  </div>
                   {detectedImageRefs.map(refName => (
                     <div key={refName} className="flex items-center gap-3 p-3 bg-background rounded-lg border border-border">
                       <div className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-muted flex items-center justify-center">

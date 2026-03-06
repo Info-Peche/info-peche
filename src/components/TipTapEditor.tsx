@@ -322,9 +322,9 @@ const TipTapEditor = ({ content, onChange, placeholder }: TipTapEditorProps) => 
   );
 
   return (
-    <div className="tiptap-wrapper border border-border rounded-lg bg-background">
-      {/* Sticky Toolbar - uses position:sticky relative to viewport */}
-      <div className="tiptap-toolbar flex flex-wrap items-center gap-0.5 p-2 border-b border-border bg-muted/95 backdrop-blur-sm sticky top-0 z-50 shadow-sm">
+    <div className="tiptap-wrapper bg-background">
+      {/* Sticky Toolbar */}
+      <div className="tiptap-toolbar flex flex-wrap items-center gap-0.5 p-2 border border-border rounded-t-lg bg-muted/95 backdrop-blur-sm sticky top-0 z-50 shadow-sm">
         <TB onClick={() => editor.chain().focus().toggleBold().run()} isActive={editor.isActive("bold")} title="Gras">
           <Bold className="w-4 h-4" />
         </TB>

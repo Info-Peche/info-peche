@@ -58,6 +58,13 @@ const formatInline = (text: string): string => {
     .replace(/\*(.*?)\*/g, "<em>$1</em>");
 };
 
+const escapeHtmlAttr = (value: string): string =>
+  value
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+
 /**
  * Convert raw pasted text (from Notion/Word) + image URL map into HTML for TipTap
  */

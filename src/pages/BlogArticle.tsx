@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/context/AuthContext";
+import "@/components/TipTapStyles.css";
 
 type TocItem = { text: string; anchor: string; level: number };
 
@@ -18,25 +19,88 @@ const generateAnchor = (text: string) =>
   text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
-// Parse TOC block from content
-const parseToc = (content: string): TocItem[] => {
-  const tocMatch = content.match(/\[TOC\]([\s\S]*?)\[\/TOC\]/);
-  if (!tocMatch) return [];
+// Extract TOC from HTML content by parsing headings
+const extractTocFromHtml = (html: string): TocItem[] => {
   const items: TocItem[] = [];
-  const lines = tocMatch[1].trim().split("\n");
-  for (const line of lines) {
-    const match = line.match(/^\s*- \[(.+?)\]\(#(.+?)\)/);
-    if (match) {
-      const indent = line.match(/^\s*/)?.[0]?.length || 0;
-      items.push({ text: match[1], anchor: match[2], level: indent >= 2 ? 3 : 2 });
+  const regex = /<h([234])[^>]*>(.*?)<\/h[234]>/gi;
+  let match;
+  while ((match = regex.exec(html)) !== null) {
+    const level = parseInt(match[1]);
+    const text = match[2].replace(/<[^>]*>/g, "").trim();
+    if (text && level <= 3) {
+      items.push({ text, anchor: generateAnchor(text), level });
     }
   }
   return items;
 };
 
-// Strip TOC block from content
-const stripToc = (content: string): string =>
-  content.replace(/\[TOC\][\s\S]*?\[\/TOC\]\n*/g, "");
+// Inject anchors into heading tags in HTML
+const injectAnchors = (html: string): string => {
+  return html.replace(/<h([234])([^>]*)>(.*?)<\/h([234])>/gi, (match, level, attrs, content, closeLevel) => {
+    const text = content.replace(/<[^>]*>/g, "").trim();
+    const anchor = generateAnchor(text);
+    return `<h${level}${attrs} id="${anchor}">${content}</h${level}>`;
+  });
+};
+
+// Legacy markdown → HTML converter for old articles
+const convertLegacyToHtml = (content: string): string => {
+  if (content.trim().startsWith("<") && (content.includes("</p>") || content.includes("</h2>"))) {
+    return content;
+  }
+  // Strip TOC
+  let text = content.replace(/\[TOC\][\s\S]*?\[\/TOC\]\n*/g, "");
+
+  // :::conseil/encadre blocks
+  text = text.replace(/:::(conseil|encadre)\s+(.+?)\n([\s\S]*?):::/g, (_, type, title, body) => {
+    const label = type === "conseil" ? "Le conseil du prof" : "Encadré";
+    const emoji = type === "conseil" ? "🎓" : "📋";
+    let cleanBody = body.trim();
+    // Extract images
+    const imgMatch = cleanBody.match(/\[IMAGE\]\((.*?)\)\{caption:(.*?)(?:\|layout:([\w-]+))?(?:\|size:(\d+))?\}/);
+    if (imgMatch) {
+      cleanBody = cleanBody.replace(imgMatch[0], "").trim();
+      cleanBody += `<img src="${imgMatch[1]}" alt="${imgMatch[2]?.trim() || ""}" />`;
+    }
+    return `<div class="encadre-block encadre-${type}" data-type="${type}"><div class="encadre-header"><span>${emoji} ${label}</span></div><div class="encadre-body"><h4>${title.trim()}</h4><p>${cleanBody}</p></div></div>`;
+  });
+
+  // [IMAGE] blocks
+  text = text.replace(/\[IMAGE\]\((.*?)\)\{caption:(.*?)(?:\|layout:([\w-]+))?(?:\|size:(\d+))?\}/g, (_, src, caption) => {
+    return `<figure><img src="${src}" alt="${caption?.trim() || ""}" />${caption?.trim() ? `<figcaption>${caption.trim()}</figcaption>` : ""}</figure>`;
+  });
+
+  const lines = text.split("\n");
+  let html = "";
+  let inList = false;
+  let listType = "";
+
+  const fmtInline = (s: string) => s
+    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+    .replace(/\*(.*?)\*/g, "<em>$1</em>");
+
+  for (const line of lines) {
+    const t = line.trim();
+    if (!t) { if (inList) { html += listType === "ul" ? "</ul>" : "</ol>"; inList = false; } continue; }
+    if (t.startsWith("#### ")) { if (inList) { html += listType === "ul" ? "</ul>" : "</ol>"; inList = false; } html += `<h4>${t.slice(5)}</h4>`; continue; }
+    if (t.startsWith("### ")) { if (inList) { html += listType === "ul" ? "</ul>" : "</ol>"; inList = false; } html += `<h3>${t.slice(4)}</h3>`; continue; }
+    if (t.startsWith("## ")) { if (inList) { html += listType === "ul" ? "</ul>" : "</ol>"; inList = false; } html += `<h2>${t.slice(3)}</h2>`; continue; }
+    if (t.startsWith("> ")) { if (inList) { html += listType === "ul" ? "</ul>" : "</ol>"; inList = false; } html += `<blockquote><p>${t.slice(2)}</p></blockquote>`; continue; }
+    if (t.startsWith("- ")) {
+      if (!inList || listType !== "ul") { if (inList) html += listType === "ul" ? "</ul>" : "</ol>"; html += "<ul>"; inList = true; listType = "ul"; }
+      html += `<li>${fmtInline(t.slice(2))}</li>`; continue;
+    }
+    const numM = t.match(/^(\d+)\.\s(.+)/);
+    if (numM) {
+      if (!inList || listType !== "ol") { if (inList) html += listType === "ul" ? "</ul>" : "</ol>"; html += "<ol>"; inList = true; listType = "ol"; }
+      html += `<li>${fmtInline(numM[2])}</li>`; continue;
+    }
+    if (inList) { html += listType === "ul" ? "</ul>" : "</ol>"; inList = false; }
+    if (t.startsWith("<")) html += t; else html += `<p>${fmtInline(t)}</p>`;
+  }
+  if (inList) html += listType === "ul" ? "</ul>" : "</ol>";
+  return html;
+};
 
 const BlogArticle = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -54,6 +118,33 @@ const BlogArticle = () => {
     enabled: !!slug,
   });
 
+  // Fetch author info
+  const { data: authorInfo } = useQuery({
+    queryKey: ["blog-author", article?.author],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("blog_authors").select("*").eq("name", article!.author!).single();
+      return data;
+    },
+    enabled: !!article?.author,
+  });
+
+  // Related articles (same category)
+  const { data: relatedArticles } = useQuery({
+    queryKey: ["related-articles", article?.category, article?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("blog_articles")
+        .select("id, slug, title, cover_image, category, published_at, author")
+        .eq("category", article!.category!)
+        .neq("id", article!.id)
+        .order("published_at", { ascending: false })
+        .limit(3);
+      return data || [];
+    },
+    enabled: !!article?.category && !!article?.id,
+  });
+
   const { data: relatedIssue } = useQuery({
     queryKey: ["related-issue", article?.related_issue_id],
     queryFn: async () => {
@@ -66,273 +157,30 @@ const BlogArticle = () => {
     enabled: !!article?.related_issue_id,
   });
 
-  const estimateReadTime = (text: string) => Math.max(1, Math.round(text.split(/\s+/).length / 200));
+  const estimateReadTime = (text: string) => Math.max(1, Math.round(text.replace(/<[^>]*>/g, "").split(/\s+/).length / 200));
 
-  const toc = useMemo(() => article ? parseToc(article.content) : [], [article]);
-
-  const renderContent = (text: string) => {
-    const cleanText = stripToc(text);
-    let firstTextRendered = false;
-    let imageCounter = 0;
-
-    const formatInlineHtml = (str: string) =>
-      str
-        .replace(/\*\*(.*?)\*\*/g, "<strong class='text-foreground font-semibold'>$1</strong>")
-        .replace(/\*(.*?)\*/g, "<em>$1</em>");
-
-    // Pre-process: protect :::conseil and :::encadre blocks
-    const protectedText = cleanText.replace(/:::(conseil|encadre)\s+[\s\S]*?:::/g, (match) => 
-      match.replace(/\n\n/g, "\n%%KEEP%%\n")
-    );
-
-    return protectedText.split("\n\n").map((rawParagraph, i) => {
-      // Restore protected newlines
-      const paragraph = rawParagraph.replace(/\n%%KEEP%%\n/g, "\n\n");
-      const trimmed = paragraph.trim();
-      if (!trimmed) return null;
-
-      // "Le conseil du prof" / "Encadré" block: :::conseil TITRE\nTexte...\n::: OR :::encadre TITRE\nTexte...\n:::
-      const conseilMatch = trimmed.match(/^:::(conseil|encadre)\s+(.+?)\n([\s\S]*?):::$/);
-      if (conseilMatch) {
-        const blockType = conseilMatch[1];
-        const conseilTitle = conseilMatch[2].trim();
-        const conseilBody = conseilMatch[3].trim();
-        // Extract image(s) if present inside the block
-        const conseilImgMatch = conseilBody.match(/\[IMAGE\]\((.*?)\)\{caption:(.*?)(?:\|layout:([\w-]+))?(?:\|size:(\d+))?\}/);
-        const conseilText = conseilBody.replace(/\[IMAGE\]\(.*?\)\{caption:.*?\}/, "").trim();
-        const isConseil = blockType === "conseil";
-        return (
-          <div key={i} className={`my-10 border rounded-2xl overflow-hidden clear-both ${isConseil ? 'bg-primary/5 border-primary/20' : 'bg-accent/30 border-accent/50'}`}>
-            <div className={`px-6 py-3 flex items-center gap-3 ${isConseil ? 'bg-primary/10' : 'bg-accent/40'}`}>
-              <span className="text-2xl">{isConseil ? '🎓' : '📋'}</span>
-              <span className={`text-sm font-bold uppercase tracking-wider ${isConseil ? 'text-primary' : 'text-foreground'}`}>
-                {isConseil ? 'Le conseil du prof' : 'Encadré'}
-              </span>
-            </div>
-            <div className="p-6 md:p-8">
-              <h4 className="text-xl md:text-2xl font-bold text-foreground font-[Playfair_Display] mb-4">{conseilTitle}</h4>
-              {conseilImgMatch && (conseilImgMatch[3] === "float-left" || conseilImgMatch[3] === "float-right") ? (
-                <div className="overflow-hidden">
-                  <figure className={`my-2 ${conseilImgMatch[3] === "float-left" ? "md:float-left md:mr-5 md:mb-3" : "md:float-right md:ml-5 md:mb-3"}`}
-                    style={{ width: `${conseilImgMatch[4] || 35}%` }}>
-                    <div className="overflow-hidden rounded-lg shadow-md">
-                      <img src={conseilImgMatch[1]} alt={conseilImgMatch[2]?.trim() || ""} className="w-full object-cover" loading="lazy" />
-                    </div>
-                    {conseilImgMatch[2]?.trim() && (
-                      <figcaption className="mt-1.5 text-[11px] text-muted-foreground italic text-center leading-tight">{conseilImgMatch[2].trim()}</figcaption>
-                    )}
-                  </figure>
-                  <div className="text-[1.05rem] leading-[1.85] text-foreground/85" dangerouslySetInnerHTML={{ __html: formatInlineHtml(conseilText) }} />
-                </div>
-              ) : (
-                <>
-                  <p className="text-[1.05rem] leading-[1.85] text-foreground/85 mb-4" dangerouslySetInnerHTML={{ __html: formatInlineHtml(conseilText) }} />
-                  {conseilImgMatch && (
-                    <figure className="mt-4">
-                      <div className="overflow-hidden rounded-xl shadow-md">
-                        <img src={conseilImgMatch[1]} alt={conseilImgMatch[2]?.trim() || ""} className="w-full max-h-[400px] object-cover" loading="lazy" />
-                      </div>
-                      {conseilImgMatch[2]?.trim() && (
-                        <figcaption className="mt-2 text-xs text-muted-foreground italic text-center">{conseilImgMatch[2].trim()}</figcaption>
-                      )}
-                    </figure>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-        );
-      }
-
-      // Image block with layout metadata
-      const imgMatch = trimmed.match(/^\[IMAGE\]\((.*?)\)\{caption:(.*?)(?:\|layout:([\w-]+))?(?:\|size:(\d+))?\}$/);
-      if (imgMatch) {
-        imageCounter++;
-        const caption = imgMatch[2]?.trim();
-        const layout = imgMatch[3] || "full";
-        const size = imgMatch[4] ? parseInt(imgMatch[4]) : 35;
-
-        if (layout === "float-left") {
-          return (
-            <figure key={i} className="md:float-left md:mr-6 md:mb-3 my-6 md:my-1" style={{ width: `${size}%` }}>
-              <div className="overflow-hidden rounded-lg shadow-md">
-                <img src={imgMatch[1]} alt={caption || ""} className="w-full object-cover" loading="lazy" />
-              </div>
-              {caption && (
-                <figcaption className="mt-1.5 text-[11px] text-muted-foreground italic text-center leading-tight">
-                  {caption}
-                </figcaption>
-              )}
-            </figure>
-          );
-        }
-        if (layout === "float-right") {
-          return (
-            <figure key={i} className="md:float-right md:ml-6 md:mb-3 my-6 md:my-1" style={{ width: `${size}%` }}>
-              <div className="overflow-hidden rounded-lg shadow-md">
-                <img src={imgMatch[1]} alt={caption || ""} className="w-full object-cover" loading="lazy" />
-              </div>
-              {caption && (
-                <figcaption className="mt-1.5 text-[11px] text-muted-foreground italic text-center leading-tight">
-                  {caption}
-                </figcaption>
-              )}
-            </figure>
-          );
-        }
-        // Full width
-        return (
-          <figure key={i} className="my-10 md:my-14 clear-both">
-            <div className="overflow-hidden rounded-xl shadow-md">
-              <img src={imgMatch[1]} alt={caption || ""} className="w-full max-h-[500px] object-cover" loading="lazy" />
-            </div>
-            {caption && (
-              <figcaption className="mt-3 text-sm text-muted-foreground italic text-center flex items-center justify-center gap-2">
-                <span className="w-8 h-px bg-primary/40 inline-block" />
-                {caption}
-                <span className="w-8 h-px bg-primary/40 inline-block" />
-              </figcaption>
-            )}
-          </figure>
-        );
-      }
-
-      // H2
-      if (trimmed.startsWith("## ")) {
-        const headingText = trimmed.replace("## ", "");
-        const anchor = generateAnchor(headingText);
-        return (
-          <h2 key={i} id={anchor} className="text-2xl md:text-3xl font-bold text-foreground mt-14 mb-6 font-[Playfair_Display] border-l-4 border-primary pl-5 scroll-mt-24 clear-both">
-            {headingText}
-          </h2>
-        );
-      }
-
-      // H3
-      if (trimmed.startsWith("### ")) {
-        const headingText = trimmed.replace("### ", "");
-        const anchor = generateAnchor(headingText);
-        return (
-          <h3 key={i} id={anchor} className="text-xl md:text-2xl font-bold text-foreground mt-10 mb-4 font-[Playfair_Display] scroll-mt-24 clear-both">
-            {headingText}
-          </h3>
-        );
-      }
-
-      // Numbered list (lines starting with "1. ", "2. ", etc.)
-      if (/^\d+\.\s/.test(trimmed)) {
-        const items = trimmed.split("\n").filter(l => /^\d+\.\s/.test(l.trim()));
-        if (items.length > 0) {
-          return (
-            <ol key={i} className="my-6 space-y-4 pl-0 list-none">
-              {items.map((item, j) => {
-                const text = item.replace(/^\d+\.\s*/, "");
-                // Split on first period to get title + description
-                const dotIndex = text.indexOf(".");
-                const hasTitle = dotIndex > 0 && dotIndex < 40;
-                return (
-                  <li key={j} className="flex gap-4 items-start bg-muted/30 rounded-xl p-4 border border-border/40">
-                    <span className="flex-shrink-0 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm">
-                      {j + 1}
-                    </span>
-                    <div className="flex-1">
-                      {hasTitle ? (
-                        <>
-                          <span className="font-semibold text-foreground" dangerouslySetInnerHTML={{ __html: formatInlineHtml(text.substring(0, dotIndex + 1)) }} />
-                          <span className="text-foreground/85" dangerouslySetInnerHTML={{ __html: " " + formatInlineHtml(text.substring(dotIndex + 1).trim()) }} />
-                        </>
-                      ) : (
-                        <span dangerouslySetInnerHTML={{ __html: formatInlineHtml(text) }} />
-                      )}
-                    </div>
-                  </li>
-                );
-              })}
-            </ol>
-          );
-        }
-      }
-
-      // Bullet list
-      if (trimmed.startsWith("- ")) {
-        const items = trimmed.split("\n").filter(Boolean);
-        return (
-          <ul key={i} className="my-6 space-y-3 pl-0">
-            {items.map((item, j) => (
-              <li key={j} className="flex gap-3 items-start">
-                <span className="mt-2 w-2 h-2 rounded-full bg-primary flex-shrink-0" />
-                <span dangerouslySetInnerHTML={{ __html: formatInlineHtml(item.replace(/^- /, "")) }} />
-              </li>
-            ))}
-          </ul>
-        );
-      }
-
-      // Pull-quote / blockquote
-      if (trimmed.startsWith("> ")) {
-        return (
-          <blockquote key={i} className="my-10 py-6 px-8 border-l-4 border-primary bg-primary/5 rounded-r-xl text-lg italic text-foreground/80 font-[Playfair_Display] clear-both">
-            {trimmed.replace(/^> /gm, "")}
-          </blockquote>
-        );
-      }
-
-      // Callout block (:::info ... :::)
-      if (trimmed.startsWith(":::")) {
-        const typeMatch = trimmed.match(/^:::(info|tip|warning|note)\s*/);
-        const type = typeMatch?.[1] || "info";
-        const body = trimmed.replace(/^:::\w*\s*/, "").replace(/\s*:::$/, "");
-        const colors: Record<string, string> = {
-          info: "bg-blue-50 border-blue-400 text-blue-900 dark:bg-blue-950/30 dark:text-blue-200 dark:border-blue-600",
-          tip: "bg-emerald-50 border-emerald-400 text-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200 dark:border-emerald-600",
-          warning: "bg-amber-50 border-amber-400 text-amber-900 dark:bg-amber-950/30 dark:text-amber-200 dark:border-amber-600",
-          note: "bg-muted border-border text-foreground",
-        };
-        const icons: Record<string, string> = { info: "💡", tip: "✅", warning: "⚠️", note: "📌" };
-        return (
-          <div key={i} className={`my-8 p-5 rounded-xl border-l-4 ${colors[type]} clear-both`}>
-            <p className="font-medium text-sm">
-              <span className="mr-2">{icons[type]}</span>
-              <span dangerouslySetInnerHTML={{ __html: formatInlineHtml(body) }} />
-            </p>
-          </div>
-        );
-      }
-
-      // Drop cap for first substantial paragraph
-      if (!firstTextRendered && trimmed.length > 80) {
-        firstTextRendered = true;
-        const firstLetter = trimmed[0];
-        const rest = trimmed.slice(1);
-        return (
-          <p key={i} className="my-6 text-lg leading-[1.9] text-foreground/85 clear-both">
-            <span className="float-left text-6xl font-bold font-[Playfair_Display] text-primary leading-[0.8] mr-3 mt-1">
-              {firstLetter}
-            </span>
-            <span dangerouslySetInnerHTML={{ __html: formatInlineHtml(rest) }} />
-          </p>
-        );
-      }
-
-      firstTextRendered = true;
-
-      return (
-        <p key={i} className="my-5 text-[1.08rem] leading-[1.9] text-foreground/85" dangerouslySetInnerHTML={{
-          __html: formatInlineHtml(trimmed)
-        }} />
-      );
-    });
-  };
-
-  const getDisplayContent = () => {
+  // Get HTML content (with legacy conversion)
+  const articleHtml = useMemo(() => {
     if (!article) return "";
-    if (article.is_free) return article.content;
-    if (user && hasAccessToBlog) return article.content;
+    return convertLegacyToHtml(article.content);
+  }, [article]);
+
+  const toc = useMemo(() => extractTocFromHtml(articleHtml), [articleHtml]);
+
+  const getDisplayHtml = () => {
+    if (!article) return "";
+    const fullHtml = injectAnchors(articleHtml);
+    if (article.is_free) return fullHtml;
+    if (user && hasAccessToBlog) return fullHtml;
+    // Truncate for paywall
     const cutoff = article.paywall_preview_length || 500;
-    const content = article.content;
-    let cut = content.indexOf("\n\n", cutoff);
+    const textOnly = fullHtml.replace(/<[^>]*>/g, "");
+    if (textOnly.length <= cutoff) return fullHtml;
+    // Find a tag boundary near the cutoff
+    let cut = fullHtml.indexOf("</p>", cutoff);
     if (cut === -1) cut = cutoff;
-    return content.substring(0, cut);
+    else cut += 4;
+    return fullHtml.substring(0, cut);
   };
 
   const showPaywall = article && !article.is_free && !(user && hasAccessToBlog);
@@ -358,7 +206,7 @@ const BlogArticle = () => {
       "@context": "https://schema.org", "@type": "Article",
       headline: article.title, description: article.excerpt,
       image: article.cover_image || undefined,
-      author: { "@type": "Organization", name: article.author || "Info Pêche" },
+      author: { "@type": "Person", name: article.author || "Info Pêche" },
       publisher: { "@type": "Organization", name: "Info Pêche" },
       datePublished: article.published_at, dateModified: article.updated_at || article.published_at,
       mainEntityOfPage: window.location.href,
@@ -366,7 +214,6 @@ const BlogArticle = () => {
     return () => { document.title = "Info Pêche"; scriptEl?.remove(); };
   }, [article]);
 
-  // Smooth scroll
   useEffect(() => {
     document.documentElement.style.scrollBehavior = "smooth";
     return () => { document.documentElement.style.scrollBehavior = "auto"; };
@@ -435,6 +282,22 @@ const BlogArticle = () => {
             <div className="container mx-auto px-4 max-w-5xl py-10 md:py-16">
               <div className="grid lg:grid-cols-[1fr_280px] gap-12">
                 <article>
+                  {/* Author bar */}
+                  {authorInfo && (
+                    <div className="flex items-center gap-3 mb-6 text-sm text-muted-foreground">
+                      {authorInfo.photo_url && (
+                        <img src={authorInfo.photo_url} alt={authorInfo.name} className="w-10 h-10 rounded-full object-cover" />
+                      )}
+                      <div>
+                        <p className="font-medium text-foreground">{authorInfo.name}</p>
+                        {authorInfo.description && <p className="text-xs">{authorInfo.description}</p>}
+                      </div>
+                      <span className="text-xs ml-auto">
+                        {new Date(article.published_at).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
+                      </span>
+                    </div>
+                  )}
+
                   {/* Excerpt */}
                   <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="mb-10 pb-8 border-b border-border">
                     <p className="text-xl md:text-2xl leading-relaxed text-foreground/70 font-[Playfair_Display] italic">
@@ -478,10 +341,14 @@ const BlogArticle = () => {
                     </motion.nav>
                   )}
 
-                  {/* Article content */}
-                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="article-body">
-                    {renderContent(getDisplayContent())}
-                  </motion.div>
+                  {/* Article HTML content */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                    className="article-html-content"
+                    dangerouslySetInnerHTML={{ __html: getDisplayHtml() }}
+                  />
 
                   {/* Paywall */}
                   {showPaywall && (
@@ -509,6 +376,34 @@ const BlogArticle = () => {
                     </motion.div>
                   )}
 
+                  {/* Related articles */}
+                  {relatedArticles && relatedArticles.length > 0 && !showPaywall && (
+                    <div className="mt-16 pt-10 border-t border-border">
+                      <h2 className="text-2xl font-bold text-foreground mb-8 font-[Playfair_Display]">Articles similaires</h2>
+                      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {relatedArticles.map(ra => (
+                          <Link key={ra.id} to={`/blog/${ra.slug}`} className="group block">
+                            <div className="bg-card border border-border/50 rounded-xl overflow-hidden hover:shadow-lg transition-all">
+                              <img
+                                src={ra.cover_image || "https://images.unsplash.com/photo-1500375592092-40eb2168fd21?w=400&h=250&fit=crop"}
+                                alt={ra.title}
+                                className="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-500"
+                              />
+                              <div className="p-4">
+                                <p className="text-xs text-muted-foreground mb-1">
+                                  {new Date(ra.published_at).toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}
+                                </p>
+                                <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2 text-sm">
+                                  {ra.title}
+                                </h3>
+                              </div>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Back link */}
                   <div className="mt-14 pt-8 border-t border-border">
                     <Link to="/blog" className="inline-flex items-center text-primary font-medium hover:underline text-sm">
@@ -520,7 +415,6 @@ const BlogArticle = () => {
                 {/* Sidebar */}
                 <aside className="hidden lg:block">
                   <div className="sticky top-28 space-y-6">
-                    {/* Sticky TOC on sidebar */}
                     {toc.length > 0 && !showPaywall && (
                       <nav className="bg-muted/30 border border-border/50 rounded-xl p-5">
                         <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Dans cet article</h3>

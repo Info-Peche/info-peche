@@ -134,6 +134,7 @@ const AdminBlogEditor = () => {
   const [slug, setSlug] = useState("");
   const [excerpt, setExcerpt] = useState("");
   const [category, setCategory] = useState("Technique");
+  const [authorId, setAuthorId] = useState<string | null>(null);
   const [author, setAuthor] = useState("Info Pêche");
   const [isFree, setIsFree] = useState(false);
   const [coverImage, setCoverImage] = useState<string | null>(null);
@@ -143,6 +144,7 @@ const AdminBlogEditor = () => {
   ]);
   const [previewMode, setPreviewMode] = useState(false);
   const [relatedIssueId, setRelatedIssueId] = useState<string | null>(null);
+  const [publishedAt, setPublishedAt] = useState<Date>(new Date());
 
   // TOC
   const [tocEntries, setTocEntries] = useState<TocEntry[]>([]);

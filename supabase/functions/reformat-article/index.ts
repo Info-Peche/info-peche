@@ -36,6 +36,11 @@ Tu dois reformater ce texte en article de blog avec une mise en page parfaite en
 - Pour les passages importants ou conseils pratiques, utilise le format encadré : :::tip Texte du conseil :::
 - Pour les mises en garde, utilise : :::warning Texte de la mise en garde :::
 - CONSERVE les références d'images entre parenthèses telles quelles, ne les supprime pas : (IMG_xxx), (_BGNxxx), (nom-image.jpg), etc.
+- IMPORTANT : Quand tu trouves un bloc "Le conseil du prof" ou "Conseil du prof" suivi d'un titre et d'un texte, formate-le ainsi :
+  :::conseil TITRE DU CONSEIL
+  Texte du conseil...
+  (REF_IMAGE) Légende de l'image
+  :::
 - Supprime tout contenu publicitaire, références de produits commerciaux hors-sujet, numéros de page, URLs du magazine
 - Garde le ton éditorial original et ne rajoute PAS d'information inventée
 - Retourne UNIQUEMENT le texte reformaté en Markdown, sans commentaire ni explication.`;

@@ -37,6 +37,7 @@ type BlogArticle = {
   published_at: string | null;
   paywall_preview_length: number | null;
   related_issue_id: string | null;
+  key_points: string[] | null;
 };
 
 // "import" = paste raw text + image URL map, "editor" = TipTap WYSIWYG
@@ -211,6 +212,7 @@ const AdminBlogEditor = () => {
   const [previewMode, setPreviewMode] = useState(false);
   const [relatedIssueId, setRelatedIssueId] = useState<string | null>(null);
   const [publishedAt, setPublishedAt] = useState<Date>(new Date());
+  const [keyPoints, setKeyPoints] = useState<string[]>([]);
 
   // Import step state
   const [rawText, setRawText] = useState("");
@@ -264,7 +266,7 @@ const AdminBlogEditor = () => {
     setTitle(""); setSlug(""); setExcerpt(""); setCategory("Technique"); setAuthor("Info Pêche");
     setIsFree(false); setCoverImage(null); setHtmlContent(""); setRawText("");
     setRelatedIssueId(null); setPreviewMode(false);
-    setAuthorId(null); setPublishedAt(new Date());
+    setAuthorId(null); setPublishedAt(new Date()); setKeyPoints([]);
     setImageRefMap({}); setEditStep("import");
   };
 
@@ -279,6 +281,7 @@ const AdminBlogEditor = () => {
       if (matchedAuthor) setAuthorId(matchedAuthor.id); else setAuthorId(null);
       setHtmlContent(convertLegacyToHtml(article.content));
       setRelatedIssueId(article.related_issue_id);
+      setKeyPoints(article.key_points || []);
       setRawText("");
       setImageRefMap({});
       // Existing article → go straight to editor
@@ -380,6 +383,7 @@ const AdminBlogEditor = () => {
       content: htmlContent, cover_image: coverImage, category,
       author: authorName, is_free: isFree, related_issue_id: relatedIssueId,
       published_at: publishedAt.toISOString(),
+      key_points: keyPoints.filter(p => p.trim()),
     };
     let error;
     if (editingArticle) {

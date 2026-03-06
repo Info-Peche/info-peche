@@ -80,7 +80,14 @@ const BlogArticle = () => {
         .replace(/\*\*(.*?)\*\*/g, "<strong class='text-foreground font-semibold'>$1</strong>")
         .replace(/\*(.*?)\*/g, "<em>$1</em>");
 
-    return cleanText.split("\n\n").map((paragraph, i) => {
+    // Pre-process: protect :::conseil blocks by replacing inner \n\n with a placeholder
+    const protectedText = cleanText.replace(/:::conseil\s+[\s\S]*?:::/g, (match) => 
+      match.replace(/\n\n/g, "\n%%KEEP%%\n")
+    );
+
+    return protectedText.split("\n\n").map((rawParagraph, i) => {
+      // Restore protected newlines
+      const paragraph = rawParagraph.replace(/\n%%KEEP%%\n/g, "\n\n");
       const trimmed = paragraph.trim();
       if (!trimmed) return null;
 

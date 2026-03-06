@@ -378,18 +378,29 @@ const AdminBlogEditor = () => {
     }
     setSaving(true);
     
-    // Replace image refs with uploaded URLs or remove them
+    // Replace image refs with uploaded URLs and extract captions
     let processedBlocks = contentBlocks.map(block => {
       if (block.type !== "text") return block;
       let text = block.content;
       for (const [refName, url] of Object.entries(imageRefMap)) {
-        // Replace (refName) with an image block marker
-        text = text.replace(new RegExp(`\\(${refName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\)`, 'g'), `\n\n[IMAGE](${url}){caption:}\n\n`);
+        // Extract caption: text after (refName) until next line break or next (ref)
+        const escapedRef = refName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const captionRegex = new RegExp(`\\(${escapedRef}\\)\\s*([^\\n(]*)`, 'g');
+        text = text.replace(captionRegex, (_, captionRaw) => {
+          const caption = captionRaw?.trim() || "";
+          return `\n\n[IMAGE](${url}){caption:${caption}}\n\n`;
+        });
       }
-      // Remove unmapped refs
+      // Remove unmapped refs (and their trailing caption text)
       for (const ref of unmapped) {
-        text = text.replace(new RegExp(`\\(${ref.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\)`, 'g'), '');
+        const escapedRef = ref.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        text = text.replace(new RegExp(`\\(${escapedRef}\\)\\s*[^\\n(]*`, 'g'), '');
       }
+      // Convert inline numbered lists: "1. xxx 2. xxx 3. xxx" on a single line
+      text = text.replace(/^(\d+\.\s+.+?)(?=\s+\d+\.\s)/gm, (match) => match);
+      // Split "1. text 2. text 3. text" into separate lines
+      text = text.replace(/(\d+)\.\s+/g, '\n$1. ');
+      text = text.replace(/^\n/, ''); // remove leading newline from first item
       return { ...block, content: text };
     });
     

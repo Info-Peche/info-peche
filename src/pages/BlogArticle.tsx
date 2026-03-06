@@ -73,28 +73,62 @@ const BlogArticle = () => {
   const renderContent = (text: string) => {
     const cleanText = stripToc(text);
     let firstTextRendered = false;
+    let imageCounter = 0;
+
+    const formatInlineHtml = (str: string) =>
+      str
+        .replace(/\*\*(.*?)\*\*/g, "<strong class='text-foreground font-semibold'>$1</strong>")
+        .replace(/\*(.*?)\*/g, "<em>$1</em>");
 
     return cleanText.split("\n\n").map((paragraph, i) => {
       const trimmed = paragraph.trim();
       if (!trimmed) return null;
 
-      // Image block
+      // Image block with varied layouts
       const imgMatch = trimmed.match(/^\[IMAGE\]\((.*?)\)\{caption:(.*?)\}$/);
       if (imgMatch) {
+        imageCounter++;
+        const layout = imageCounter % 3; // 0=full, 1=float-left, 2=float-right
+        const caption = imgMatch[2]?.trim();
+
+        if (layout === 1) {
+          return (
+            <figure key={i} className="md:float-left md:w-[45%] md:mr-8 md:mb-4 my-8 md:my-2">
+              <div className="overflow-hidden rounded-xl shadow-md">
+                <img src={imgMatch[1]} alt={caption || ""} className="w-full object-cover" loading="lazy" />
+              </div>
+              {caption && (
+                <figcaption className="mt-2 text-xs text-muted-foreground italic text-center">
+                  {caption}
+                </figcaption>
+              )}
+            </figure>
+          );
+        }
+        if (layout === 2) {
+          return (
+            <figure key={i} className="md:float-right md:w-[45%] md:ml-8 md:mb-4 my-8 md:my-2">
+              <div className="overflow-hidden rounded-xl shadow-md">
+                <img src={imgMatch[1]} alt={caption || ""} className="w-full object-cover" loading="lazy" />
+              </div>
+              {caption && (
+                <figcaption className="mt-2 text-xs text-muted-foreground italic text-center">
+                  {caption}
+                </figcaption>
+              )}
+            </figure>
+          );
+        }
+        // Full width (layout === 0)
         return (
-          <figure key={i} className="my-10 md:my-14">
+          <figure key={i} className="my-10 md:my-14 clear-both">
             <div className="overflow-hidden rounded-xl shadow-md">
-              <img
-                src={imgMatch[1]}
-                alt={imgMatch[2] || ""}
-                className="w-full max-h-[500px] object-cover"
-                loading="lazy"
-              />
+              <img src={imgMatch[1]} alt={caption || ""} className="w-full max-h-[500px] object-cover" loading="lazy" />
             </div>
-            {imgMatch[2] && (
+            {caption && (
               <figcaption className="mt-3 text-sm text-muted-foreground italic text-center flex items-center justify-center gap-2">
                 <span className="w-8 h-px bg-primary/40 inline-block" />
-                {imgMatch[2]}
+                {caption}
                 <span className="w-8 h-px bg-primary/40 inline-block" />
               </figcaption>
             )}
@@ -107,7 +141,7 @@ const BlogArticle = () => {
         const headingText = trimmed.replace("## ", "");
         const anchor = generateAnchor(headingText);
         return (
-          <h2 key={i} id={anchor} className="text-2xl md:text-3xl font-bold text-foreground mt-14 mb-6 font-[Playfair_Display] border-l-4 border-primary pl-5 scroll-mt-24">
+          <h2 key={i} id={anchor} className="text-2xl md:text-3xl font-bold text-foreground mt-14 mb-6 font-[Playfair_Display] border-l-4 border-primary pl-5 scroll-mt-24 clear-both">
             {headingText}
           </h2>
         );
@@ -118,10 +152,44 @@ const BlogArticle = () => {
         const headingText = trimmed.replace("### ", "");
         const anchor = generateAnchor(headingText);
         return (
-          <h3 key={i} id={anchor} className="text-xl md:text-2xl font-bold text-foreground mt-10 mb-4 font-[Playfair_Display] scroll-mt-24">
+          <h3 key={i} id={anchor} className="text-xl md:text-2xl font-bold text-foreground mt-10 mb-4 font-[Playfair_Display] scroll-mt-24 clear-both">
             {headingText}
           </h3>
         );
+      }
+
+      // Numbered list (lines starting with "1. ", "2. ", etc.)
+      if (/^\d+\.\s/.test(trimmed)) {
+        const items = trimmed.split("\n").filter(l => /^\d+\.\s/.test(l.trim()));
+        if (items.length > 0) {
+          return (
+            <ol key={i} className="my-6 space-y-4 pl-0 list-none">
+              {items.map((item, j) => {
+                const text = item.replace(/^\d+\.\s*/, "");
+                // Split on first period to get title + description
+                const dotIndex = text.indexOf(".");
+                const hasTitle = dotIndex > 0 && dotIndex < 40;
+                return (
+                  <li key={j} className="flex gap-4 items-start bg-muted/30 rounded-xl p-4 border border-border/40">
+                    <span className="flex-shrink-0 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm">
+                      {j + 1}
+                    </span>
+                    <div className="flex-1">
+                      {hasTitle ? (
+                        <>
+                          <span className="font-semibold text-foreground" dangerouslySetInnerHTML={{ __html: formatInlineHtml(text.substring(0, dotIndex + 1)) }} />
+                          <span className="text-foreground/85" dangerouslySetInnerHTML={{ __html: " " + formatInlineHtml(text.substring(dotIndex + 1).trim()) }} />
+                        </>
+                      ) : (
+                        <span dangerouslySetInnerHTML={{ __html: formatInlineHtml(text) }} />
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
+          );
+        }
       }
 
       // Bullet list
@@ -132,23 +200,41 @@ const BlogArticle = () => {
             {items.map((item, j) => (
               <li key={j} className="flex gap-3 items-start">
                 <span className="mt-2 w-2 h-2 rounded-full bg-primary flex-shrink-0" />
-                <span dangerouslySetInnerHTML={{
-                  __html: item.replace(/^- /, "")
-                    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-                    .replace(/\*(.*?)\*/g, "<em>$1</em>")
-                }} />
+                <span dangerouslySetInnerHTML={{ __html: formatInlineHtml(item.replace(/^- /, "")) }} />
               </li>
             ))}
           </ul>
         );
       }
 
-      // Pull-quote
+      // Pull-quote / blockquote
       if (trimmed.startsWith("> ")) {
         return (
-          <blockquote key={i} className="my-10 py-6 px-8 border-l-4 border-primary bg-primary/5 rounded-r-xl text-lg italic text-foreground/80 font-[Playfair_Display]">
+          <blockquote key={i} className="my-10 py-6 px-8 border-l-4 border-primary bg-primary/5 rounded-r-xl text-lg italic text-foreground/80 font-[Playfair_Display] clear-both">
             {trimmed.replace(/^> /gm, "")}
           </blockquote>
+        );
+      }
+
+      // Callout block (:::info ... :::)
+      if (trimmed.startsWith(":::")) {
+        const typeMatch = trimmed.match(/^:::(info|tip|warning|note)\s*/);
+        const type = typeMatch?.[1] || "info";
+        const body = trimmed.replace(/^:::\w*\s*/, "").replace(/\s*:::$/, "");
+        const colors: Record<string, string> = {
+          info: "bg-blue-50 border-blue-400 text-blue-900 dark:bg-blue-950/30 dark:text-blue-200 dark:border-blue-600",
+          tip: "bg-emerald-50 border-emerald-400 text-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200 dark:border-emerald-600",
+          warning: "bg-amber-50 border-amber-400 text-amber-900 dark:bg-amber-950/30 dark:text-amber-200 dark:border-amber-600",
+          note: "bg-muted border-border text-foreground",
+        };
+        const icons: Record<string, string> = { info: "💡", tip: "✅", warning: "⚠️", note: "📌" };
+        return (
+          <div key={i} className={`my-8 p-5 rounded-xl border-l-4 ${colors[type]} clear-both`}>
+            <p className="font-medium text-sm">
+              <span className="mr-2">{icons[type]}</span>
+              <span dangerouslySetInnerHTML={{ __html: formatInlineHtml(body) }} />
+            </p>
+          </div>
         );
       }
 
@@ -158,15 +244,11 @@ const BlogArticle = () => {
         const firstLetter = trimmed[0];
         const rest = trimmed.slice(1);
         return (
-          <p key={i} className="my-6 text-lg leading-[1.9] text-foreground/85">
+          <p key={i} className="my-6 text-lg leading-[1.9] text-foreground/85 clear-both">
             <span className="float-left text-6xl font-bold font-[Playfair_Display] text-primary leading-[0.8] mr-3 mt-1">
               {firstLetter}
             </span>
-            <span dangerouslySetInnerHTML={{
-              __html: rest
-                .replace(/\*\*(.*?)\*\*/g, "<strong class='text-foreground font-semibold'>$1</strong>")
-                .replace(/\*(.*?)\*/g, "<em>$1</em>")
-            }} />
+            <span dangerouslySetInnerHTML={{ __html: formatInlineHtml(rest) }} />
           </p>
         );
       }
@@ -175,9 +257,7 @@ const BlogArticle = () => {
 
       return (
         <p key={i} className="my-5 text-[1.08rem] leading-[1.9] text-foreground/85" dangerouslySetInnerHTML={{
-          __html: trimmed
-            .replace(/\*\*(.*?)\*\*/g, "<strong class='text-foreground font-semibold'>$1</strong>")
-            .replace(/\*(.*?)\*/g, "<em>$1</em>")
+          __html: formatInlineHtml(trimmed)
         }} />
       );
     });

@@ -1,5 +1,5 @@
 import { useCallback, useRef } from "react";
-import { useEditor, EditorContent, BubbleMenu } from "@tiptap/react";
+import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
 import Youtube from "@tiptap/extension-youtube";

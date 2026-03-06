@@ -65,6 +65,33 @@ export type Database = {
         }
         Relationships: []
       }
+      blog_authors: {
+        Row: {
+          created_at: string
+          description: string | null
+          external_url: string | null
+          id: string
+          name: string
+          photo_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          external_url?: string | null
+          id?: string
+          name: string
+          photo_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          external_url?: string | null
+          id?: string
+          name?: string
+          photo_url?: string | null
+        }
+        Relationships: []
+      }
       digital_access: {
         Row: {
           access_type: string

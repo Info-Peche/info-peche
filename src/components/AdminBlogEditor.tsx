@@ -68,7 +68,7 @@ const convertRawToHtml = (rawText: string, imageMap: Record<string, string>): st
   for (const [refName, url] of Object.entries(imageMap)) {
     const escapedRef = refName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     // Match (refName) optionally followed by caption text on the same line
-    const captionRegex = new RegExp(`\\(${escapedRef}\\)\\s*([^\\n(]*)`, 'g');
+    const captionRegex = new RegExp(`\\(${escapedRef}\\)\\s*([^\\n]*)`, 'g');
     text = text.replace(captionRegex, (_, captionRaw) => {
       const caption = captionRaw?.trim() || "";
       return `\n\n<figure><img src="${url}" alt="${caption}" />${caption ? `<figcaption>${caption}</figcaption>` : ""}</figure>\n\n`;
@@ -126,7 +126,7 @@ const convertRawToHtml = (rawText: string, imageMap: Record<string, string>): st
     }
 
     // Numbered list
-    const numMatch = t.match(/^(\d+)\.\s(.+)/);
+    const numMatch = t.match(/^(\d+)[.)]\s*(.+)/);
     if (numMatch) {
       if (!inList || listType !== "ol") { if (inList) html += listType === "ul" ? "</ul>" : "</ol>"; html += "<ol>"; inList = true; listType = "ol"; }
       html += `<li>${formatInline(numMatch[2])}</li>`; continue;
@@ -179,7 +179,7 @@ const convertLegacyToHtml = (content: string): string => {
       if (!inList || listType !== "ul") { if (inList) html += listType === "ul" ? "</ul>" : "</ol>"; html += "<ul>"; inList = true; listType = "ul"; }
       html += `<li>${formatInline(t.slice(2))}</li>`; continue;
     }
-    const numM = t.match(/^(\d+)\.\s(.+)/);
+    const numM = t.match(/^(\d+)[.)]\s*(.+)/);
     if (numM) {
       if (!inList || listType !== "ol") { if (inList) html += listType === "ul" ? "</ul>" : "</ol>"; html += "<ol>"; inList = true; listType = "ol"; }
       html += `<li>${formatInline(numM[2])}</li>`; continue;

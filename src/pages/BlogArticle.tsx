@@ -43,6 +43,30 @@ const injectAnchors = (html: string): string => {
   });
 };
 
+// Post-process HTML: convert img with data-caption/data-layout into figure/figcaption
+const postProcessImages = (html: string): string => {
+  // Split by existing <figure> blocks to avoid double-wrapping
+  const parts = html.split(/(<figure[\s\S]*?<\/figure>)/g);
+  return parts.map(part => {
+    if (part.startsWith('<figure')) return part;
+    return part.replace(
+      /<img([^>]*?)\/?\s*>/g,
+      (match, attrs) => {
+        const captionMatch = attrs.match(/data-caption="([^"]*)"/);
+        const layoutMatch = attrs.match(/data-layout="([^"]*)"/);
+        const caption = captionMatch?.[1];
+        const layout = layoutMatch?.[1];
+        if (!caption && (!layout || layout === 'center')) return match;
+        const layoutClass = layout && layout !== 'center' ? ` class="image-${layout}"` : '';
+        if (caption) {
+          return `<figure${layoutClass}><img${attrs} /><figcaption>${caption}</figcaption></figure>`;
+        }
+        return `<figure${layoutClass}><img${attrs} /></figure>`;
+      }
+    );
+  }).join('');
+};
+
 // Legacy markdown → HTML converter for old articles
 const convertLegacyToHtml = (content: string): string => {
   if (content.trim().startsWith("<") && (content.includes("</p>") || content.includes("</h2>"))) {
@@ -90,7 +114,7 @@ const convertLegacyToHtml = (content: string): string => {
       if (!inList || listType !== "ul") { if (inList) html += listType === "ul" ? "</ul>" : "</ol>"; html += "<ul>"; inList = true; listType = "ul"; }
       html += `<li>${fmtInline(t.slice(2))}</li>`; continue;
     }
-    const numM = t.match(/^(\d+)\.\s(.+)/);
+    const numM = t.match(/^(\d+)[.)]\s*(.+)/);
     if (numM) {
       if (!inList || listType !== "ol") { if (inList) html += listType === "ul" ? "</ul>" : "</ol>"; html += "<ol>"; inList = true; listType = "ol"; }
       html += `<li>${fmtInline(numM[2])}</li>`; continue;
@@ -162,7 +186,8 @@ const BlogArticle = () => {
   // Get HTML content (with legacy conversion)
   const articleHtml = useMemo(() => {
     if (!article) return "";
-    return convertLegacyToHtml(article.content);
+    let html = convertLegacyToHtml(article.content);
+    return postProcessImages(html);
   }, [article]);
 
   const toc = useMemo(() => extractTocFromHtml(articleHtml), [articleHtml]);
@@ -321,10 +346,16 @@ const BlogArticle = () => {
                   )}
 
                   {/* Excerpt / Chapeau */}
-                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }} className="mb-10 pb-8 border-b border-border">
-                    <p className="text-xl md:text-2xl leading-relaxed text-foreground/70 font-[Playfair_Display] italic">
-                      {article.excerpt}
-                    </p>
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }} className="mb-12">
+                    <div className="flex gap-5">
+                      <div className="hidden md:block w-1 bg-gradient-to-b from-primary via-primary/40 to-transparent rounded-full flex-shrink-0" />
+                      <div>
+                        <span className="inline-block text-[0.65rem] font-bold uppercase tracking-[0.25em] text-primary/70 mb-3 border border-primary/20 rounded-full px-3 py-0.5">Introduction</span>
+                        <p className="text-lg md:text-[1.25rem] leading-[1.9] text-foreground/80 font-[Playfair_Display]">
+                          {article.excerpt}
+                        </p>
+                      </div>
+                    </div>
                   </motion.div>
 
                   {/* Mini-sommaire */}

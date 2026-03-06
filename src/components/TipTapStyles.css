@@ -427,3 +427,68 @@
   margin-right: 0.5rem;
   margin-top: 0.15rem;
 }
+
+/* ===== Editor: Image Layouts ===== */
+
+.tiptap-editor-content img[data-layout="float-left"] {
+  float: left;
+  margin: 0.5rem 1.5rem 1rem 0;
+}
+
+.tiptap-editor-content img[data-layout="float-right"] {
+  float: right;
+  margin: 0.5rem 0 1rem 1.5rem;
+}
+
+.tiptap-editor-content img[data-layout="full"] {
+  width: 100% !important;
+}
+
+/* Show caption hint in editor */
+.tiptap-editor-content img[data-caption]:not([data-caption=""])::after {
+  content: attr(data-caption);
+}
+
+/* ===== Article: Figures & Captions ===== */
+
+.article-html-content figure {
+  margin: 2rem 0;
+  text-align: center;
+  clear: none;
+}
+
+.article-html-content figure img {
+  margin: 0 auto;
+  display: block;
+}
+
+.article-html-content figcaption {
+  font-size: 0.85rem;
+  color: hsl(var(--muted-foreground));
+  font-style: italic;
+  margin-top: 0.75rem;
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* Article: Image float layouts */
+.article-html-content figure.image-float-left {
+  float: left;
+  margin: 0.5rem 1.5rem 1rem 0;
+  max-width: 50%;
+}
+
+.article-html-content figure.image-float-right {
+  float: right;
+  margin: 0.5rem 0 1rem 1.5rem;
+  max-width: 50%;
+}
+
+.article-html-content figure.image-full {
+  width: 100%;
+}
+
+.article-html-content figure.image-full img {
+  width: 100%;
+  border-radius: 0.75rem;
+}

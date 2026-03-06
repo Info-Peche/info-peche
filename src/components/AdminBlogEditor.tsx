@@ -226,6 +226,14 @@ const AdminBlogEditor = () => {
     if (url) setCoverImage(url);
     setUploadingCover(false);
   };
+  const handleRefImageUpload = async (refName: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingRef(refName);
+    const url = await uploadImage(file, "article");
+    if (url) setImageRefMap(prev => ({ ...prev, [refName]: url }));
+    setUploadingRef(null);
+  };
 
   const addImageBlock = async (e: React.ChangeEvent<HTMLInputElement>, afterIndex: number) => {
     const files = e.target.files;

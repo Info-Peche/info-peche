@@ -432,7 +432,9 @@ const TipTapEditor = ({ content, onChange, placeholder }: TipTapEditorProps) => 
         </div>
       )}
 
-      <EditorContent editor={editor} />
+      <div className="border border-t-0 border-border rounded-b-lg">
+        <EditorContent editor={editor} />
+      </div>
 
       <input
         ref={fileInputRef}

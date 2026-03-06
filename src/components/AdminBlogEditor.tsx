@@ -141,6 +141,21 @@ const AdminBlogEditor = () => {
   const [tocEntries, setTocEntries] = useState<TocEntry[]>([]);
   const [includeToc, setIncludeToc] = useState(true);
 
+  // Image references mapping: filename -> uploaded URL
+  const [imageRefMap, setImageRefMap] = useState<Record<string, string>>({});
+  const [uploadingRef, setUploadingRef] = useState<string | null>(null);
+
+  // Detect image references like (nom_image.jpg) in text blocks
+  const detectedImageRefs = (() => {
+    const refs = new Set<string>();
+    for (const block of contentBlocks) {
+      if (block.type !== "text") continue;
+      const matches = block.content.matchAll(/\(([^)]+\.(?:jpg|jpeg|png|gif|webp|avif))\)/gi);
+      for (const m of matches) refs.add(m[1]);
+    }
+    return Array.from(refs);
+  })();
+
   // Auto-update TOC when content blocks change
   useEffect(() => {
     const entries = extractTocFromBlocks(contentBlocks);
@@ -169,6 +184,7 @@ const AdminBlogEditor = () => {
     setTitle(""); setSlug(""); setExcerpt(""); setCategory("Technique"); setAuthor("Info Pêche");
     setIsFree(false); setCoverImage(null); setContentBlocks([{ id: generateId(), type: "text", content: "" }]);
     setRelatedIssueId(null); setPreviewMode(false); setTocEntries([]); setIncludeToc(true);
+    setImageRefMap({});
   };
 
   const openEditor = (article?: BlogArticle) => {
@@ -209,6 +225,14 @@ const AdminBlogEditor = () => {
     const url = await uploadImage(file, "cover");
     if (url) setCoverImage(url);
     setUploadingCover(false);
+  };
+  const handleRefImageUpload = async (refName: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingRef(refName);
+    const url = await uploadImage(file, "article");
+    if (url) setImageRefMap(prev => ({ ...prev, [refName]: url }));
+    setUploadingRef(null);
   };
 
   const addImageBlock = async (e: React.ChangeEvent<HTMLInputElement>, afterIndex: number) => {
@@ -265,8 +289,30 @@ const AdminBlogEditor = () => {
 
   const handleSave = async () => {
     if (!title.trim() || !slug.trim() || !excerpt.trim()) { toast.error("Titre, slug et chapeau sont obligatoires"); return; }
+    // Check unmapped image refs
+    const unmapped = detectedImageRefs.filter(r => !imageRefMap[r]);
+    if (unmapped.length > 0) {
+      const proceed = confirm(`${unmapped.length} image(s) non importée(s) : ${unmapped.join(", ")}. Les références seront supprimées. Continuer ?`);
+      if (!proceed) return;
+    }
     setSaving(true);
-    let content = blocksToContent(contentBlocks);
+    
+    // Replace image refs with uploaded URLs or remove them
+    let processedBlocks = contentBlocks.map(block => {
+      if (block.type !== "text") return block;
+      let text = block.content;
+      for (const [refName, url] of Object.entries(imageRefMap)) {
+        // Replace (refName) with an image block marker
+        text = text.replace(new RegExp(`\\(${refName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\)`, 'g'), `\n\n[IMAGE](${url}){caption:}\n\n`);
+      }
+      // Remove unmapped refs
+      for (const ref of unmapped) {
+        text = text.replace(new RegExp(`\\(${ref.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\)`, 'g'), '');
+      }
+      return { ...block, content: text };
+    });
+    
+    let content = blocksToContent(processedBlocks);
     
     // Prepend TOC if enabled
     if (includeToc && tocEntries.length > 0) {
@@ -540,6 +586,60 @@ const AdminBlogEditor = () => {
               </CardContent>
             </Card>
 
+            {/* Image References Panel */}
+            {detectedImageRefs.length > 0 && (
+              <Card className="border-amber-500/50 bg-amber-50/30 dark:bg-amber-950/10">
+                <CardHeader>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <ImagePlus className="w-4 h-4 text-amber-600" /> Images détectées dans le texte
+                    <Badge variant="outline" className="ml-auto text-amber-700 border-amber-300">
+                      {detectedImageRefs.filter(r => imageRefMap[r]).length}/{detectedImageRefs.length}
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <p className="text-xs text-muted-foreground">
+                    Les références <code className="bg-muted px-1 rounded">(nom_image.jpg)</code> trouvées dans votre texte sont listées ci-dessous. Importez chaque image correspondante.
+                  </p>
+                  {detectedImageRefs.map(refName => (
+                    <div key={refName} className="flex items-center gap-3 p-3 bg-background rounded-lg border border-border">
+                      <div className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-muted flex items-center justify-center">
+                        {imageRefMap[refName] ? (
+                          <img src={imageRefMap[refName]} alt={refName} className="w-full h-full object-cover" />
+                        ) : (
+                          <ImageIcon className="w-6 h-6 text-muted-foreground" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-mono font-medium truncate">{refName}</p>
+                        {imageRefMap[refName] ? (
+                          <p className="text-xs text-green-600 flex items-center gap-1">✅ Importée</p>
+                        ) : (
+                          <p className="text-xs text-amber-600">En attente d'import</p>
+                        )}
+                      </div>
+                      <div className="flex gap-2 flex-shrink-0">
+                        {imageRefMap[refName] ? (
+                          <Button variant="ghost" size="sm" className="h-8 text-destructive" onClick={() => setImageRefMap(prev => { const copy = { ...prev }; delete copy[refName]; return copy; })}>
+                            <X className="w-4 h-4" />
+                          </Button>
+                        ) : null}
+                        <label>
+                          <Button variant={imageRefMap[refName] ? "outline" : "default"} size="sm" className="h-8 text-xs gap-1" asChild disabled={uploadingRef === refName}>
+                            <span>
+                              {uploadingRef === refName ? <Loader2 className="w-3 h-3 animate-spin" /> : <UploadCloud className="w-3 h-3" />}
+                              {imageRefMap[refName] ? "Remplacer" : "Importer"}
+                            </span>
+                          </Button>
+                          <input type="file" accept="image/*" className="hidden" onChange={e => handleRefImageUpload(refName, e)} />
+                        </label>
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
             {/* TOC Editor */}
             <Card>
               <CardHeader>
@@ -624,7 +724,7 @@ const AdminBlogEditor = () => {
                   <li>Chargez l'image cover</li>
                   <li>Collez l'intro</li>
                   <li>Collez le texte brut du corps</li>
-                  <li>Insérez les photos entre les blocs</li>
+                  <li>Importez les images référencées <code className="bg-muted px-1 rounded">(photo.jpg)</code></li>
                 </ol>
                 <div className="border-t border-border pt-2 mt-3">
                   <p><strong>Mise en forme :</strong></p>

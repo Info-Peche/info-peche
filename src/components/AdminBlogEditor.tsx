@@ -586,6 +586,60 @@ const AdminBlogEditor = () => {
               </CardContent>
             </Card>
 
+            {/* Image References Panel */}
+            {detectedImageRefs.length > 0 && (
+              <Card className="border-amber-500/50 bg-amber-50/30 dark:bg-amber-950/10">
+                <CardHeader>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <ImagePlus className="w-4 h-4 text-amber-600" /> Images détectées dans le texte
+                    <Badge variant="outline" className="ml-auto text-amber-700 border-amber-300">
+                      {detectedImageRefs.filter(r => imageRefMap[r]).length}/{detectedImageRefs.length}
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <p className="text-xs text-muted-foreground">
+                    Les références <code className="bg-muted px-1 rounded">(nom_image.jpg)</code> trouvées dans votre texte sont listées ci-dessous. Importez chaque image correspondante.
+                  </p>
+                  {detectedImageRefs.map(refName => (
+                    <div key={refName} className="flex items-center gap-3 p-3 bg-background rounded-lg border border-border">
+                      <div className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-muted flex items-center justify-center">
+                        {imageRefMap[refName] ? (
+                          <img src={imageRefMap[refName]} alt={refName} className="w-full h-full object-cover" />
+                        ) : (
+                          <ImageIcon className="w-6 h-6 text-muted-foreground" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-mono font-medium truncate">{refName}</p>
+                        {imageRefMap[refName] ? (
+                          <p className="text-xs text-green-600 flex items-center gap-1">✅ Importée</p>
+                        ) : (
+                          <p className="text-xs text-amber-600">En attente d'import</p>
+                        )}
+                      </div>
+                      <div className="flex gap-2 flex-shrink-0">
+                        {imageRefMap[refName] ? (
+                          <Button variant="ghost" size="sm" className="h-8 text-destructive" onClick={() => setImageRefMap(prev => { const copy = { ...prev }; delete copy[refName]; return copy; })}>
+                            <X className="w-4 h-4" />
+                          </Button>
+                        ) : null}
+                        <label>
+                          <Button variant={imageRefMap[refName] ? "outline" : "default"} size="sm" className="h-8 text-xs gap-1" asChild disabled={uploadingRef === refName}>
+                            <span>
+                              {uploadingRef === refName ? <Loader2 className="w-3 h-3 animate-spin" /> : <UploadCloud className="w-3 h-3" />}
+                              {imageRefMap[refName] ? "Remplacer" : "Importer"}
+                            </span>
+                          </Button>
+                          <input type="file" accept="image/*" className="hidden" onChange={e => handleRefImageUpload(refName, e)} />
+                        </label>
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
             {/* TOC Editor */}
             <Card>
               <CardHeader>

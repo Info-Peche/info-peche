@@ -1,1 +1,4 @@
 project_id = "fokaikipfikcokjwyeka"
+
+[functions.generate-alt-text]
+verify_jwt = false

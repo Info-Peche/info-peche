@@ -463,12 +463,14 @@
 }
 
 .article-html-content figcaption {
-  font-size: 0.85rem;
-  color: hsl(var(--muted-foreground));
+  font-size: 0.8rem;
+  color: hsl(var(--muted-foreground) / 0.7);
   font-style: italic;
-  margin-top: 0.75rem;
+  margin-top: 0.5rem;
   text-align: center;
-  line-height: 1.5;
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+  padding: 0 1rem;
 }
 
 /* Article: Image float layouts */

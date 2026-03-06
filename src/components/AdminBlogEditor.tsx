@@ -384,6 +384,49 @@ const AdminBlogEditor = () => {
     }
   };
 
+  // Generate alt texts for images via AI (multimodal)
+  const generateAltTexts = async (html: string): Promise<string> => {
+    // Extract all <img> with their src and data-caption
+    const imgRegex = /<img([^>]*?)\/?\s*>/g;
+    const images: { url: string; caption?: string; fullMatch: string }[] = [];
+    let m;
+    while ((m = imgRegex.exec(html)) !== null) {
+      const attrs = m[1];
+      const srcMatch = attrs.match(/src="([^"]*)"/);
+      const captionMatch = attrs.match(/data-caption="([^"]*)"/);
+      if (srcMatch?.[1]) {
+        images.push({
+          url: srcMatch[1],
+          caption: captionMatch?.[1] || undefined,
+          fullMatch: m[0],
+        });
+      }
+    }
+    if (images.length === 0) return html;
+
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-alt-text", {
+        body: { images: images.map(i => ({ url: i.url, caption: i.caption })) },
+      });
+      if (error || !data?.alt_texts) return html;
+
+      let result = html;
+      images.forEach((img, idx) => {
+        const altText = data.alt_texts[idx];
+        if (!altText) return;
+        const safeAlt = escapeHtmlAttr(altText);
+        // Replace existing alt attribute
+        const updated = img.fullMatch.replace(/alt="[^"]*"/, `alt="${safeAlt}"`);
+        result = result.replace(img.fullMatch, updated);
+      });
+      toast.success(`Alt text généré pour ${images.length} image(s)`);
+      return result;
+    } catch (e) {
+      console.error("Alt text generation error:", e);
+      return html;
+    }
+  };
+
   // Transition from import → editor: convert raw text + images to HTML
   const proceedToEditor = async () => {
     const unmapped = detectedImageRefs.filter(r => !imageRefMap[r]);
@@ -391,12 +434,18 @@ const AdminBlogEditor = () => {
       const proceed = confirm(`${unmapped.length} image(s) non importée(s) : ${unmapped.join(", ")}. Les références seront supprimées. Continuer ?`);
       if (!proceed) return;
     }
-    const html = convertRawToHtml(rawText, imageRefMap);
+    let html = convertRawToHtml(rawText, imageRefMap);
     setHtmlContent(html);
     setEditStep("editor");
-    toast.success("Contenu importé ! Génération des points clés en cours…");
-    // Generate key points in background
+    toast.success("Contenu importé ! Génération en cours…");
+    
+    // Generate key points and alt texts in parallel
     generateKeyPoints(rawText);
+    generateAltTexts(html).then(updatedHtml => {
+      if (updatedHtml !== html) {
+        setHtmlContent(updatedHtml);
+      }
+    });
   };
 
   const handleSave = async () => {

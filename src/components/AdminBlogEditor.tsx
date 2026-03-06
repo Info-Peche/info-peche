@@ -815,6 +815,24 @@ const AdminBlogEditor = () => {
                   </CardContent>
                 </Card>
 
+                {/* Key Points */}
+                <Card className="border-primary/20 bg-primary/5">
+                  <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      📌 L'essentiel de l'article
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Textarea
+                      value={keyPoints.join("\n")}
+                      onChange={e => setKeyPoints(e.target.value.split("\n"))}
+                      placeholder="Un point clé par ligne..."
+                      rows={4}
+                      className="leading-relaxed"
+                    />
+                  </CardContent>
+                </Card>
+
                 {/* TipTap WYSIWYG Editor */}
                 <Card>
                   <CardHeader>

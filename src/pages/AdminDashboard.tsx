@@ -617,6 +617,10 @@ const AdminDashboard = () => {
             <AdminReviewManager />
           </TabsContent>
 
+          <TabsContent value="authors">
+            <AdminAuthorManager />
+          </TabsContent>
+
           <TabsContent value="orders">
             <div className="flex items-center gap-4 mb-6 flex-wrap">
               <div className="relative flex-1 max-w-md">

@@ -236,22 +236,6 @@ const TipTapEditor = ({ content, onChange, placeholder }: TipTapEditorProps) => 
         </ToolbarButton>
       </div>
 
-      {/* Bubble Menu */}
-      <BubbleMenu editor={editor} tippyOptions={{ duration: 100 }} className="bg-popover border border-border rounded-lg shadow-lg p-1 flex items-center gap-0.5">
-        <ToolbarButton onClick={() => editor.chain().focus().toggleBold().run()} isActive={editor.isActive("bold")} title="Gras">
-          <Bold className="w-3.5 h-3.5" />
-        </ToolbarButton>
-        <ToolbarButton onClick={() => editor.chain().focus().toggleItalic().run()} isActive={editor.isActive("italic")} title="Italique">
-          <Italic className="w-3.5 h-3.5" />
-        </ToolbarButton>
-        <ToolbarButton onClick={() => editor.chain().focus().toggleUnderline().run()} isActive={editor.isActive("underline")} title="Souligné">
-          <UnderlineIcon className="w-3.5 h-3.5" />
-        </ToolbarButton>
-        <ToolbarButton onClick={() => editor.chain().focus().toggleHighlight().run()} isActive={editor.isActive("highlight")} title="Surligné">
-          <Highlighter className="w-3.5 h-3.5" />
-        </ToolbarButton>
-      </BubbleMenu>
-
       {/* Editor content */}
       <EditorContent editor={editor} />
 

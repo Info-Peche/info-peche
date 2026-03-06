@@ -1,12 +1,17 @@
+import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, Lock, Calendar, User } from "lucide-react";
+import { ArrowRight, Lock, Calendar, User, Search, X } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SideCart from "@/components/SideCart";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
+
+const CATEGORIES = ["Tous", "Technique", "Compétition", "Matériel", "Débutant", "Reportage", "Famille"];
 
 const categoryColors: Record<string, string> = {
   Technique: "bg-primary/10 text-primary",
@@ -18,6 +23,9 @@ const categoryColors: Record<string, string> = {
 };
 
 const Blog = () => {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("Tous");
+
   const { data: articles, isLoading } = useQuery({
     queryKey: ["blog-articles"],
     queryFn: async () => {
@@ -30,8 +38,20 @@ const Blog = () => {
     },
   });
 
-  const featured = articles?.[0];
-  const rest = articles?.slice(1);
+  const filtered = useMemo(() => {
+    if (!articles) return [];
+    return articles.filter(a => {
+      const matchesCategory = selectedCategory === "Tous" || a.category === selectedCategory;
+      const matchesSearch = !searchQuery ||
+        a.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        a.excerpt.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (a.author && a.author.toLowerCase().includes(searchQuery.toLowerCase()));
+      return matchesCategory && matchesSearch;
+    });
+  }, [articles, searchQuery, selectedCategory]);
+
+  const featured = filtered?.[0];
+  const rest = filtered?.slice(1);
 
   return (
     <div className="min-h-screen bg-background">
@@ -44,7 +64,7 @@ const Blog = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-12"
+            className="text-center mb-10"
           >
             <span className="text-primary font-semibold text-sm uppercase tracking-widest">Le Blog</span>
             <h1 className="text-4xl md:text-5xl font-bold text-foreground mt-2 mb-4 font-[Playfair_Display]">
@@ -54,6 +74,44 @@ const Blog = () => {
               Techniques, reportages, tests matériel et actualités du monde de la pêche au coup.
             </p>
             <div className="w-16 h-1 bg-primary mx-auto mt-6 rounded-full" />
+          </motion.div>
+
+          {/* Search & Filters */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="mb-10 space-y-4"
+          >
+            <div className="relative max-w-md mx-auto">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Rechercher un article, un thème, un auteur..."
+                className="pl-10 pr-10"
+              />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+            <div className="flex flex-wrap justify-center gap-2">
+              {CATEGORIES.map(cat => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
+                    selectedCategory === cat
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
           </motion.div>
 
           {isLoading ? (
@@ -71,12 +129,11 @@ const Blog = () => {
             </div>
           ) : (
             <>
-              {/* Featured article - hero card */}
               {featured && (
                 <motion.div
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
+                  transition={{ delay: 0.15 }}
                   className="mb-14"
                 >
                   <Link to={`/blog/${featured.slug}`}>
@@ -119,7 +176,6 @@ const Blog = () => {
                 </motion.div>
               )}
 
-              {/* Articles grid */}
               {rest && rest.length > 0 && (
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                   {rest.map((article, index) => (
@@ -172,8 +228,12 @@ const Blog = () => {
                 </div>
               )}
 
-              {(!articles || articles.length === 0) && (
-                <p className="text-center text-muted-foreground py-12">Aucun article pour le moment.</p>
+              {filtered.length === 0 && (
+                <p className="text-center text-muted-foreground py-12">
+                  {searchQuery || selectedCategory !== "Tous"
+                    ? "Aucun article trouvé pour cette recherche."
+                    : "Aucun article pour le moment."}
+                </p>
               )}
             </>
           )}

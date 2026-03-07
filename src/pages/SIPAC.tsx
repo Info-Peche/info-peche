@@ -101,18 +101,25 @@ const SIPAC = () => {
 
       <main className="pt-28 pb-20">
         {/* Hero with official logo */}
-        <section className="relative bg-gradient-to-br from-[hsl(25,100%,40%)]/10 via-accent/5 to-background py-16 md:py-24">
+        {/* Hero banner */}
+        <section className="relative">
+          <picture>
+            <source media="(min-width: 768px)" srcSet="/images/sipac/sipac-banner-desktop.jpg" />
+            <img
+              src="/images/sipac/sipac-banner-mobile.jpg"
+              alt="SIPAC 2026 - 4e Salon International des Pêches au Coup - Mégacité Amiens - 07 & 08 Novembre 2026"
+              className="w-full h-auto"
+            />
+          </picture>
+        </section>
+
+        <section className="relative bg-gradient-to-br from-[hsl(25,100%,40%)]/10 via-accent/5 to-background py-12 md:py-16">
           <div className="container mx-auto px-4">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               className="max-w-4xl mx-auto text-center"
             >
-              <img
-                src="/images/sipac/sipac-logo-official.png"
-                alt="SIPAC - 4e Salon International des Pêches au Coup - Mégacité Amiens - 07 & 08 Novembre 2026"
-                className="w-56 h-56 md:w-72 md:h-72 mx-auto mb-8 object-contain"
-              />
 
               {/* Stats */}
               <div className="flex justify-center gap-6 md:gap-12 mb-8">

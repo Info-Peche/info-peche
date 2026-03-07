@@ -8,18 +8,24 @@ import SideCart from "@/components/SideCart";
 
 const species = [
   { name: "Gardon", latin: "Rutilus rutilus", image: "/images/fish/gardon.jpg" },
-  { name: "Brème commune", latin: "Abramis brama", image: "/images/fish/breme.jpg" },
+  { name: "Brème commune", latin: "Abramis brama", image: "/images/fish/breme.png" },
   { name: "Ide", latin: "Leuciscus idus", image: "/images/fish/ide.jpg" },
   { name: "Carassin commun", latin: "Carassius carassius", image: "/images/fish/carassin.jpg" },
   { name: "Tanche", latin: "Tinca tinca", image: "/images/fish/tanche.jpg" },
-  { name: "Barbeau commun", latin: "Barbus barbus", image: "/images/fish/barbeau.jpg" },
+  { name: "Barbeau commun", latin: "Barbus barbus", image: "/images/fish/barbeau.png" },
   { name: "Chevesne", latin: "Leuciscus cephalus", image: "/images/fish/chevesne.jpg" },
   { name: "Rotengle", latin: "Scardinius erythrophthalmus", image: "/images/fish/rotengle.jpg" },
 ];
 
-const partners = [
-  "Sensas", "Shimano", "Fun Fishing", "Daiwa", "Garbolino", "Champion Feed", "Milo", "Nytro", "Cresta"
+const partnerLogos = [
+  { name: "Sensas", logo: "/images/specimen/logo-sensas.jpeg" },
+  { name: "Daiwa", logo: "/images/specimen/logo-daiwa.jpg" },
+  { name: "Milo", logo: "/images/specimen/logo-milo.jpeg" },
+  { name: "Rive", logo: "/images/specimen/logo-rive.jpg" },
+  { name: "Wychwood", logo: "/images/specimen/logo-wychwood.jpeg" },
 ];
+
+const otherPartners = ["Shimano", "Fun Fishing", "Garbolino", "Champion Feed", "Nytro", "Cresta"];
 
 const SpecimenTrophy = () => {
   return (
@@ -68,6 +74,20 @@ const SpecimenTrophy = () => {
                 </a>
               </div>
             </motion.div>
+          </div>
+        </section>
+
+        {/* Ambiance photo */}
+        <section className="py-0">
+          <div className="container mx-auto px-4 max-w-5xl">
+            <div className="rounded-2xl overflow-hidden shadow-lg">
+              <img
+                src="/images/specimen/lecture-magazine.jpg"
+                alt="Un pêcheur au bord de l'eau lisant Info Pêche magazine"
+                className="w-full h-64 md:h-96 object-cover"
+                loading="lazy"
+              />
+            </div>
           </div>
         </section>
 
@@ -129,11 +149,12 @@ const SpecimenTrophy = () => {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {species.map((sp) => (
                 <Card key={sp.name} className="border-border/50 overflow-hidden group hover:shadow-lg transition-shadow">
-                  <div className="aspect-[4/3] overflow-hidden">
+                  <div className="aspect-square overflow-hidden bg-[hsl(var(--muted))]">
                     <img
                       src={sp.image}
                       alt={sp.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300 p-2"
+                      loading="lazy"
                     />
                   </div>
                   <CardContent className="p-4 text-center">
@@ -169,27 +190,48 @@ const SpecimenTrophy = () => {
 
         {/* Finale */}
         <section className="py-16 bg-muted/30">
-          <div className="container mx-auto px-4 max-w-3xl text-center">
-            <Calendar className="w-10 h-10 text-primary mx-auto mb-4" />
-            <h2 className="text-3xl font-bold text-foreground mb-4">Grande Finale – Mai 2027</h2>
-            <p className="text-muted-foreground leading-relaxed mb-6">
-              À l'issue des sélections, 20 pêcheurs seront retenus pour la grande finale du Specimen Trophy.
-              Elle se déroulera sur deux jours et sur deux parcours – l'un en lac, l'autre en rivière.
-              Un grand vainqueur au classement général ainsi qu'un gagnant pour chacune des 8 espèces seront couronnés.
-            </p>
-            <p className="text-sm text-muted-foreground italic">
-              Saison de sélection : juillet 2025 – février 2027
-            </p>
+          <div className="container mx-auto px-4 max-w-5xl">
+            <div className="flex flex-col md:flex-row gap-8 md:gap-12 items-center">
+              <div className="w-full md:w-1/2">
+                <div className="rounded-2xl overflow-hidden shadow-lg">
+                  <img
+                    src="/images/specimen/finalistes.jpg"
+                    alt="Les finalistes du Specimen Trophy 2023 réunis pour la photo de groupe"
+                    className="w-full h-64 md:h-80 object-cover"
+                    loading="lazy"
+                  />
+                </div>
+              </div>
+              <div className="w-full md:w-1/2 text-center md:text-left">
+                <Calendar className="w-10 h-10 text-primary mb-4 mx-auto md:mx-0" />
+                <h2 className="text-3xl font-bold text-foreground mb-4">Grande Finale – Mai 2027</h2>
+                <p className="text-muted-foreground leading-relaxed mb-6">
+                  À l'issue des sélections, 20 pêcheurs seront retenus pour la grande finale du Specimen Trophy.
+                  Elle se déroulera sur deux jours et sur deux parcours – l'un en lac, l'autre en rivière.
+                  Un grand vainqueur au classement général ainsi qu'un gagnant pour chacune des 8 espèces seront couronnés.
+                </p>
+                <p className="text-sm text-muted-foreground italic">
+                  Saison de sélection : juillet 2025 – février 2027
+                </p>
+              </div>
+            </div>
           </div>
         </section>
 
         {/* Partenaires */}
         <section className="py-16">
-          <div className="container mx-auto px-4 max-w-3xl text-center">
+          <div className="container mx-auto px-4 max-w-4xl text-center">
             <h2 className="text-3xl font-bold text-foreground mb-3">Nos Partenaires</h2>
-            <p className="text-muted-foreground mb-8">Merci à nos partenaires pour leur soutien dans la promotion de cette pêche</p>
+            <p className="text-muted-foreground mb-10">Merci à nos partenaires pour leur soutien dans la promotion de cette pêche</p>
+            <div className="flex flex-wrap justify-center items-center gap-6 md:gap-10 mb-8">
+              {partnerLogos.map((p) => (
+                <div key={p.name} className="bg-card border border-border/50 rounded-xl p-4 w-28 h-20 md:w-36 md:h-24 flex items-center justify-center shadow-sm hover:shadow-md transition-shadow">
+                  <img src={p.logo} alt={p.name} className="max-w-full max-h-full object-contain" loading="lazy" />
+                </div>
+              ))}
+            </div>
             <div className="flex flex-wrap justify-center gap-3">
-              {partners.map((p) => (
+              {otherPartners.map((p) => (
                 <span key={p} className="bg-muted px-4 py-2 rounded-full text-sm font-medium text-foreground">
                   {p}
                 </span>

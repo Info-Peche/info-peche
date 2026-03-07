@@ -80,7 +80,7 @@ const Contact = () => {
                 </div>
                 <div>
                   <h3 className="font-bold text-foreground mb-1">Email</h3>
-                  <p className="text-sm text-muted-foreground">contact@info-peche.fr</p>
+                  <a href="mailto:jeanfrancois.darnet@info-peche.fr" className="text-sm text-primary hover:underline">jeanfrancois.darnet@info-peche.fr</a>
                 </div>
               </div>
               <div className="bg-card rounded-2xl border border-border p-6 space-y-4">
@@ -89,7 +89,7 @@ const Contact = () => {
                 </div>
                 <div>
                   <h3 className="font-bold text-foreground mb-1">Téléphone</h3>
-                  <p className="text-sm text-muted-foreground">04 XX XX XX XX</p>
+                  <a href="tel:+33673694733" className="text-sm text-primary hover:underline">06 73 69 47 33</a>
                 </div>
               </div>
               <div className="bg-card rounded-2xl border border-border p-6 space-y-4">
@@ -98,7 +98,11 @@ const Contact = () => {
                 </div>
                 <div>
                   <h3 className="font-bold text-foreground mb-1">Adresse</h3>
-                  <p className="text-sm text-muted-foreground">France</p>
+                  <p className="text-sm text-muted-foreground">
+                    INFO PÊCHE<br />
+                    20, avenue des Lauriers Roses<br />
+                    13600 La Ciotat
+                  </p>
                 </div>
               </div>
             </motion.div>

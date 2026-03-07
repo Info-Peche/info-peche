@@ -24,6 +24,7 @@ export type Database = {
           excerpt: string
           id: string
           is_free: boolean
+          key_points: string[] | null
           paywall_preview_length: number | null
           published_at: string | null
           related_issue_id: string | null
@@ -40,6 +41,7 @@ export type Database = {
           excerpt: string
           id?: string
           is_free?: boolean
+          key_points?: string[] | null
           paywall_preview_length?: number | null
           published_at?: string | null
           related_issue_id?: string | null
@@ -56,12 +58,40 @@ export type Database = {
           excerpt?: string
           id?: string
           is_free?: boolean
+          key_points?: string[] | null
           paywall_preview_length?: number | null
           published_at?: string | null
           related_issue_id?: string | null
           slug?: string
           title?: string
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      blog_authors: {
+        Row: {
+          created_at: string
+          description: string | null
+          external_url: string | null
+          id: string
+          name: string
+          photo_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          external_url?: string | null
+          id?: string
+          name: string
+          photo_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          external_url?: string | null
+          id?: string
+          name?: string
+          photo_url?: string | null
         }
         Relationships: []
       }

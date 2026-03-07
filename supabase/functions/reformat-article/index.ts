@@ -27,8 +27,25 @@ Tu dois reformater ce texte en article de blog avec une mise en page parfaite en
 - Corrige les erreurs de copier-coller (mots coupés par des retours à la ligne, espaces en trop, tirets de césure)
 - Restructure en paragraphes logiques bien séparés par des doubles sauts de ligne
 - Ajoute des titres ## et sous-titres ### là où c'est pertinent pour structurer l'article
-- Utilise **gras** pour les points importants et *italique* pour les citations ou termes techniques
-- Utilise des listes à puces (- item) quand c'est adapté (avantages, inconvénients, étapes)
+- Utilise **gras** pour les points importants, les noms de techniques, les chiffres clés et *italique* pour les citations ou termes techniques
+- IMPORTANT : Quand le texte contient des énumérations numérotées (1. xxx 2. xxx 3. xxx) ou des listes d'avantages/inconvénients, transforme-les en listes Markdown propres avec chaque item sur sa propre ligne :
+  1. Premier point
+  2. Deuxième point
+  3. Troisième point
+- Utilise des listes à puces (- item) pour les énumérations non numérotées
+- Pour les passages importants ou conseils pratiques, utilise le format encadré : :::tip Texte du conseil :::
+- Pour les mises en garde, utilise : :::warning Texte de la mise en garde :::
+- CONSERVE les références d'images entre parenthèses telles quelles, ne les supprime pas : (IMG_xxx), (_BGNxxx), (nom-image.jpg), etc.
+- IMPORTANT : Quand tu trouves un bloc "Le conseil du prof" ou "Conseil du prof" suivi d'un titre et d'un texte, formate-le ainsi :
+  :::conseil TITRE DU CONSEIL
+  Texte du conseil...
+  (REF_IMAGE) Légende de l'image
+  :::
+- IMPORTANT : Quand tu trouves un bloc "Encadré" ou "ENCADRÉ" suivi d'un titre et d'un texte, formate-le EXACTEMENT comme un conseil du prof mais avec le tag encadre :
+  :::encadre TITRE DE L'ENCADRÉ
+  Texte de l'encadré...
+  (REF_IMAGE) Légende de l'image
+  :::
 - Supprime tout contenu publicitaire, références de produits commerciaux hors-sujet, numéros de page, URLs du magazine
 - Garde le ton éditorial original et ne rajoute PAS d'information inventée
 - Retourne UNIQUEMENT le texte reformaté en Markdown, sans commentaire ni explication.`;

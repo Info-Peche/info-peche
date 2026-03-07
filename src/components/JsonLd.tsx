@@ -42,7 +42,7 @@ const JsonLd = () => {
     "@context": "https://schema.org",
     "@type": "Product",
     name: "Info Pêche Magazine — Abonnement",
-    description: "Abonnement au magazine Info Pêche, la référence de la pêche au coup. 11 numéros par an en version papier ou numérique.",
+    description: "Abonnement au magazine Info Pêche, la référence de la pêche au coup. 6 numéros par an en version papier, accès numérique inclus.",
     brand: {
       "@type": "Brand",
       name: "Info Pêche",
@@ -50,16 +50,24 @@ const JsonLd = () => {
     offers: [
       {
         "@type": "Offer",
-        name: "Abonnement Numérique",
-        price: "33.00",
+        name: "Abonnement 6 mois",
+        price: "14.50",
         priceCurrency: "EUR",
         availability: "https://schema.org/InStock",
         url: `${window.location.origin}/#abonnements`,
       },
       {
         "@type": "Offer",
-        name: "Abonnement Papier + Numérique",
-        price: "55.00",
+        name: "Abonnement 1 an",
+        price: "26.50",
+        priceCurrency: "EUR",
+        availability: "https://schema.org/InStock",
+        url: `${window.location.origin}/#abonnements`,
+      },
+      {
+        "@type": "Offer",
+        name: "Abonnement 2 ans",
+        price: "48.00",
         priceCurrency: "EUR",
         availability: "https://schema.org/InStock",
         url: `${window.location.origin}/#abonnements`,

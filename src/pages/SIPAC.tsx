@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Calendar, MapPin, ExternalLink, Users, ShoppingBag, Mic, Trophy, Heart, Facebook, Send, Mail, Phone, Building2, Clock, Euro, Car, Train, Bus } from "lucide-react";
+import { Calendar, MapPin, ExternalLink, Users, ShoppingBag, Mic, Trophy, Heart, Facebook, Send, Mail, Phone, Building2, Clock, Euro, Car, Train, Bus, Dices, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,30 +17,49 @@ const stats = [
   { value: "60+", label: "Marques d'exposants" },
 ];
 
+const galleryPhotos = [
+  { src: "/images/sipac/sipac-p1.jpg", alt: "Vue aérienne du salon SIPAC - stands et visiteurs" },
+  { src: "/images/sipac/sipac-p2.jpg", alt: "Courrier Picard - Amiens capitale de la pêche au coup" },
+  { src: "/images/sipac/sipac-p3.jpg", alt: "Échanges entre passionnés sur le stand Garbolino" },
+  { src: "/images/sipac/sipac-p4.jpg", alt: "Démonstration de pêche au coup en plein centre-ville d'Amiens" },
+];
+
 const highlights = [
   {
     icon: Trophy,
     title: "Compétition ALL STAR GAME",
     description: "Le vendredi 06 novembre, une grande compétition internationale réunissant les meilleurs pêcheurs au monde. En plein centre-ville d'Amiens, au bassin de la Hotoie, une occasion unique et gratuite de les voir à l'œuvre.",
-    image: "/images/sipac/competition.jpg",
+    image: "/images/sipac/sipac-competition.jpg",
   },
   {
     icon: ShoppingBag,
     title: "Matériels & Nouveautés",
     description: "Le salon regroupe les plus grandes marques françaises et étrangères. Découvrez en exclusivité leurs toutes dernières nouveautés des collections 2027, disponibles à l'achat directement sur les stands.",
-    image: "/images/sipac/materiel.jpg",
+    image: "/images/sipac/sipac-materiel.jpg",
+  },
+  {
+    icon: Tag,
+    title: "Vente & Bonnes Affaires",
+    description: "Profitez de prix salon exceptionnels et d'offres exclusives proposées par les exposants. C'est le moment idéal pour s'équiper ou renouveler son matériel à des tarifs imbattables.",
+    image: "/images/sipac/sipac-vente.jpg",
   },
   {
     icon: Mic,
     title: "Conférences Gratuites",
     description: "Les meilleurs spécialistes et les plus grands champions internationaux répondent à toutes vos questions lors de nombreuses conférences gratuites le samedi 07 et le dimanche 08 novembre.",
-    image: "/images/sipac/conferences.jpg",
+    image: "/images/sipac/sipac-conferences.jpg",
   },
   {
     icon: Users,
     title: "Échanges & Rencontres",
     description: "Des moments de rencontres et d'échanges privilégiés entre passionnés pendant toute la durée du salon. L'occasion de se retrouver et de partager autour d'une passion commune.",
-    image: "/images/sipac/echanges.jpg",
+    image: "/images/sipac/sipac-echanges.jpg",
+  },
+  {
+    icon: Dices,
+    title: "Jeux & Tombola",
+    description: "Passez de bons moments en participant à de nombreux jeux et animations gratuits. Tentez votre chance à une grande tombola avec de magnifiques lots à gagner !",
+    image: "/images/sipac/sipac-jeux.jpg",
   },
 ];
 
@@ -122,14 +141,39 @@ const SIPAC = () => {
                     Billetterie & Infos
                   </Button>
                 </a>
-                <a href="https://www.facebook.com/groups/sipacamiens/" target="_blank" rel="noopener noreferrer">
+                <a href="https://www.facebook.com/sipacamiens" target="_blank" rel="noopener noreferrer">
                   <Button size="lg" variant="outline" className="w-full sm:w-auto border-primary text-primary hover:bg-primary/5 font-bold rounded-full px-8">
                     <Facebook className="w-5 h-5 mr-2" />
-                    Groupe Facebook
+                    Page Facebook
                   </Button>
                 </a>
               </div>
             </motion.div>
+          </div>
+        </section>
+
+        {/* Photo Gallery */}
+        <section className="py-12 md:py-16">
+          <div className="container mx-auto px-4 max-w-6xl">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+              {galleryPhotos.map((photo, index) => (
+                <motion.div
+                  key={photo.src}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1 }}
+                  className="overflow-hidden rounded-xl shadow-md"
+                >
+                  <img
+                    src={photo.src}
+                    alt={photo.alt}
+                    className="w-full h-40 md:h-56 object-cover hover:scale-105 transition-transform duration-500"
+                    loading="lazy"
+                  />
+                </motion.div>
+              ))}
+            </div>
           </div>
         </section>
 
@@ -149,7 +193,7 @@ const SIPAC = () => {
                 >
                   {item.image ? (
                     <div className="w-full md:w-1/2 overflow-hidden rounded-2xl shadow-lg">
-                      <img src={item.image} alt={item.title} className="w-full h-64 md:h-80 object-cover hover:scale-105 transition-transform duration-500" />
+                      <img src={item.image} alt={item.title} className="w-full h-64 md:h-80 object-cover hover:scale-105 transition-transform duration-500" loading="lazy" />
                     </div>
                   ) : null}
                   <div className={`w-full ${item.image ? "md:w-1/2" : ""} text-center md:text-left`}>
@@ -182,10 +226,10 @@ const SIPAC = () => {
                     <div className="bg-primary/10 p-3 rounded-xl w-fit mb-4">
                       <Clock className="w-6 h-6 text-primary" />
                     </div>
-                    <h3 className="font-bold text-foreground mb-3">Horaires</h3>
+                    <h3 className="font-bold text-foreground mb-3">Dates & Horaires</h3>
                     <ul className="text-sm text-muted-foreground space-y-1.5">
-                      <li>Samedi 07 nov. : <strong className="text-foreground">9h – 19h</strong></li>
-                      <li>Dimanche 08 nov. : <strong className="text-foreground">9h – 18h</strong></li>
+                      <li>Samedi 07 novembre : <strong className="text-foreground">9h – 19h</strong></li>
+                      <li>Dimanche 08 novembre : <strong className="text-foreground">9h – 18h</strong></li>
                     </ul>
                   </CardContent>
                 </Card>
@@ -220,11 +264,23 @@ const SIPAC = () => {
                     </div>
                     <h3 className="font-bold text-foreground mb-3">Lieu</h3>
                     <p className="text-sm text-muted-foreground leading-relaxed">
-                      <strong className="text-foreground">Mégacité</strong> – Parc des expositions<br />
+                      <strong className="text-foreground">Mégacité</strong><br />
+                      Centre d'exposition et de Congrès d'Amiens Métropole<br />
                       Avenue de l'Hippodrome<br />
                       80 011 Amiens Cedex 1
                     </p>
                     <p className="text-xs text-muted-foreground mt-2">🅿️ Parking gratuit · 🍽️ Restauration sur place</p>
+                    <a
+                      href="https://www.google.com/maps/search/?api=1&query=Mégacité+Avenue+de+l'Hippodrome+Amiens"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-3 block"
+                    >
+                      <Button size="sm" variant="outline" className="w-full text-primary border-primary/30 hover:bg-primary/5 rounded-full text-xs">
+                        <MapPin className="w-3.5 h-3.5 mr-1.5" />
+                        Voir sur Google Maps
+                      </Button>
+                    </a>
                   </CardContent>
                 </Card>
               </div>

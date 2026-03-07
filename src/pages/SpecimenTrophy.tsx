@@ -7,14 +7,14 @@ import Footer from "@/components/Footer";
 import SideCart from "@/components/SideCart";
 
 const species = [
-  { name: "Gardon", latin: "Rutilus rutilus", image: "/images/fish/gardon.jpg" },
+  { name: "Gardon", latin: "Rutilus rutilus", image: "/images/fish/gardon.png" },
   { name: "Brème commune", latin: "Abramis brama", image: "/images/fish/breme.png" },
-  { name: "Ide", latin: "Leuciscus idus", image: "/images/fish/ide.jpg" },
-  { name: "Carassin commun", latin: "Carassius carassius", image: "/images/fish/carassin.jpg" },
-  { name: "Tanche", latin: "Tinca tinca", image: "/images/fish/tanche.jpg" },
+  { name: "Ide", latin: "Leuciscus idus", image: "/images/fish/ide.png" },
+  { name: "Carassin commun", latin: "Carassius carassius", image: "/images/fish/carassin.png" },
+  { name: "Tanche", latin: "Tinca tinca", image: "/images/fish/tanche.png" },
   { name: "Barbeau commun", latin: "Barbus barbus", image: "/images/fish/barbeau.png" },
-  { name: "Chevesne", latin: "Leuciscus cephalus", image: "/images/fish/chevesne.jpg" },
-  { name: "Rotengle", latin: "Scardinius erythrophthalmus", image: "/images/fish/rotengle.jpg" },
+  { name: "Chevesne", latin: "Leuciscus cephalus", image: "/images/fish/chevesne.png" },
+  { name: "Rotengle", latin: "Scardinius erythrophthalmus", image: "/images/fish/rotengle.png" },
 ];
 
 const partnerLogos = [
@@ -23,9 +23,11 @@ const partnerLogos = [
   { name: "Milo", logo: "/images/specimen/logo-milo.jpeg" },
   { name: "Rive", logo: "/images/specimen/logo-rive.jpg" },
   { name: "Wychwood", logo: "/images/specimen/logo-wychwood.jpeg" },
+  { name: "Shimano", logo: "/images/specimen/logo-shimano.png" },
+  { name: "Champion Feed", logo: "/images/specimen/logo-champion-feed.png" },
 ];
 
-const otherPartners = ["Shimano", "Fun Fishing", "Garbolino", "Champion Feed", "Nytro", "Cresta"];
+const otherPartners = ["Fun Fishing", "Garbolino", "Nytro", "Cresta"];
 
 const SpecimenTrophy = () => {
   return (
@@ -43,11 +45,13 @@ const SpecimenTrophy = () => {
               animate={{ opacity: 1, y: 0 }}
               className="max-w-4xl mx-auto text-center"
             >
-              <img
-                src="/images/specimen-trophy.png"
-                alt="Specimen Trophy"
-                className="w-32 h-32 md:w-40 md:h-40 mx-auto mb-8 rounded-full shadow-xl"
-              />
+              <div className="rounded-2xl overflow-hidden shadow-xl mb-8 max-w-3xl mx-auto">
+                <img
+                  src="/images/specimen/specimen-banner.png"
+                  alt="Specimen Trophy - Concours de poissons blancs spécimens par Info Pêche"
+                  className="w-full h-auto"
+                />
+              </div>
               <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-4 leading-tight">
                 Specimen Trophy
               </h1>
@@ -77,16 +81,26 @@ const SpecimenTrophy = () => {
           </div>
         </section>
 
-        {/* Ambiance photo */}
-        <section className="py-0">
+        {/* Ambiance photos */}
+        <section className="py-8">
           <div className="container mx-auto px-4 max-w-5xl">
-            <div className="rounded-2xl overflow-hidden shadow-lg">
-              <img
-                src="/images/specimen/lecture-magazine.jpg"
-                alt="Un pêcheur au bord de l'eau lisant Info Pêche magazine"
-                className="w-full h-64 md:h-96 object-cover"
-                loading="lazy"
-              />
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="rounded-2xl overflow-hidden shadow-lg">
+                <img
+                  src="/images/specimen/photo-prise.webp"
+                  alt="Un pêcheur photographiant sa belle prise pour le Specimen Trophy"
+                  className="w-full h-56 md:h-72 object-cover"
+                  loading="lazy"
+                />
+              </div>
+              <div className="rounded-2xl overflow-hidden shadow-lg">
+                <img
+                  src="/images/specimen/lecture-magazine.jpg"
+                  alt="Un pêcheur au bord de l'eau lisant Info Pêche magazine"
+                  className="w-full h-56 md:h-72 object-cover"
+                  loading="lazy"
+                />
+              </div>
             </div>
           </div>
         </section>

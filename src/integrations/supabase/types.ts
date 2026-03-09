@@ -187,6 +187,54 @@ export type Database = {
         }
         Relationships: []
       }
+      fishing_spots: {
+        Row: {
+          city: string | null
+          created_at: string | null
+          department: string | null
+          description: string | null
+          fish_species: string[] | null
+          google_maps_url: string | null
+          id: string
+          issue_number: string | null
+          latitude: number
+          longitude: number
+          name: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          city?: string | null
+          created_at?: string | null
+          department?: string | null
+          description?: string | null
+          fish_species?: string[] | null
+          google_maps_url?: string | null
+          id?: string
+          issue_number?: string | null
+          latitude: number
+          longitude: number
+          name: string
+          type?: string
+          updated_at?: string | null
+        }
+        Update: {
+          city?: string | null
+          created_at?: string | null
+          department?: string | null
+          description?: string | null
+          fish_species?: string[] | null
+          google_maps_url?: string | null
+          id?: string
+          issue_number?: string | null
+          latitude?: number
+          longitude?: number
+          name?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           address_line1: string

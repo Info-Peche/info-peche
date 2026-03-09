@@ -24,6 +24,7 @@ import ResetPassword from "./pages/ResetPassword";
 import ScrollToTop from "./components/ScrollToTop";
 import SIPAC from "./pages/SIPAC";
 import SpecimenTrophy from "./pages/SpecimenTrophy";
+import FishingSpots from "./pages/FishingSpots";
 
 const queryClient = new QueryClient();
 
@@ -43,6 +44,7 @@ const App = () => (
               <Route path="/evenements" element={<Events />} />
               <Route path="/sipac" element={<SIPAC />} />
               <Route path="/specimen-trophy" element={<SpecimenTrophy />} />
+              <Route path="/coins-peche" element={<FishingSpots />} />
               <Route path="/boutique" element={<Shop />} />
               <Route path="/commande" element={<Checkout />} />
               <Route path="/commande-confirmee" element={<OrderConfirmation />} />

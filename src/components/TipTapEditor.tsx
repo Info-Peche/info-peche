@@ -13,7 +13,7 @@ import {
   Image as ImageIcon, Youtube as YoutubeIcon, Highlighter,
   AlignLeft, AlignCenter, AlignRight, Undo, Redo, Minus,
   Box, GraduationCap, Type, Settings2, Upload, GalleryHorizontal,
-  GripVertical,
+  GripVertical, Move,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -28,30 +28,100 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import "@/components/TipTapStyles.css";
 
-/* ── Image NodeView: renders figure with visible caption ── */
-const ImageNodeView = ({ node, selected }: NodeViewProps) => {
+/* ── Image NodeView: renders figure with visible caption + resize handles ── */
+const ImageNodeView = ({ node, selected, updateAttributes, editor }: NodeViewProps) => {
   const { src, alt, width, "data-caption": caption, "data-layout": layout } = node.attrs;
+  const imgRef = useRef<HTMLImageElement>(null);
+  const [isResizing, setIsResizing] = useState(false);
+
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const startX = e.clientX;
+    const imgEl = imgRef.current;
+    if (!imgEl) return;
+    const startWidth = imgEl.getBoundingClientRect().width;
+    const containerWidth = imgEl.closest('.tiptap-editor-content')?.getBoundingClientRect().width || imgEl.parentElement?.parentElement?.getBoundingClientRect().width || 800;
+
+    setIsResizing(true);
+
+    const onMouseMove = (ev: MouseEvent) => {
+      const diff = ev.clientX - startX;
+      const newPx = Math.max(80, startWidth + diff);
+      const newPercent = Math.min(100, Math.max(10, Math.round((newPx / containerWidth) * 100)));
+      imgEl.style.width = `${newPercent}%`;
+    };
+
+    const onMouseUp = (ev: MouseEvent) => {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      setIsResizing(false);
+      const finalPx = imgEl.getBoundingClientRect().width;
+      const finalPercent = Math.min(100, Math.max(10, Math.round((finalPx / containerWidth) * 100)));
+      updateAttributes({ width: finalPercent >= 100 ? null : finalPercent });
+    };
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  }, [updateAttributes]);
+
   return (
     <NodeViewWrapper
       as="figure"
-      className={`tiptap-image-figure ${selected ? "selected" : ""}`}
+      className={`tiptap-image-figure ${selected ? "selected" : ""} ${isResizing ? "resizing" : ""}`}
       data-layout={layout || "center"}
       draggable="true"
       data-drag-handle
     >
-      <img
-        src={src}
-        alt={alt || ""}
-        style={width ? { width: `${width}%` } : undefined}
-        className="tiptap-image"
-      />
+      <div className="image-container" style={{ width: width ? `${width}%` : undefined, position: 'relative', display: 'inline-block', maxWidth: '100%' }}>
+        <img
+          ref={imgRef}
+          src={src}
+          alt={alt || ""}
+          style={{ width: '100%', height: 'auto' }}
+          className="tiptap-image"
+        />
+        {/* Resize handles */}
+        {selected && (
+          <>
+            <div className="resize-handle resize-handle-right" onMouseDown={handleResizeStart} />
+            <div className="resize-handle resize-handle-left" onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              const startX = e.clientX;
+              const imgEl = imgRef.current;
+              if (!imgEl) return;
+              const startWidth = imgEl.getBoundingClientRect().width;
+              const containerWidth = imgEl.closest('.tiptap-editor-content')?.getBoundingClientRect().width || 800;
+              setIsResizing(true);
+              const onMouseMove = (ev: MouseEvent) => {
+                const diff = startX - ev.clientX;
+                const newPx = Math.max(80, startWidth + diff);
+                const newPercent = Math.min(100, Math.max(10, Math.round((newPx / containerWidth) * 100)));
+                imgEl.style.width = `${newPercent}%`;
+              };
+              const onMouseUp = () => {
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+                setIsResizing(false);
+                const finalPx = imgEl.getBoundingClientRect().width;
+                const finalPercent = Math.min(100, Math.max(10, Math.round((finalPx / containerWidth) * 100)));
+                updateAttributes({ width: finalPercent >= 100 ? null : finalPercent });
+              };
+              document.addEventListener('mousemove', onMouseMove);
+              document.addEventListener('mouseup', onMouseUp);
+            }} />
+          </>
+        )}
+        {/* Drag handle */}
+        {selected && (
+          <div className="drag-handle" contentEditable={false}>
+            <Move className="w-3.5 h-3.5 text-muted-foreground" />
+          </div>
+        )}
+      </div>
       {caption && (
         <figcaption className="tiptap-caption">{caption}</figcaption>
-      )}
-      {selected && (
-        <div className="drag-handle" contentEditable={false}>
-          <GripVertical className="w-4 h-4 text-muted-foreground" />
-        </div>
       )}
     </NodeViewWrapper>
   );
@@ -367,13 +437,18 @@ const TipTapEditor = ({ content, onChange, placeholder }: TipTapEditorProps) => 
 
   const insertPairImages = () => {
     if (!editor || !pairImage1 || !pairImage2) return;
-    // Insert two consecutive images with inline layout and 48% width
+    // Insert both images as consecutive nodes with inline layout
     editor.chain().focus()
-      .setImage({ src: pairImage1, alt: pairCaption1, "data-caption": pairCaption1, "data-layout": "inline", width: 48 } as any)
-      .run();
-    // Insert second image right after
-    editor.chain().focus()
-      .setImage({ src: pairImage2, alt: pairCaption2, "data-caption": pairCaption2, "data-layout": "inline", width: 48 } as any)
+      .insertContent([
+        {
+          type: 'image',
+          attrs: { src: pairImage1, alt: pairCaption1, "data-caption": pairCaption1, "data-layout": "inline", width: 48 },
+        },
+        {
+          type: 'image',
+          attrs: { src: pairImage2, alt: pairCaption2, "data-caption": pairCaption2, "data-layout": "inline", width: 48 },
+        },
+      ])
       .run();
     setPairDialog(false);
     toast.success("Images côte à côte insérées");

@@ -437,13 +437,18 @@ const TipTapEditor = ({ content, onChange, placeholder }: TipTapEditorProps) => 
 
   const insertPairImages = () => {
     if (!editor || !pairImage1 || !pairImage2) return;
-    // Insert two consecutive images with inline layout and 48% width
+    // Insert both images as consecutive nodes with inline layout
     editor.chain().focus()
-      .setImage({ src: pairImage1, alt: pairCaption1, "data-caption": pairCaption1, "data-layout": "inline", width: 48 } as any)
-      .run();
-    // Insert second image right after
-    editor.chain().focus()
-      .setImage({ src: pairImage2, alt: pairCaption2, "data-caption": pairCaption2, "data-layout": "inline", width: 48 } as any)
+      .insertContent([
+        {
+          type: 'image',
+          attrs: { src: pairImage1, alt: pairCaption1, "data-caption": pairCaption1, "data-layout": "inline", width: 48 },
+        },
+        {
+          type: 'image',
+          attrs: { src: pairImage2, alt: pairCaption2, "data-caption": pairCaption2, "data-layout": "inline", width: 48 },
+        },
+      ])
       .run();
     setPairDialog(false);
     toast.success("Images côte à côte insérées");

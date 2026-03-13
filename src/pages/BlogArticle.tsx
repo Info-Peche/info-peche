@@ -58,6 +58,7 @@ const postProcessImages = (html: string): string => {
         const layout = layoutMatch?.[1];
         if (!caption && (!layout || layout === 'center')) return match;
         const layoutClass = layout && layout !== 'center' ? ` class="image-${layout}"` : '';
+        const layoutAttr = layout === 'inline' ? ' data-layout="inline"' : '';
         if (caption) {
           return `<figure${layoutClass}><img${attrs} /><figcaption>${caption}</figcaption></figure>`;
         }

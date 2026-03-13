@@ -1,5 +1,10 @@
 /* TipTap Editor Styles */
 
+/* Ensure ProseMirror allows inline-block for side-by-side images */
+.ProseMirror {
+  white-space: normal;
+}
+
 .tiptap-editor-content {
   font-family: 'Inter', sans-serif;
   color: hsl(var(--foreground));

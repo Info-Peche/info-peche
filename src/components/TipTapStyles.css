@@ -126,8 +126,8 @@
   position: relative;
   margin: 2rem auto;
   text-align: center;
-  cursor: grab;
   transition: outline 0.15s;
+  user-select: none;
 }
 
 .tiptap-image-figure.selected {
@@ -136,13 +136,22 @@
   border-radius: 0.75rem;
 }
 
+.tiptap-image-figure.resizing {
+  outline: 3px solid hsl(var(--accent));
+  outline-offset: 4px;
+}
+
+.tiptap-image-figure .image-container {
+  margin: 0 auto;
+}
+
 .tiptap-image-figure .tiptap-image {
   max-width: 100%;
   height: auto;
   border-radius: 0.75rem;
   display: block;
-  margin: 0 auto;
   box-shadow: 0 4px 12px hsl(var(--foreground) / 0.1);
+  pointer-events: none;
 }
 
 .tiptap-image-figure .tiptap-caption {
@@ -155,18 +164,73 @@
   padding: 0 1rem;
 }
 
+/* Drag handle */
 .tiptap-image-figure .drag-handle {
   position: absolute;
   top: 0.5rem;
-  left: 0.5rem;
-  background: hsl(var(--background) / 0.9);
+  left: 50%;
+  transform: translateX(-50%);
+  background: hsl(var(--background) / 0.95);
   border: 1px solid hsl(var(--border));
   border-radius: 0.375rem;
-  padding: 0.25rem;
+  padding: 0.2rem 0.5rem;
   cursor: grab;
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 5;
+  box-shadow: 0 2px 6px hsl(var(--foreground) / 0.1);
+}
+
+.tiptap-image-figure .drag-handle:active {
+  cursor: grabbing;
+}
+
+/* Resize handles */
+.resize-handle {
+  position: absolute;
+  top: 0;
+  width: 8px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 10;
+}
+
+.resize-handle::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 40px;
+  border-radius: 2px;
+  background: hsl(var(--primary));
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.tiptap-image-figure.selected .resize-handle::after {
+  opacity: 0.6;
+}
+
+.tiptap-image-figure.selected .resize-handle:hover::after {
+  opacity: 1;
+}
+
+.resize-handle-right {
+  right: -4px;
+}
+
+.resize-handle-right::after {
+  right: 0;
+}
+
+.resize-handle-left {
+  left: -4px;
+}
+
+.resize-handle-left::after {
+  left: 0;
 }
 
 /* Image layouts in editor */
@@ -191,6 +255,11 @@
   vertical-align: top;
   margin: 0.5rem 0.5%;
   text-align: center;
+}
+
+/* Make consecutive inline figures sit side by side */
+.tiptap-image-figure[data-layout="inline"] + .tiptap-image-figure[data-layout="inline"] {
+  margin-left: 0;
 }
 
 /* Legacy img styles (fallback) */

@@ -70,7 +70,7 @@ const Hero = () => {
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.7 }}
-            className="text-base md:text-xl lg:text-2xl text-white/85 mb-8 md:mb-12 max-w-2xl mx-auto font-light drop-shadow-md leading-relaxed px-2">
+            className="text-base md:text-xl lg:text-2xl text-white/85 mb-8 md:mb-12 max-w-2xl mx-auto font-light leading-relaxed px-2" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.6), 0 1px 3px rgba(0,0,0,0.4)' }}>
             L'expertise technique et la passion au service de votre réussite au bord de l'eau.
           </motion.p>
 

@@ -80,8 +80,8 @@ const BackIssuesSection = () => {
             className="group"
           >
             <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-card shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col">
-              <div className="relative h-72 overflow-hidden bg-muted/30 flex items-center justify-center p-6">
-                <MagazineFanVisual count={6} showBadge={false} className="scale-110 group-hover:scale-[1.15] transition-transform duration-500" />
+              <div className="relative h-80 overflow-hidden bg-muted/30 flex items-center justify-center p-6">
+                <MagazineFanVisual count={6} showBadge={false} className="scale-125 group-hover:scale-[1.3] transition-transform duration-500" />
                 <div className="absolute top-3 left-3 flex items-center gap-2 bg-accent text-accent-foreground py-1.5 px-3 rounded-full text-sm font-bold shadow z-10">
                   <Package className="w-4 h-4" />
                   Livraison à domicile

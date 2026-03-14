@@ -4,9 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 interface MagazineFanVisualProps {
   count: 3 | 6 | 12;
   className?: string;
+  showBadge?: boolean;
 }
 
-const MagazineFanVisual = ({ count, className = "" }: MagazineFanVisualProps) => {
+const MagazineFanVisual = ({ count, className = "", showBadge = true }: MagazineFanVisualProps) => {
   const [covers, setCovers] = useState<string[]>([]);
 
   useEffect(() => {

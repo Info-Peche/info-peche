@@ -28,7 +28,7 @@ const Footer = () => {
               <li><a href="/#magazine" className="text-white/70 hover:text-white transition-colors">Le Magazine</a></li>
               <li><a href="/#subscribe" className="text-white/70 hover:text-white transition-colors">Abonnements</a></li>
               <li><Link to="/blog" className="text-white/70 hover:text-white transition-colors">Blog & Conseils</Link></li>
-              <li><Link to="/boutique" className="text-white/70 hover:text-white transition-colors">Boutique</Link></li>
+              <li><Link to="/boutique" className="text-white/70 hover:text-white transition-colors">Anciens numéros</Link></li>
             </ul>
           </div>
 

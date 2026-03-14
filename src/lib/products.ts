@@ -85,20 +85,6 @@ export const PRODUCTS = {
       "Accès permanent au numéro",
     ],
   },
-  pass15jours: {
-    id: "pass-15-jours",
-    name: "Pass lecture 15 jours",
-    price: 30,
-    price_id: "price_1T124FKbRd4yKDMHYO6acPe1",
-    product_id: "prod_Tz04Q4hOdHdp0D",
-    mode: "payment" as const,
-    description: "Accès illimité pendant 15 jours à tous les anciens numéros en ligne",
-    features: [
-      "Tous les anciens numéros",
-      "15 jours d'accès illimité",
-      "Consultation en ligne",
-    ],
-  },
 } as const;
 
 export type ProductKey = keyof typeof PRODUCTS;

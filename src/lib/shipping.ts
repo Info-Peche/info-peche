@@ -21,7 +21,7 @@ const SUBSCRIPTION_IDS = ["abo-6-mois", "abo-1-an", "abo-2-ans"];
 
 // IDs that are digital products (no shipping needed)
 const isDigitalItem = (id: string) =>
-  id.startsWith("digital-") || id === "lecture-numero" || id === "pass-15-jours";
+  id.startsWith("digital-") || id === "lecture-numero";
 
 const isSubscriptionItem = (id: string) => SUBSCRIPTION_IDS.includes(id);
 

@@ -41,7 +41,7 @@ const SideCart = () => {
             </div>
 
             {/* Trust banner - only show shipping mention if there are physical items */}
-            {items.some(item => !item.id.startsWith("digital-") && item.id !== "lecture-numero" && item.id !== "pass-15-jours") && (
+            {items.some(item => !item.id.startsWith("digital-") && item.id !== "lecture-numero") && (
               <div className="px-6 py-3 bg-primary/5 border-b border-primary/10 flex items-center gap-3">
                 <Truck className="w-4 h-4 text-primary shrink-0" />
                 <span className="text-xs font-semibold text-primary">Livraison OFFERTE pour tous les abonnements</span>

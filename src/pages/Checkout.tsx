@@ -382,7 +382,7 @@ const CheckoutContent = () => {
                     <span className="text-muted-foreground">Sous-total</span>
                     <span className="font-medium">{total.toFixed(2)}€</span>
                   </div>
-                  {items.some(item => !item.id.startsWith("digital-") && item.id !== "lecture-numero" && item.id !== "pass-15-jours") && (
+                  {items.some(item => !item.id.startsWith("digital-") && item.id !== "lecture-numero") && (
                     <>
                       <div className="flex justify-between text-sm items-center">
                         <span className="text-muted-foreground flex items-center gap-1.5">

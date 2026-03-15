@@ -35,7 +35,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Info Pêche Contact <onboarding@resend.dev>",
+        from: "Info Pêche Contact <contact@info-peche.fr>",
         to: [ADMIN_EMAIL],
         reply_to: email,
         subject: `[Contact] ${subject}`,

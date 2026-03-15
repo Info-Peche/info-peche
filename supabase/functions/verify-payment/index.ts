@@ -196,7 +196,7 @@ serve(async (req) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          from: "Info Pêche <onboarding@resend.dev>",
+          from: "Info Pêche <commandes@info-peche.fr>",
           to: [customerEmail],
           subject: "✅ Confirmation de votre commande Info Pêche",
           html: `

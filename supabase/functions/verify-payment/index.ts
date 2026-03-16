@@ -217,8 +217,8 @@ serve(async (req) => {
           subject: "✅ Confirmation de votre commande Info Pêche",
           html: `
             <div style="font-family: 'Playfair Display', Georgia, serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
-              <div style="background: #d41227; padding: 20px; text-align: center;">
-                <img src="https://www.info-peche.fr/images/info-peche-logo.png" alt="Info Pêche" style="height: 60px; margin-bottom: 8px;" />
+              <div style="background: #ffffff; padding: 25px 20px 15px; text-align: center; border-bottom: 3px solid #d41227;">
+                <img src="https://www.info-peche.fr/images/info-peche-logo.png" alt="Info Pêche" style="height: 60px;" />
               </div>
               <div style="padding: 30px 25px;">
                 <h2 style="color: #1a1a1a; margin: 0 0 15px; font-family: 'Playfair Display', Georgia, serif;">Merci pour votre commande, ${customerName} !</h2>

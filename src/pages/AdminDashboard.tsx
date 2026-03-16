@@ -33,7 +33,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { LogOut, Search, Package, Loader2, Download, Newspaper, RefreshCw, CalendarClock, SlidersHorizontal, FileText, GripVertical, BarChart3, PackageOpen, Trash2, ChevronDown, ChevronRight, MessageSquare, Users, MapPin, Contact } from "lucide-react";
+import { LogOut, Search, Package, Loader2, Download, Newspaper, RefreshCw, CalendarClock, SlidersHorizontal, FileText, GripVertical, BarChart3, PackageOpen, Trash2, ChevronDown, ChevronRight, MessageSquare, Users, Contact } from "lucide-react";
 import { toast } from "sonner";
 import AdminEditionManager from "@/components/AdminEditionManager";
 import AdminBlogEditor from "@/components/AdminBlogEditor";
@@ -41,7 +41,6 @@ import AdminAnalytics from "@/components/AdminAnalytics";
 import AdminStockManager from "@/components/AdminStockManager";
 import AdminReviewManager from "@/components/AdminReviewManager";
 import AdminAuthorManager from "@/components/AdminAuthorManager";
-import AdminFishingSpots from "@/components/AdminFishingSpots";
 import AdminCRM from "@/components/AdminCRM";
 
 type Order = {
@@ -579,35 +578,36 @@ const AdminDashboard = () => {
 
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="orders" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="orders" className="gap-2">
-              <Package className="w-4 h-4" /> Commandes
-            </TabsTrigger>
-            <TabsTrigger value="analytics" className="gap-2">
-              <BarChart3 className="w-4 h-4" /> Analytics
-            </TabsTrigger>
-            <TabsTrigger value="edition" className="gap-2">
-              <Newspaper className="w-4 h-4" /> Édition du mois
-            </TabsTrigger>
-            <TabsTrigger value="stock" className="gap-2">
-              <PackageOpen className="w-4 h-4" /> Stocks & Tarifs
-            </TabsTrigger>
-            <TabsTrigger value="blog" className="gap-2">
-              <FileText className="w-4 h-4" /> Blog
-            </TabsTrigger>
-            <TabsTrigger value="reviews" className="gap-2">
-              <MessageSquare className="w-4 h-4" /> Avis
-            </TabsTrigger>
-            <TabsTrigger value="authors" className="gap-2">
-              <Users className="w-4 h-4" /> Auteurs
-            </TabsTrigger>
-            <TabsTrigger value="fishing-spots" className="gap-2">
-              <MapPin className="w-4 h-4" /> Coins de Pêche
-            </TabsTrigger>
-            <TabsTrigger value="crm" className="gap-2">
-              <Contact className="w-4 h-4" /> CRM Clients
-            </TabsTrigger>
-          </TabsList>
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Gestion Business</p>
+            <TabsList className="flex-wrap">
+              <TabsTrigger value="orders" className="gap-2">
+                <Package className="w-4 h-4" /> Commandes
+              </TabsTrigger>
+              <TabsTrigger value="analytics" className="gap-2">
+                <BarChart3 className="w-4 h-4" /> Analytics
+              </TabsTrigger>
+              <TabsTrigger value="stock" className="gap-2">
+                <PackageOpen className="w-4 h-4" /> Stocks & Tarifs
+              </TabsTrigger>
+              <TabsTrigger value="crm" className="gap-2">
+                <Contact className="w-4 h-4" /> CRM Clients
+              </TabsTrigger>
+            </TabsList>
+
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pt-2">Gestion Contenu</p>
+            <TabsList className="flex-wrap">
+              <TabsTrigger value="edition" className="gap-2">
+                <Newspaper className="w-4 h-4" /> Édition du mois
+              </TabsTrigger>
+              <TabsTrigger value="blog" className="gap-2">
+                <FileText className="w-4 h-4" /> Blog
+              </TabsTrigger>
+              <TabsTrigger value="reviews" className="gap-2">
+                <MessageSquare className="w-4 h-4" /> Avis
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="analytics">
             <AdminAnalytics orders={orders as any} />
@@ -627,14 +627,6 @@ const AdminDashboard = () => {
 
           <TabsContent value="reviews">
             <AdminReviewManager />
-          </TabsContent>
-
-          <TabsContent value="authors">
-            <AdminAuthorManager />
-          </TabsContent>
-
-          <TabsContent value="fishing-spots">
-            <AdminFishingSpots />
           </TabsContent>
 
           <TabsContent value="crm">

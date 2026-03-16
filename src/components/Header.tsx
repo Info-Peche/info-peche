@@ -247,16 +247,29 @@ const Header = () => {
                     exit={{ opacity: 0, height: 0 }}
                     className="pl-4 space-y-1"
                   >
-                    {resourceLinks.map((link) => (
-                      <Link
-                        key={link.name}
-                        to={link.href}
-                        className="block text-foreground/70 hover:text-primary font-medium p-2 text-sm"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                      >
-                        {link.name}
-                      </Link>
-                    ))}
+                    {resourceLinks.map((link) =>
+                      (link as any).external ? (
+                        <a
+                          key={link.name}
+                          href={link.href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block text-foreground/70 hover:text-primary font-medium p-2 text-sm"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          {link.name}
+                        </a>
+                      ) : (
+                        <Link
+                          key={link.name}
+                          to={link.href}
+                          className="block text-foreground/70 hover:text-primary font-medium p-2 text-sm"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          {link.name}
+                        </Link>
+                      )
+                    )}
                   </motion.div>
                 )}
               </AnimatePresence>

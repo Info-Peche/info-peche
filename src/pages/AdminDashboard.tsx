@@ -225,30 +225,34 @@ const AdminDashboard = () => {
     toast.success(!current ? "Commande marquée traitée" : "Commande remise en attente");
   };
 
-  const exportCSV = () => {
-    const headers = [
-      "ID commande", "Date", "Nom", "Prénom", "Adresse 1", "Adresse 2",
-      "Code postal", "Ville", "Pays", "Email", "Téléphone", "Commentaire",
-      "N° abonné", "Type abonnement", "Début abo", "Fin abo",
-      "Montant (€)", "Mode de paiement", "Statut paiement", "Traité"
-    ];
-    const rows = filteredOrders.map(o => [
-      o.id,
-      new Date(o.created_at).toLocaleDateString("fr-FR"),
-      o.last_name, o.first_name, o.address_line1, o.address_line2 || "",
-      o.postal_code, o.city, o.country, o.email, o.phone || "",
-      o.comment || "", o.subscriber_number || "", o.subscription_type || "",
-      o.subscription_start_date ? new Date(o.subscription_start_date).toLocaleDateString("fr-FR") : "",
-      o.subscription_end_date ? new Date(o.subscription_end_date).toLocaleDateString("fr-FR") : "",
-      (o.total_amount / 100).toFixed(2), o.payment_method, o.payment_status,
-      o.is_processed ? "Oui" : "Non",
-    ]);
-    const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(";")).join("\n");
-    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = `commandes-infopeche-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click(); URL.revokeObjectURL(url);
+  const exportXLSX = async () => {
+    const XLSX = await import("xlsx");
+    const data = filteredOrders.map(o => ({
+      "ID commande": o.id,
+      "Date": new Date(o.created_at).toLocaleDateString("fr-FR"),
+      "Nom": o.last_name,
+      "Prénom": o.first_name,
+      "Adresse 1": o.address_line1,
+      "Adresse 2": o.address_line2 || "",
+      "Code postal": o.postal_code,
+      "Ville": o.city,
+      "Pays": o.country,
+      "Email": o.email,
+      "Téléphone": o.phone || "",
+      "Commentaire": o.comment || "",
+      "N° abonné": o.subscriber_number || "",
+      "Type abonnement": o.subscription_type || "",
+      "Début abo": o.subscription_start_date ? new Date(o.subscription_start_date).toLocaleDateString("fr-FR") : "",
+      "Fin abo": o.subscription_end_date ? new Date(o.subscription_end_date).toLocaleDateString("fr-FR") : "",
+      "Montant (€)": (o.total_amount / 100).toFixed(2),
+      "Mode de paiement": o.payment_method,
+      "Statut paiement": o.payment_status,
+      "Traité": o.is_processed ? "Oui" : "Non",
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Commandes");
+    XLSX.writeFile(wb, `commandes-infopeche-${new Date().toISOString().slice(0, 10)}.xlsx`);
   };
 
   const filteredOrders = orders.filter(o => {

@@ -489,51 +489,62 @@ const AdminBlogEditor = () => {
   // ===== LIST VIEW =====
   if (view === "list") {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <h2 className="text-xl font-bold">Articles de blog</h2>
-          <Button onClick={() => openEditor()} className="gap-2">
-            <Plus className="w-4 h-4" /> Nouvel article
-          </Button>
-        </div>
-        {isLoading ? (
-          <div className="flex items-center justify-center py-12"><Loader2 className="w-6 h-6 animate-spin" /></div>
-        ) : (
-          <div className="space-y-3">
-            {articles?.map(article => (
-              <Card key={article.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-4 flex items-center gap-4">
-                  {article.cover_image ? (
-                    <img src={article.cover_image} alt="" className="w-16 h-16 object-cover rounded-lg flex-shrink-0" />
-                  ) : (
-                    <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
-                      <FileText className="w-6 h-6 text-muted-foreground" />
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold truncate">{article.title}</h3>
-                      <Badge variant={article.is_free ? "secondary" : "default"} className="text-xs flex-shrink-0">
-                        {article.is_free ? "Libre" : "Premium"}
-                      </Badge>
-                      {article.category && <Badge variant="outline" className="text-xs flex-shrink-0">{article.category}</Badge>}
-                    </div>
-                    <p className="text-sm text-muted-foreground truncate">{article.excerpt}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {article.published_at && new Date(article.published_at).toLocaleDateString("fr-FR")} · {article.author}
-                    </p>
-                  </div>
-                  <div className="flex gap-2 flex-shrink-0">
-                    <Button variant="outline" size="sm" onClick={() => openEditor(article)}><Edit className="w-4 h-4" /></Button>
-                    <Button variant="outline" size="sm" onClick={() => handleDelete(article.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-            {articles?.length === 0 && <p className="text-center text-muted-foreground py-8">Aucun article. Créez le premier !</p>}
+      <Tabs defaultValue="articles" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="articles">Articles</TabsTrigger>
+          <TabsTrigger value="authors">Auteurs</TabsTrigger>
+        </TabsList>
+        <TabsContent value="articles">
+          <div className="space-y-6">
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <h2 className="text-xl font-bold">Articles de blog</h2>
+              <Button onClick={() => openEditor()} className="gap-2">
+                <Plus className="w-4 h-4" /> Nouvel article
+              </Button>
+            </div>
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12"><Loader2 className="w-6 h-6 animate-spin" /></div>
+            ) : (
+              <div className="space-y-3">
+                {articles?.map(article => (
+                  <Card key={article.id} className="hover:shadow-md transition-shadow">
+                    <CardContent className="p-4 flex items-center gap-4">
+                      {article.cover_image ? (
+                        <img src={article.cover_image} alt="" className="w-16 h-16 object-cover rounded-lg flex-shrink-0" />
+                      ) : (
+                        <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
+                          <FileText className="w-6 h-6 text-muted-foreground" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-semibold truncate">{article.title}</h3>
+                          <Badge variant={article.is_free ? "secondary" : "default"} className="text-xs flex-shrink-0">
+                            {article.is_free ? "Libre" : "Premium"}
+                          </Badge>
+                          {article.category && <Badge variant="outline" className="text-xs flex-shrink-0">{article.category}</Badge>}
+                        </div>
+                        <p className="text-sm text-muted-foreground truncate">{article.excerpt}</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {article.published_at && new Date(article.published_at).toLocaleDateString("fr-FR")} · {article.author}
+                        </p>
+                      </div>
+                      <div className="flex gap-2 flex-shrink-0">
+                        <Button variant="outline" size="sm" onClick={() => openEditor(article)}><Edit className="w-4 h-4" /></Button>
+                        <Button variant="outline" size="sm" onClick={() => handleDelete(article.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+                {articles?.length === 0 && <p className="text-center text-muted-foreground py-8">Aucun article. Créez le premier !</p>}
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </TabsContent>
+        <TabsContent value="authors">
+          <AdminAuthorManager />
+        </TabsContent>
+      </Tabs>
     );
   }
 

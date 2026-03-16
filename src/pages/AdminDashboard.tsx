@@ -604,6 +604,9 @@ const AdminDashboard = () => {
             <TabsTrigger value="fishing-spots" className="gap-2">
               <MapPin className="w-4 h-4" /> Coins de Pêche
             </TabsTrigger>
+            <TabsTrigger value="crm" className="gap-2">
+              <Contact className="w-4 h-4" /> CRM Clients
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="analytics">

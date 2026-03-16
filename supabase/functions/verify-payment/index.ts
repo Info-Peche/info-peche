@@ -216,24 +216,24 @@ serve(async (req) => {
           to: [customerEmail],
           subject: "✅ Confirmation de votre commande Info Pêche",
           html: `
-            <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-              <div style="text-align: center; padding: 20px 0; border-bottom: 2px solid #1a5c2e;">
-                <h1 style="color: #1a5c2e; margin: 0;">Info Pêche</h1>
+            <div style="font-family: 'Playfair Display', Georgia, serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
+              <div style="background: #d41227; padding: 20px; text-align: center;">
+                <img src="https://www.info-peche.fr/images/info-peche-logo.png" alt="Info Pêche" style="height: 60px; margin-bottom: 8px;" />
               </div>
-              <div style="padding: 30px 0;">
-                <h2 style="color: #333;">Merci pour votre commande, ${customerName} !</h2>
-                <p style="color: #666; line-height: 1.6;">
-                  Votre paiement a été confirmé avec succès. Voici le récapitulatif de votre commande :
+              <div style="padding: 30px 25px;">
+                <h2 style="color: #1a1a1a; margin: 0 0 15px; font-family: 'Playfair Display', Georgia, serif;">Merci pour votre commande, ${customerName} !</h2>
+                <p style="color: #555; line-height: 1.6; font-family: 'Inter', Arial, sans-serif; font-size: 15px;">
+                  Votre paiement a été confirmé avec succès. Voici le récapitulatif :
                 </p>
-                <div style="background: #f8f6f0; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                  <pre style="font-family: Georgia, serif; white-space: pre-wrap; margin: 0; color: #333;">${lineItemsSummary}</pre>
-                  <hr style="border: none; border-top: 1px solid #ddd; margin: 15px 0;">
-                  <p style="font-size: 18px; font-weight: bold; color: #1a5c2e; margin: 0;">Total : ${totalFormatted}</p>
+                <div style="background: #fef9e7; border-left: 4px solid #f5c800; padding: 20px; border-radius: 6px; margin: 20px 0;">
+                  <pre style="font-family: 'Inter', Arial, sans-serif; white-space: pre-wrap; margin: 0; color: #333; font-size: 14px;">${lineItemsSummary}</pre>
+                  <hr style="border: none; border-top: 1px solid #e8d98a; margin: 15px 0;">
+                  <p style="font-size: 18px; font-weight: bold; color: #d41227; margin: 0;">Total : ${totalFormatted}</p>
                 </div>
                 ${order ? `
                 <div style="margin-top: 20px;">
-                  <h3 style="color: #333;">Adresse de livraison :</h3>
-                  <p style="color: #666; line-height: 1.6;">
+                  <h3 style="color: #1a1a1a; font-family: 'Playfair Display', Georgia, serif;">Adresse de livraison :</h3>
+                  <p style="color: #555; line-height: 1.6; font-family: 'Inter', Arial, sans-serif; font-size: 14px;">
                     ${order.address_line1}<br>
                     ${order.address_line2 ? order.address_line2 + "<br>" : ""}
                     ${order.postal_code} ${order.city}<br>
@@ -242,23 +242,23 @@ serve(async (req) => {
                 </div>
                 ` : ""}
                 ${isSubscription ? `
-                <div style="background: #e8f5e9; padding: 20px; border-radius: 8px; margin: 25px 0; text-align: center;">
-                  <h3 style="color: #1a5c2e; margin: 0 0 10px;">🎣 Accédez à votre espace abonné</h3>
-                  <p style="color: #555; line-height: 1.6; margin: 0 0 15px;">
+                <div style="background: #fef9e7; padding: 20px; border-radius: 8px; margin: 25px 0; text-align: center; border: 1px solid #f5c800;">
+                  <h3 style="color: #d41227; margin: 0 0 10px; font-family: 'Playfair Display', Georgia, serif;">🎣 Accédez à votre espace abonné</h3>
+                  <p style="color: #555; line-height: 1.6; margin: 0 0 15px; font-family: 'Inter', Arial, sans-serif; font-size: 14px;">
                     Votre compte est rattaché à votre adresse email <strong>${customerEmail}</strong>.<br>
                     Lors de votre première connexion, cliquez sur <em>« Mot de passe oublié »</em> pour créer votre mot de passe et finaliser vos accès.
                   </p>
-                  <a href="https://www.info-peche.fr/mon-compte" style="display: inline-block; background: #1a5c2e; color: #fff; padding: 14px 30px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 16px;">
+                  <a href="https://www.info-peche.fr/mon-compte" style="display: inline-block; background: #d41227; color: #fff; padding: 14px 30px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 16px; font-family: 'Inter', Arial, sans-serif;">
                     Accéder à mon compte
                   </a>
                 </div>
                 ` : ""}
-                <p style="color: #666; line-height: 1.6; margin-top: 20px;">
+                <p style="color: #555; line-height: 1.6; margin-top: 20px; font-family: 'Inter', Arial, sans-serif; font-size: 14px;">
                   Votre magazine sera expédié dans les plus brefs délais. 
                   Pour toute question, n'hésitez pas à nous contacter.
                 </p>
               </div>
-              <div style="text-align: center; padding: 20px 0; border-top: 1px solid #eee; color: #999; font-size: 12px;">
+              <div style="background: #d41227; text-align: center; padding: 15px; color: #ffffff; font-size: 12px; font-family: 'Inter', Arial, sans-serif;">
                 Info Pêche Magazine — La passion de la pêche au coup
               </div>
             </div>

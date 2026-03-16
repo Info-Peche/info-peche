@@ -33,7 +33,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { LogOut, Search, Package, Loader2, Download, Newspaper, RefreshCw, CalendarClock, SlidersHorizontal, FileText, GripVertical, BarChart3, PackageOpen, Trash2, ChevronDown, ChevronRight, MessageSquare, Users, MapPin } from "lucide-react";
+import { LogOut, Search, Package, Loader2, Download, Newspaper, RefreshCw, CalendarClock, SlidersHorizontal, FileText, GripVertical, BarChart3, PackageOpen, Trash2, ChevronDown, ChevronRight, MessageSquare, Users, MapPin, Contact } from "lucide-react";
 import { toast } from "sonner";
 import AdminEditionManager from "@/components/AdminEditionManager";
 import AdminBlogEditor from "@/components/AdminBlogEditor";
@@ -42,6 +42,7 @@ import AdminStockManager from "@/components/AdminStockManager";
 import AdminReviewManager from "@/components/AdminReviewManager";
 import AdminAuthorManager from "@/components/AdminAuthorManager";
 import AdminFishingSpots from "@/components/AdminFishingSpots";
+import AdminCRM from "@/components/AdminCRM";
 
 type Order = {
   id: string;
@@ -603,6 +604,9 @@ const AdminDashboard = () => {
             <TabsTrigger value="fishing-spots" className="gap-2">
               <MapPin className="w-4 h-4" /> Coins de Pêche
             </TabsTrigger>
+            <TabsTrigger value="crm" className="gap-2">
+              <Contact className="w-4 h-4" /> CRM Clients
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="analytics">
@@ -631,6 +635,10 @@ const AdminDashboard = () => {
 
           <TabsContent value="fishing-spots">
             <AdminFishingSpots />
+          </TabsContent>
+
+          <TabsContent value="crm">
+            <AdminCRM />
           </TabsContent>
 
           <TabsContent value="orders">

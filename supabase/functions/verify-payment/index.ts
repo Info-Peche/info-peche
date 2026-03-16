@@ -281,7 +281,7 @@ serve(async (req) => {
           subject: `🎣 Nouvelle commande — ${customerName} — ${totalFormatted}`,
           html: `
             <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
-              <div style="background: #d41227; padding: 15px; text-align: center;">
+              <div style="background: #ffffff; padding: 20px 15px 12px; text-align: center; border-bottom: 3px solid #d41227;">
                 <img src="https://www.info-peche.fr/images/info-peche-logo.png" alt="Info Pêche" style="height: 50px;" />
               </div>
               <div style="padding: 25px;">

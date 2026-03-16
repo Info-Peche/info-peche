@@ -41,7 +41,6 @@ import AdminAnalytics from "@/components/AdminAnalytics";
 import AdminStockManager from "@/components/AdminStockManager";
 import AdminReviewManager from "@/components/AdminReviewManager";
 import AdminAuthorManager from "@/components/AdminAuthorManager";
-import AdminFishingSpots from "@/components/AdminFishingSpots";
 import AdminCRM from "@/components/AdminCRM";
 
 type Order = {

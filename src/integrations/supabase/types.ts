@@ -413,7 +413,9 @@ export type Database = {
         Row: {
           author_location: string | null
           author_name: string
+          avatar_position: number | null
           avatar_url: string | null
+          avatar_zoom: number | null
           created_at: string
           id: string
           is_approved: boolean
@@ -423,7 +425,9 @@ export type Database = {
         Insert: {
           author_location?: string | null
           author_name: string
+          avatar_position?: number | null
           avatar_url?: string | null
+          avatar_zoom?: number | null
           created_at?: string
           id?: string
           is_approved?: boolean
@@ -433,7 +437,9 @@ export type Database = {
         Update: {
           author_location?: string | null
           author_name?: string
+          avatar_position?: number | null
           avatar_url?: string | null
+          avatar_zoom?: number | null
           created_at?: string
           id?: string
           is_approved?: boolean

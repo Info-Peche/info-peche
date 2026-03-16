@@ -38,7 +38,15 @@ const MonCompte = () => {
       } else {
         const { error } = await signUp(email, password);
         if (error) throw error;
-        toast.success("Inscription réussie ! Vérifiez votre email pour confirmer votre compte.");
+        // Send branded welcome email via edge function
+        try {
+          await supabase.functions.invoke("send-signup-email", {
+            body: { email },
+          });
+        } catch (emailErr) {
+          console.error("Welcome email error (non-blocking):", emailErr);
+        }
+        toast.success("Inscription réussie ! Un email de bienvenue vous a été envoyé.");
       }
     } catch (err: any) {
       toast.error(err.message || "Une erreur est survenue.");

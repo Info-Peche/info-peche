@@ -95,6 +95,72 @@ export type Database = {
         }
         Relationships: []
       }
+      clients: {
+        Row: {
+          address_line1: string | null
+          address_line2: string | null
+          city: string | null
+          country: string | null
+          created_at: string | null
+          email: string
+          first_name: string | null
+          id: string
+          is_active_subscriber: boolean | null
+          last_name: string | null
+          notes: string | null
+          phone: string | null
+          postal_code: string | null
+          subscription_end_date: string | null
+          subscription_start_date: string | null
+          subscription_type: string | null
+          total_orders: number | null
+          total_spent: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          address_line1?: string | null
+          address_line2?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          email: string
+          first_name?: string | null
+          id?: string
+          is_active_subscriber?: boolean | null
+          last_name?: string | null
+          notes?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          subscription_end_date?: string | null
+          subscription_start_date?: string | null
+          subscription_type?: string | null
+          total_orders?: number | null
+          total_spent?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          address_line1?: string | null
+          address_line2?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          email?: string
+          first_name?: string | null
+          id?: string
+          is_active_subscriber?: boolean | null
+          last_name?: string | null
+          notes?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          subscription_end_date?: string | null
+          subscription_start_date?: string | null
+          subscription_type?: string | null
+          total_orders?: number | null
+          total_spent?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       digital_access: {
         Row: {
           access_type: string
@@ -347,7 +413,9 @@ export type Database = {
         Row: {
           author_location: string | null
           author_name: string
+          avatar_position: number | null
           avatar_url: string | null
+          avatar_zoom: number | null
           created_at: string
           id: string
           is_approved: boolean
@@ -357,7 +425,9 @@ export type Database = {
         Insert: {
           author_location?: string | null
           author_name: string
+          avatar_position?: number | null
           avatar_url?: string | null
+          avatar_zoom?: number | null
           created_at?: string
           id?: string
           is_approved?: boolean
@@ -367,7 +437,9 @@ export type Database = {
         Update: {
           author_location?: string | null
           author_name?: string
+          avatar_position?: number | null
           avatar_url?: string | null
+          avatar_zoom?: number | null
           created_at?: string
           id?: string
           is_approved?: boolean
@@ -427,6 +499,25 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      upsert_client: {
+        Args: {
+          _address_line1?: string
+          _address_line2?: string
+          _city?: string
+          _country?: string
+          _email: string
+          _first_name?: string
+          _is_active_subscriber?: boolean
+          _last_name?: string
+          _order_total?: number
+          _phone?: string
+          _postal_code?: string
+          _subscription_end_date?: string
+          _subscription_start_date?: string
+          _subscription_type?: string
+        }
+        Returns: undefined
       }
     }
     Enums: {

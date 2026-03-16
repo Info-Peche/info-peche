@@ -13,7 +13,7 @@ const logStep = (step: string, details?: any) => {
   console.log(`[VERIFY-PAYMENT] ${step}${d}`);
 };
 
-const ADMIN_EMAIL = "jeanfrancois.darnet@gmail.com";
+const ADMIN_EMAIL = "jeanfrancois.darnet@info-peche.fr";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -33,7 +33,7 @@ serve(async (req) => {
 
     // Retrieve the checkout session with line items
     const session = await stripe.checkout.sessions.retrieve(session_id, {
-      expand: ["line_items", "line_items.data.price.product", "subscription"],
+      expand: ["line_items", "line_items.data.price.product"],
     });
     logStep("Session retrieved", { status: session.payment_status, email: session.customer_details?.email });
 
@@ -60,39 +60,53 @@ serve(async (req) => {
       payment_status: "paid",
       status: "confirmed",
       stripe_payment_intent_id: session.payment_intent as string || null,
-      stripe_subscription_id: session.subscription
-        ? (typeof session.subscription === "string" ? session.subscription : session.subscription.id)
-        : null,
     };
 
-    // If this is a subscription, extract dates and payment method from Stripe
+    // Handle subscription ID
+    if (session.subscription) {
+      updatePayload.stripe_subscription_id = typeof session.subscription === "string"
+        ? session.subscription
+        : session.subscription.id;
+    }
+
+    // If this is a subscription, retrieve subscription separately and extract dates
     if (session.mode === "subscription" && session.subscription) {
-      const sub = typeof session.subscription === "string"
-        ? await stripe.subscriptions.retrieve(session.subscription)
-        : session.subscription;
+      try {
+        const subId = typeof session.subscription === "string"
+          ? session.subscription
+          : session.subscription.id;
 
-      const startDate = new Date(sub.current_period_start * 1000).toISOString();
-      const endDate = new Date(sub.current_period_end * 1000).toISOString();
-      updatePayload.subscription_start_date = startDate;
-      updatePayload.subscription_end_date = endDate;
-      updatePayload.is_recurring = true;
+        const sub = await stripe.subscriptions.retrieve(subId);
+        logStep("Subscription retrieved", { subId, start: sub.current_period_start, end: sub.current_period_end });
 
-      // Detect payment method type
-      const pmTypes = sub.default_payment_method
-        ? typeof sub.default_payment_method === "string"
-          ? null
-          : sub.default_payment_method.type
-        : null;
-      if (pmTypes) {
-        const methodMap: Record<string, string> = {
-          card: "card",
-          sepa_debit: "sepa_debit",
-          paypal: "paypal",
-        };
-        updatePayload.payment_method = methodMap[pmTypes] || "card";
+        if (sub.current_period_start && typeof sub.current_period_start === "number") {
+          updatePayload.subscription_start_date = new Date(sub.current_period_start * 1000).toISOString();
+        }
+        if (sub.current_period_end && typeof sub.current_period_end === "number") {
+          updatePayload.subscription_end_date = new Date(sub.current_period_end * 1000).toISOString();
+        }
+        updatePayload.is_recurring = true;
+
+        // Detect payment method type
+        if (sub.default_payment_method && typeof sub.default_payment_method !== "string") {
+          const pmType = sub.default_payment_method.type;
+          const methodMap: Record<string, string> = {
+            card: "card",
+            sepa_debit: "sepa_debit",
+            paypal: "paypal",
+          };
+          updatePayload.payment_method = methodMap[pmType] || "card";
+        }
+
+        logStep("Subscription dates set", {
+          start: updatePayload.subscription_start_date,
+          end: updatePayload.subscription_end_date,
+        });
+      } catch (subError) {
+        logStep("Subscription retrieval error (non-blocking)", {
+          message: subError instanceof Error ? subError.message : String(subError),
+        });
       }
-
-      logStep("Subscription dates set", { startDate, endDate });
     }
 
     // Try to update existing order
@@ -174,6 +188,7 @@ serve(async (req) => {
         }
       }
     }
+
     const customerEmail = session.customer_details?.email || order?.email;
     const customerName = `${order?.first_name || ""} ${order?.last_name || ""}`.trim();
 
@@ -188,7 +203,8 @@ serve(async (req) => {
     // Send emails via Resend
     const resendKey = Deno.env.get("RESEND_API_KEY");
     if (resendKey && customerEmail) {
-      // 1. Email to customer
+      // 1. Email to customer — with account access CTA
+      const isSubscription = session.mode === "subscription";
       const customerEmailResult = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: {
@@ -225,6 +241,18 @@ serve(async (req) => {
                   </p>
                 </div>
                 ` : ""}
+                ${isSubscription ? `
+                <div style="background: #e8f5e9; padding: 20px; border-radius: 8px; margin: 25px 0; text-align: center;">
+                  <h3 style="color: #1a5c2e; margin: 0 0 10px;">🎣 Accédez à votre espace abonné</h3>
+                  <p style="color: #555; line-height: 1.6; margin: 0 0 15px;">
+                    Votre compte est rattaché à votre adresse email <strong>${customerEmail}</strong>.<br>
+                    Lors de votre première connexion, cliquez sur <em>« Mot de passe oublié »</em> pour créer votre mot de passe et finaliser vos accès.
+                  </p>
+                  <a href="https://www.info-peche.fr/mon-compte" style="display: inline-block; background: #1a5c2e; color: #fff; padding: 14px 30px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 16px;">
+                    Accéder à mon compte
+                  </a>
+                </div>
+                ` : ""}
                 <p style="color: #666; line-height: 1.6; margin-top: 20px;">
                   Votre magazine sera expédié dans les plus brefs délais. 
                   Pour toute question, n'hésitez pas à nous contacter.
@@ -258,7 +286,7 @@ serve(async (req) => {
                 <tr><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Client</td><td style="padding: 8px; border-bottom: 1px solid #eee;">${customerName}</td></tr>
                 <tr><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Email</td><td style="padding: 8px; border-bottom: 1px solid #eee;">${customerEmail}</td></tr>
                 <tr><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Téléphone</td><td style="padding: 8px; border-bottom: 1px solid #eee;">${order?.phone || "Non renseigné"}</td></tr>
-                <tr><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Type</td><td style="padding: 8px; border-bottom: 1px solid #eee;">${order?.order_type === "subscription" ? "Abonnement" : "Achat unique"}</td></tr>
+                <tr><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Type</td><td style="padding: 8px; border-bottom: 1px solid #eee;">${isSubscription ? "Abonnement" : "Achat unique"}</td></tr>
                 <tr><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Total</td><td style="padding: 8px; border-bottom: 1px solid #eee; font-size: 18px; color: #1a5c2e; font-weight: bold;">${totalFormatted}</td></tr>
               </table>
               <h3>Articles :</h3>

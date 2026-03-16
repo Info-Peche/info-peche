@@ -16,6 +16,8 @@ interface Review {
   rating: number;
   review_text: string;
   created_at: string;
+  avatar_zoom: number | null;
+  avatar_position: number | null;
 }
 
 const CustomerReviews = () => {

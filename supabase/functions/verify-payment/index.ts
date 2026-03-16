@@ -189,6 +189,32 @@ serve(async (req) => {
       }
     }
 
+    // Upsert client into CRM
+    if (order) {
+      try {
+        const isSubscription = session.mode === "subscription";
+        await supabaseAdmin.rpc("upsert_client" as any, {
+          _email: order.email,
+          _first_name: order.first_name || null,
+          _last_name: order.last_name || null,
+          _phone: order.phone || null,
+          _address_line1: order.address_line1 || null,
+          _address_line2: order.address_line2 || null,
+          _city: order.city || null,
+          _postal_code: order.postal_code || null,
+          _country: order.country || "FR",
+          _subscription_type: isSubscription ? order.subscription_type : null,
+          _subscription_start_date: order.subscription_start_date || null,
+          _subscription_end_date: order.subscription_end_date || null,
+          _is_active_subscriber: isSubscription,
+          _order_total: session.amount_total || 0,
+        });
+        logStep("CRM client upserted", { email: order.email });
+      } catch (crmErr) {
+        logStep("CRM upsert error (non-blocking)", { error: crmErr instanceof Error ? crmErr.message : String(crmErr) });
+      }
+    }
+
     const customerEmail = session.customer_details?.email || order?.email;
     const customerName = `${order?.first_name || ""} ${order?.last_name || ""}`.trim();
 

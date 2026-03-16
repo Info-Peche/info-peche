@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from "react";
-import { useEditor, EditorContent } from "@tiptap/react";
+import { useEditor, EditorContent, NodeViewWrapper, ReactNodeViewRenderer, NodeViewProps } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import BaseImage from "@tiptap/extension-image";
 import Youtube from "@tiptap/extension-youtube";
@@ -12,7 +12,8 @@ import {
   Heading2, Heading3, Heading4, List, ListOrdered, Quote,
   Image as ImageIcon, Youtube as YoutubeIcon, Highlighter,
   AlignLeft, AlignCenter, AlignRight, Undo, Redo, Minus,
-  Box, GraduationCap, Type, Settings2, Upload,
+  Box, GraduationCap, Type, Settings2, Upload, GalleryHorizontal,
+  GripVertical, Move,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -27,8 +28,109 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import "@/components/TipTapStyles.css";
 
-// Custom Image extension with layout, width, caption attributes
+/* ── Image NodeView: renders figure with visible caption + resize handles ── */
+const ImageNodeView = ({ node, selected, updateAttributes, editor }: NodeViewProps) => {
+  const { src, alt, width, "data-caption": caption, "data-layout": layout } = node.attrs;
+  const imgRef = useRef<HTMLImageElement>(null);
+  const [isResizing, setIsResizing] = useState(false);
+
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const startX = e.clientX;
+    const imgEl = imgRef.current;
+    if (!imgEl) return;
+    const startWidth = imgEl.getBoundingClientRect().width;
+    const containerWidth = imgEl.closest('.tiptap-editor-content')?.getBoundingClientRect().width || imgEl.parentElement?.parentElement?.getBoundingClientRect().width || 800;
+
+    setIsResizing(true);
+
+    const onMouseMove = (ev: MouseEvent) => {
+      const diff = ev.clientX - startX;
+      const newPx = Math.max(80, startWidth + diff);
+      const newPercent = Math.min(100, Math.max(10, Math.round((newPx / containerWidth) * 100)));
+      imgEl.style.width = `${newPercent}%`;
+    };
+
+    const onMouseUp = (ev: MouseEvent) => {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      setIsResizing(false);
+      const finalPx = imgEl.getBoundingClientRect().width;
+      const finalPercent = Math.min(100, Math.max(10, Math.round((finalPx / containerWidth) * 100)));
+      updateAttributes({ width: finalPercent >= 100 ? null : finalPercent });
+    };
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  }, [updateAttributes]);
+
+  return (
+    <NodeViewWrapper
+      as="figure"
+      className={`tiptap-image-figure ${selected ? "selected" : ""} ${isResizing ? "resizing" : ""}`}
+      data-layout={layout || "center"}
+      draggable="true"
+      data-drag-handle
+    >
+      <div className="image-container" style={{ width: width ? `${width}%` : undefined, position: 'relative', display: 'inline-block', maxWidth: '100%' }}>
+        <img
+          ref={imgRef}
+          src={src}
+          alt={alt || ""}
+          style={{ width: '100%', height: 'auto' }}
+          className="tiptap-image"
+        />
+        {/* Resize handles */}
+        {selected && (
+          <>
+            <div className="resize-handle resize-handle-right" onMouseDown={handleResizeStart} />
+            <div className="resize-handle resize-handle-left" onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              const startX = e.clientX;
+              const imgEl = imgRef.current;
+              if (!imgEl) return;
+              const startWidth = imgEl.getBoundingClientRect().width;
+              const containerWidth = imgEl.closest('.tiptap-editor-content')?.getBoundingClientRect().width || 800;
+              setIsResizing(true);
+              const onMouseMove = (ev: MouseEvent) => {
+                const diff = startX - ev.clientX;
+                const newPx = Math.max(80, startWidth + diff);
+                const newPercent = Math.min(100, Math.max(10, Math.round((newPx / containerWidth) * 100)));
+                imgEl.style.width = `${newPercent}%`;
+              };
+              const onMouseUp = () => {
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+                setIsResizing(false);
+                const finalPx = imgEl.getBoundingClientRect().width;
+                const finalPercent = Math.min(100, Math.max(10, Math.round((finalPx / containerWidth) * 100)));
+                updateAttributes({ width: finalPercent >= 100 ? null : finalPercent });
+              };
+              document.addEventListener('mousemove', onMouseMove);
+              document.addEventListener('mouseup', onMouseUp);
+            }} />
+          </>
+        )}
+        {/* Drag handle */}
+        {selected && (
+          <div className="drag-handle" contentEditable={false}>
+            <Move className="w-3.5 h-3.5 text-muted-foreground" />
+          </div>
+        )}
+      </div>
+      {caption && (
+        <figcaption className="tiptap-caption">{caption}</figcaption>
+      )}
+    </NodeViewWrapper>
+  );
+};
+
+// Custom Image extension with layout, width, caption attributes + drag + nodeView
 const CustomImage = BaseImage.extend({
+  draggable: true,
+
   addAttributes() {
     return {
       ...this.parent?.(),
@@ -60,6 +162,10 @@ const CustomImage = BaseImage.extend({
       },
     };
   },
+
+  addNodeView() {
+    return ReactNodeViewRenderer(ImageNodeView);
+  },
 });
 
 interface TipTapEditorProps {
@@ -73,6 +179,7 @@ const LAYOUTS = [
   { value: "float-left", label: "← Flottant gauche" },
   { value: "float-right", label: "Flottant droit →" },
   { value: "full", label: "Pleine largeur" },
+  { value: "inline", label: "Côte à côte" },
 ];
 
 const SIZE_PRESETS = [
@@ -86,6 +193,8 @@ const SIZE_PRESETS = [
 const TipTapEditor = ({ content, onChange, placeholder }: TipTapEditorProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const encadreFileInputRef = useRef<HTMLInputElement>(null);
+  const pairFileInputRef1 = useRef<HTMLInputElement>(null);
+  const pairFileInputRef2 = useRef<HTMLInputElement>(null);
 
   // Image detail dialog
   const [imageDialog, setImageDialog] = useState<{
@@ -110,6 +219,14 @@ const TipTapEditor = ({ content, onChange, placeholder }: TipTapEditorProps) => 
   // Selected image quick-resize bar
   const [selectedImagePos, setSelectedImagePos] = useState<number | null>(null);
   const [selectedImageWidth, setSelectedImageWidth] = useState<number>(100);
+
+  // Side-by-side dialog
+  const [pairDialog, setPairDialog] = useState(false);
+  const [pairImage1, setPairImage1] = useState<string | null>(null);
+  const [pairImage2, setPairImage2] = useState<string | null>(null);
+  const [pairCaption1, setPairCaption1] = useState("");
+  const [pairCaption2, setPairCaption2] = useState("");
+  const [pairUploading, setPairUploading] = useState(false);
 
   const editor = useEditor({
     extensions: [
@@ -296,6 +413,47 @@ const TipTapEditor = ({ content, onChange, placeholder }: TipTapEditorProps) => 
     toast.success("Bloc inséré");
   };
 
+  // ── Side-by-side images ──
+  const openPairDialog = () => {
+    setPairImage1(null);
+    setPairImage2(null);
+    setPairCaption1("");
+    setPairCaption2("");
+    setPairDialog(true);
+  };
+
+  const handlePairUpload = async (index: 1 | 2, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPairUploading(true);
+    const url = await uploadImage(file);
+    if (url) {
+      if (index === 1) setPairImage1(url);
+      else setPairImage2(url);
+    }
+    setPairUploading(false);
+    e.target.value = "";
+  };
+
+  const insertPairImages = () => {
+    if (!editor || !pairImage1 || !pairImage2) return;
+    // Insert both images as consecutive nodes with inline layout
+    editor.chain().focus()
+      .insertContent([
+        {
+          type: 'image',
+          attrs: { src: pairImage1, alt: pairCaption1, "data-caption": pairCaption1, "data-layout": "inline", width: 48 },
+        },
+        {
+          type: 'image',
+          attrs: { src: pairImage2, alt: pairCaption2, "data-caption": pairCaption2, "data-layout": "inline", width: 48 },
+        },
+      ])
+      .run();
+    setPairDialog(false);
+    toast.success("Images côte à côte insérées");
+  };
+
   if (!editor) return null;
 
   const TB = ({
@@ -388,6 +546,9 @@ const TipTapEditor = ({ content, onChange, placeholder }: TipTapEditorProps) => 
         <TB onClick={handleImageUpload} title="Image">
           <ImageIcon className="w-4 h-4" />
         </TB>
+        <TB onClick={openPairDialog} title="2 images côte à côte">
+          <GalleryHorizontal className="w-4 h-4" />
+        </TB>
         <TB onClick={handleYoutubeEmbed} title="YouTube">
           <YoutubeIcon className="w-4 h-4" />
         </TB>
@@ -428,7 +589,7 @@ const TipTapEditor = ({ content, onChange, placeholder }: TipTapEditorProps) => 
             </Button>
           ))}
           <Separator orientation="vertical" className="h-5 mx-1" />
-          <span className="text-xs text-muted-foreground">Double-clic → légende, alt, habillage</span>
+          <span className="text-xs text-muted-foreground">Double-clic → légende, alt, habillage | Glissez pour déplacer</span>
         </div>
       )}
 
@@ -511,6 +672,67 @@ const TipTapEditor = ({ content, onChange, placeholder }: TipTapEditorProps) => 
               Annuler
             </Button>
             <Button onClick={saveImageAttrs}>Appliquer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Side-by-side images dialog */}
+      <Dialog open={pairDialog} onOpenChange={(o) => !o && setPairDialog(false)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <GalleryHorizontal className="w-5 h-5 text-primary" /> 2 images côte à côte
+            </DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-4 py-2">
+            {/* Image 1 */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Image gauche</Label>
+              {pairImage1 ? (
+                <div className="relative">
+                  <img src={pairImage1} alt="" className="w-full h-28 object-cover rounded-lg" />
+                  <Button variant="destructive" size="sm" className="absolute top-1 right-1 h-6 w-6 p-0" onClick={() => setPairImage1(null)}>×</Button>
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
+                  className="w-full h-28 border-dashed flex flex-col gap-1"
+                  onClick={() => pairFileInputRef1.current?.click()}
+                  disabled={pairUploading}
+                >
+                  <Upload className="w-5 h-5 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">Importer</span>
+                </Button>
+              )}
+              <Input value={pairCaption1} onChange={e => setPairCaption1(e.target.value)} placeholder="Légende (optionnel)" className="text-xs" />
+            </div>
+            {/* Image 2 */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Image droite</Label>
+              {pairImage2 ? (
+                <div className="relative">
+                  <img src={pairImage2} alt="" className="w-full h-28 object-cover rounded-lg" />
+                  <Button variant="destructive" size="sm" className="absolute top-1 right-1 h-6 w-6 p-0" onClick={() => setPairImage2(null)}>×</Button>
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
+                  className="w-full h-28 border-dashed flex flex-col gap-1"
+                  onClick={() => pairFileInputRef2.current?.click()}
+                  disabled={pairUploading}
+                >
+                  <Upload className="w-5 h-5 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">Importer</span>
+                </Button>
+              )}
+              <Input value={pairCaption2} onChange={e => setPairCaption2(e.target.value)} placeholder="Légende (optionnel)" className="text-xs" />
+            </div>
+          </div>
+          <input ref={pairFileInputRef1} type="file" accept="image/*" className="hidden" onChange={e => handlePairUpload(1, e)} />
+          <input ref={pairFileInputRef2} type="file" accept="image/*" className="hidden" onChange={e => handlePairUpload(2, e)} />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPairDialog(false)}>Annuler</Button>
+            <Button onClick={insertPairImages} disabled={!pairImage1 || !pairImage2 || pairUploading}>Insérer</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

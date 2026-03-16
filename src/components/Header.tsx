@@ -8,7 +8,7 @@ import { useAuth } from "@/context/AuthContext";
 const logo = "/images/info-peche-logo.png";
 
 const resourceLinks = [
-  { name: "Boutique Archives", href: "/boutique" },
+  { name: "Anciens numéros", href: "/boutique" },
   { name: "Événements", href: "/evenements" },
   { name: "Blog", href: "/blog" },
   { name: "Contact", href: "/contact" },

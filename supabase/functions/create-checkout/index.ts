@@ -49,7 +49,7 @@ serve(async (req) => {
       logStep("Existing customer found", { customerId });
     }
 
-    const origin = req.headers.get("origin") || "https://info-peche.fr";
+    const origin = req.headers.get("origin") || "https://www.info-peche.fr";
 
     // Build line items
     const lineItems: any[] = items.map((item: any) => ({

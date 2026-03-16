@@ -4,9 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 interface MagazineFanVisualProps {
   count: 3 | 6 | 12;
   className?: string;
+  showBadge?: boolean;
 }
 
-const MagazineFanVisual = ({ count, className = "" }: MagazineFanVisualProps) => {
+const MagazineFanVisual = ({ count, className = "", showBadge = true }: MagazineFanVisualProps) => {
   const [covers, setCovers] = useState<string[]>([]);
 
   useEffect(() => {
@@ -35,7 +36,7 @@ const MagazineFanVisual = ({ count, className = "" }: MagazineFanVisualProps) =>
   // All dimensions in px – kept small to never overflow card (~220px wide)
   const config = {
     3:  { w: 80, h: 112, rot: 10, tx: 28, ty: 3, containerH: 130 },
-    6:  { w: 68, h: 95,  rot: 14, tx: 18, ty: 2, containerH: 130 },
+    6:  { w: 90, h: 126, rot: 14, tx: 22, ty: 2, containerH: 160 },
     12: { w: 52, h: 73,  rot: 18, tx: 10, ty: 1.5, containerH: 120 },
   }[count];
 
@@ -78,10 +79,11 @@ const MagazineFanVisual = ({ count, className = "" }: MagazineFanVisualProps) =>
           />
         </div>
       ))}
-      {/* Badge pastille nombre de numéros */}
-      <span className="absolute bottom-1 right-2 z-50 bg-primary text-primary-foreground text-[11px] font-bold rounded-full px-2.5 py-1 shadow-lg border-2 border-background">
-        ×{count}
-      </span>
+      {showBadge && (
+        <span className="absolute bottom-1 right-2 z-50 bg-primary text-primary-foreground text-[11px] font-bold rounded-full px-2.5 py-1 shadow-lg border-2 border-background">
+          ×{count}
+        </span>
+      )}
     </figure>
   );
 };

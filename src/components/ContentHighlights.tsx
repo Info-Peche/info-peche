@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, Monitor, Truck, BookOpen, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import magazineCover from "@/assets/magazine-cover-new.jpg";
+import MagazineFanVisual from "@/components/MagazineFanVisual";
 
 const BackIssuesSection = () => {
   const navigate = useNavigate();
@@ -14,7 +14,7 @@ const BackIssuesSection = () => {
       <div className="container px-4 mx-auto relative z-10">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <span className="text-primary font-bold tracking-widest uppercase text-sm">
-            Archives
+            Anciens numéros
           </span>
           <h2 className="text-4xl md:text-5xl font-serif font-bold mt-2 mb-4 text-foreground">
             Retrouvez tous les anciens numéros
@@ -34,13 +34,9 @@ const BackIssuesSection = () => {
             className="group"
           >
             <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-card shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col">
-              <div className="relative h-64 overflow-hidden bg-muted/30 flex items-center justify-center p-4">
-                <img
-                  src={magazineCover}
-                  alt="Lire les anciens numéros en ligne"
-                  className="w-auto h-full object-contain drop-shadow-lg group-hover:scale-105 transition-transform duration-500 rounded-sm"
-                />
-                <div className="absolute top-3 left-3 flex items-center gap-2 bg-primary text-primary-foreground py-1.5 px-3 rounded-full text-sm font-bold shadow">
+              <div className="relative h-80 overflow-hidden bg-muted/30 flex items-center justify-center p-6">
+                <MagazineFanVisual count={6} showBadge={false} className="scale-125 group-hover:scale-[1.3] transition-transform duration-500" />
+                <div className="absolute top-3 left-3 flex items-center gap-2 bg-primary text-primary-foreground py-1.5 px-3 rounded-full text-sm font-bold shadow z-10">
                   <Monitor className="w-4 h-4" />
                   Lecture en ligne
                 </div>
@@ -68,7 +64,7 @@ const BackIssuesSection = () => {
                     className="rounded-full bg-primary hover:bg-primary/90 text-primary-foreground px-6"
                     onClick={() => navigate("/boutique")}
                   >
-                    Voir les archives <ArrowRight className="w-4 h-4 ml-2" />
+                    Voir les anciens numéros <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </div>
               </div>
@@ -84,13 +80,9 @@ const BackIssuesSection = () => {
             className="group"
           >
             <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-card shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col">
-              <div className="relative h-64 overflow-hidden bg-muted/30 flex items-center justify-center p-4">
-                <img
-                  src={magazineCover}
-                  alt="Commander les anciens numéros en papier"
-                  className="w-auto h-full object-contain drop-shadow-lg group-hover:scale-105 transition-transform duration-500 rounded-sm"
-                />
-                <div className="absolute top-3 left-3 flex items-center gap-2 bg-accent text-accent-foreground py-1.5 px-3 rounded-full text-sm font-bold shadow">
+              <div className="relative h-80 overflow-hidden bg-muted/30 flex items-center justify-center p-6">
+                <MagazineFanVisual count={6} showBadge={false} className="scale-125 group-hover:scale-[1.3] transition-transform duration-500" />
+                <div className="absolute top-3 left-3 flex items-center gap-2 bg-accent text-accent-foreground py-1.5 px-3 rounded-full text-sm font-bold shadow z-10">
                   <Package className="w-4 h-4" />
                   Livraison à domicile
                 </div>

@@ -37,7 +37,6 @@ serve(async (req) => {
 
     const now = new Date();
     const reminders = [
-      { days: 30, label: "J-30" },
       { days: 15, label: "J-15" },
       { days: 1, label: "J-1" },
     ];
@@ -45,7 +44,6 @@ serve(async (req) => {
     let totalSent = 0;
 
     for (const reminder of reminders) {
-      // Target date = today + N days (match orders expiring on that day)
       const targetDate = new Date(now);
       targetDate.setDate(targetDate.getDate() + reminder.days);
       const targetStart = new Date(targetDate);
@@ -58,7 +56,6 @@ serve(async (req) => {
         to: targetEnd.toISOString(),
       });
 
-      // Find subscription orders expiring on the target date
       const { data: orders, error } = await supabaseAdmin
         .from("orders")
         .select("*")
@@ -103,7 +100,7 @@ serve(async (req) => {
             <div style="padding: 30px 0;">
               <h2 style="color: #333;">Bonjour ${customerName},</h2>
               <p style="color: #666; line-height: 1.8; font-size: 16px;">
-                Votre <strong>${subLabel}</strong> sera automatiquement renouvelé 
+                Votre <strong>${subLabel}</strong> sera automatiquement reconduit 
                 le <strong>${endDate}</strong>${reminder.days === 1 ? ", soit demain" : ""}.
               </p>
               <div style="background: #f8f6f0; padding: 20px; border-radius: 8px; margin: 25px 0;">

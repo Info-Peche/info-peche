@@ -93,32 +93,32 @@ serve(async (req) => {
           : `📋 Renouvellement dans ${reminder.days} jours — ${subLabel} Info Pêche`;
 
         const emailHtml = `
-          <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <div style="text-align: center; padding: 20px 0; border-bottom: 2px solid #1a5c2e;">
-              <h1 style="color: #1a5c2e; margin: 0;">Info Pêche</h1>
+          <div style="font-family: 'Playfair Display', Georgia, serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
+            <div style="background: #d41227; padding: 20px; text-align: center;">
+              <img src="https://www.info-peche.fr/images/info-peche-logo.png" alt="Info Pêche" style="height: 60px; margin-bottom: 8px;" />
             </div>
-            <div style="padding: 30px 0;">
-              <h2 style="color: #333;">Bonjour ${customerName},</h2>
-              <p style="color: #666; line-height: 1.8; font-size: 16px;">
+            <div style="padding: 30px 25px;">
+              <h2 style="color: #1a1a1a; margin: 0 0 15px; font-family: 'Playfair Display', Georgia, serif;">Bonjour ${customerName},</h2>
+              <p style="color: #555; line-height: 1.8; font-size: 16px; font-family: 'Inter', Arial, sans-serif;">
                 Votre <strong>${subLabel}</strong> sera automatiquement reconduit 
                 le <strong>${endDate}</strong>${reminder.days === 1 ? ", soit demain" : ""}.
               </p>
-              <div style="background: #f8f6f0; padding: 20px; border-radius: 8px; margin: 25px 0;">
-                <p style="margin: 0 0 8px; color: #333; font-weight: bold;">Récapitulatif :</p>
-                <p style="margin: 4px 0; color: #666;">📦 Formule : ${subLabel}</p>
-                <p style="margin: 4px 0; color: #666;">💳 Moyen de paiement : ${paymentMethod}</p>
-                <p style="margin: 4px 0; color: #666;">📅 Date de renouvellement : ${endDate}</p>
+              <div style="background: #fef9e7; border-left: 4px solid #f5c800; padding: 20px; border-radius: 6px; margin: 25px 0;">
+                <p style="margin: 0 0 8px; color: #1a1a1a; font-weight: bold; font-family: 'Inter', Arial, sans-serif;">Récapitulatif :</p>
+                <p style="margin: 4px 0; color: #555; font-family: 'Inter', Arial, sans-serif;">📦 Formule : ${subLabel}</p>
+                <p style="margin: 4px 0; color: #555; font-family: 'Inter', Arial, sans-serif;">💳 Moyen de paiement : ${paymentMethod}</p>
+                <p style="margin: 4px 0; color: #555; font-family: 'Inter', Arial, sans-serif;">📅 Date de renouvellement : ${endDate}</p>
               </div>
-              <p style="color: #666; line-height: 1.8; font-size: 16px;">
+              <p style="color: #555; line-height: 1.8; font-size: 15px; font-family: 'Inter', Arial, sans-serif;">
                 Le montant sera prélevé automatiquement sur votre ${paymentMethod}. 
                 Si vous souhaitez modifier ou annuler votre abonnement, contactez-nous 
-                avant cette date à <a href="mailto:contact@info-peche.fr" style="color: #1a5c2e;">contact@info-peche.fr</a>.
+                avant cette date à <a href="mailto:contact@info-peche.fr" style="color: #d41227; font-weight: bold;">contact@info-peche.fr</a>.
               </p>
-              <p style="color: #666; line-height: 1.8; font-size: 16px; margin-top: 20px;">
+              <p style="color: #555; line-height: 1.8; font-size: 15px; margin-top: 20px; font-family: 'Inter', Arial, sans-serif;">
                 Merci de votre fidélité et bonne pêche ! 🎣
               </p>
             </div>
-            <div style="text-align: center; padding: 20px 0; border-top: 1px solid #eee; color: #999; font-size: 12px;">
+            <div style="background: #d41227; text-align: center; padding: 15px; color: #ffffff; font-size: 12px; font-family: 'Inter', Arial, sans-serif;">
               Info Pêche Magazine — La passion de la pêche au coup
             </div>
           </div>

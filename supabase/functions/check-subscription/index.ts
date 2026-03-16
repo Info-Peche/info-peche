@@ -54,7 +54,20 @@ serve(async (req) => {
 
     const sub = subscriptions.data[0];
     const productId = sub.items.data[0].price.product;
-    const subscriptionEnd = new Date(sub.current_period_end * 1000).toISOString();
+    let subscriptionEnd: string | null = null;
+    try {
+      const endVal = sub.current_period_end;
+      if (typeof endVal === 'number') {
+        subscriptionEnd = new Date(endVal * 1000).toISOString();
+      } else if (typeof endVal === 'string') {
+        subscriptionEnd = new Date(endVal).toISOString();
+      } else if (endVal && typeof endVal === 'object' && 'toISOString' in endVal) {
+        subscriptionEnd = (endVal as Date).toISOString();
+      }
+    } catch (e) {
+      console.log("Could not parse current_period_end:", sub.current_period_end, e);
+      subscriptionEnd = null;
+    }
 
     return new Response(JSON.stringify({
       subscribed: true,

@@ -9,7 +9,8 @@ const logo = "/images/info-peche-logo.png";
 
 const resourceLinks = [
   { name: "Anciens numéros", href: "/boutique" },
-  { name: "Événements", href: "/evenements" },
+  { name: "Specimen Trophy", href: "/specimen-trophy" },
+  { name: "Bons plans pêche", href: "https://bons-coins.info-peche.fr/", external: true },
   { name: "Blog", href: "/blog" },
   { name: "Contact", href: "/contact" },
 ];

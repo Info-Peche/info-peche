@@ -13,7 +13,7 @@ const logStep = (step: string, details?: any) => {
   console.log(`[VERIFY-PAYMENT] ${step}${d}`);
 };
 
-const ADMIN_EMAIL = "jeanfrancois.darnet@gmail.com";
+const ADMIN_EMAIL = "jeanfrancois.darnet@info-peche.fr";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -33,7 +33,7 @@ serve(async (req) => {
 
     // Retrieve the checkout session with line items
     const session = await stripe.checkout.sessions.retrieve(session_id, {
-      expand: ["line_items", "line_items.data.price.product", "subscription"],
+      expand: ["line_items", "line_items.data.price.product"],
     });
     logStep("Session retrieved", { status: session.payment_status, email: session.customer_details?.email });
 
@@ -60,39 +60,53 @@ serve(async (req) => {
       payment_status: "paid",
       status: "confirmed",
       stripe_payment_intent_id: session.payment_intent as string || null,
-      stripe_subscription_id: session.subscription
-        ? (typeof session.subscription === "string" ? session.subscription : session.subscription.id)
-        : null,
     };
 
-    // If this is a subscription, extract dates and payment method from Stripe
+    // Handle subscription ID
+    if (session.subscription) {
+      updatePayload.stripe_subscription_id = typeof session.subscription === "string"
+        ? session.subscription
+        : session.subscription.id;
+    }
+
+    // If this is a subscription, retrieve subscription separately and extract dates
     if (session.mode === "subscription" && session.subscription) {
-      const sub = typeof session.subscription === "string"
-        ? await stripe.subscriptions.retrieve(session.subscription)
-        : session.subscription;
+      try {
+        const subId = typeof session.subscription === "string"
+          ? session.subscription
+          : session.subscription.id;
 
-      const startDate = new Date(sub.current_period_start * 1000).toISOString();
-      const endDate = new Date(sub.current_period_end * 1000).toISOString();
-      updatePayload.subscription_start_date = startDate;
-      updatePayload.subscription_end_date = endDate;
-      updatePayload.is_recurring = true;
+        const sub = await stripe.subscriptions.retrieve(subId);
+        logStep("Subscription retrieved", { subId, start: sub.current_period_start, end: sub.current_period_end });
 
-      // Detect payment method type
-      const pmTypes = sub.default_payment_method
-        ? typeof sub.default_payment_method === "string"
-          ? null
-          : sub.default_payment_method.type
-        : null;
-      if (pmTypes) {
-        const methodMap: Record<string, string> = {
-          card: "card",
-          sepa_debit: "sepa_debit",
-          paypal: "paypal",
-        };
-        updatePayload.payment_method = methodMap[pmTypes] || "card";
+        if (sub.current_period_start && typeof sub.current_period_start === "number") {
+          updatePayload.subscription_start_date = new Date(sub.current_period_start * 1000).toISOString();
+        }
+        if (sub.current_period_end && typeof sub.current_period_end === "number") {
+          updatePayload.subscription_end_date = new Date(sub.current_period_end * 1000).toISOString();
+        }
+        updatePayload.is_recurring = true;
+
+        // Detect payment method type
+        if (sub.default_payment_method && typeof sub.default_payment_method !== "string") {
+          const pmType = sub.default_payment_method.type;
+          const methodMap: Record<string, string> = {
+            card: "card",
+            sepa_debit: "sepa_debit",
+            paypal: "paypal",
+          };
+          updatePayload.payment_method = methodMap[pmType] || "card";
+        }
+
+        logStep("Subscription dates set", {
+          start: updatePayload.subscription_start_date,
+          end: updatePayload.subscription_end_date,
+        });
+      } catch (subError) {
+        logStep("Subscription retrieval error (non-blocking)", {
+          message: subError instanceof Error ? subError.message : String(subError),
+        });
       }
-
-      logStep("Subscription dates set", { startDate, endDate });
     }
 
     // Try to update existing order
@@ -174,6 +188,7 @@ serve(async (req) => {
         }
       }
     }
+
     const customerEmail = session.customer_details?.email || order?.email;
     const customerName = `${order?.first_name || ""} ${order?.last_name || ""}`.trim();
 
@@ -188,7 +203,8 @@ serve(async (req) => {
     // Send emails via Resend
     const resendKey = Deno.env.get("RESEND_API_KEY");
     if (resendKey && customerEmail) {
-      // 1. Email to customer
+      // 1. Email to customer — with account access CTA
+      const isSubscription = session.mode === "subscription";
       const customerEmailResult = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: {
@@ -200,24 +216,24 @@ serve(async (req) => {
           to: [customerEmail],
           subject: "✅ Confirmation de votre commande Info Pêche",
           html: `
-            <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-              <div style="text-align: center; padding: 20px 0; border-bottom: 2px solid #1a5c2e;">
-                <h1 style="color: #1a5c2e; margin: 0;">Info Pêche</h1>
+            <div style="font-family: 'Playfair Display', Georgia, serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
+              <div style="background: #ffffff; padding: 25px 20px 15px; text-align: center; border-bottom: 3px solid #d41227;">
+                <img src="https://www.info-peche.fr/images/info-peche-logo.png" alt="Info Pêche" style="height: 60px;" />
               </div>
-              <div style="padding: 30px 0;">
-                <h2 style="color: #333;">Merci pour votre commande, ${customerName} !</h2>
-                <p style="color: #666; line-height: 1.6;">
-                  Votre paiement a été confirmé avec succès. Voici le récapitulatif de votre commande :
+              <div style="padding: 30px 25px;">
+                <h2 style="color: #1a1a1a; margin: 0 0 15px; font-family: 'Playfair Display', Georgia, serif;">Merci pour votre commande, ${customerName} !</h2>
+                <p style="color: #555; line-height: 1.6; font-family: 'Inter', Arial, sans-serif; font-size: 15px;">
+                  Votre paiement a été confirmé avec succès. Voici le récapitulatif :
                 </p>
-                <div style="background: #f8f6f0; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                  <pre style="font-family: Georgia, serif; white-space: pre-wrap; margin: 0; color: #333;">${lineItemsSummary}</pre>
-                  <hr style="border: none; border-top: 1px solid #ddd; margin: 15px 0;">
-                  <p style="font-size: 18px; font-weight: bold; color: #1a5c2e; margin: 0;">Total : ${totalFormatted}</p>
+                <div style="background: #fef9e7; border-left: 4px solid #f5c800; padding: 20px; border-radius: 6px; margin: 20px 0;">
+                  <pre style="font-family: 'Inter', Arial, sans-serif; white-space: pre-wrap; margin: 0; color: #333; font-size: 14px;">${lineItemsSummary}</pre>
+                  <hr style="border: none; border-top: 1px solid #e8d98a; margin: 15px 0;">
+                  <p style="font-size: 18px; font-weight: bold; color: #d41227; margin: 0;">Total : ${totalFormatted}</p>
                 </div>
                 ${order ? `
                 <div style="margin-top: 20px;">
-                  <h3 style="color: #333;">Adresse de livraison :</h3>
-                  <p style="color: #666; line-height: 1.6;">
+                  <h3 style="color: #1a1a1a; font-family: 'Playfair Display', Georgia, serif;">Adresse de livraison :</h3>
+                  <p style="color: #555; line-height: 1.6; font-family: 'Inter', Arial, sans-serif; font-size: 14px;">
                     ${order.address_line1}<br>
                     ${order.address_line2 ? order.address_line2 + "<br>" : ""}
                     ${order.postal_code} ${order.city}<br>
@@ -225,12 +241,24 @@ serve(async (req) => {
                   </p>
                 </div>
                 ` : ""}
-                <p style="color: #666; line-height: 1.6; margin-top: 20px;">
+                ${isSubscription ? `
+                <div style="background: #fef9e7; padding: 20px; border-radius: 8px; margin: 25px 0; text-align: center; border: 1px solid #f5c800;">
+                  <h3 style="color: #d41227; margin: 0 0 10px; font-family: 'Playfair Display', Georgia, serif;">🎣 Accédez à votre espace abonné</h3>
+                  <p style="color: #555; line-height: 1.6; margin: 0 0 15px; font-family: 'Inter', Arial, sans-serif; font-size: 14px;">
+                    Votre compte est rattaché à votre adresse email <strong>${customerEmail}</strong>.<br>
+                    Lors de votre première connexion, cliquez sur <em>« Mot de passe oublié »</em> pour créer votre mot de passe et finaliser vos accès.
+                  </p>
+                  <a href="https://www.info-peche.fr/mon-compte" style="display: inline-block; background: #d41227; color: #fff; padding: 14px 30px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 16px; font-family: 'Inter', Arial, sans-serif;">
+                    Accéder à mon compte
+                  </a>
+                </div>
+                ` : ""}
+                <p style="color: #555; line-height: 1.6; margin-top: 20px; font-family: 'Inter', Arial, sans-serif; font-size: 14px;">
                   Votre magazine sera expédié dans les plus brefs délais. 
                   Pour toute question, n'hésitez pas à nous contacter.
                 </p>
               </div>
-              <div style="text-align: center; padding: 20px 0; border-top: 1px solid #eee; color: #999; font-size: 12px;">
+              <div style="background: #d41227; text-align: center; padding: 15px; color: #ffffff; font-size: 12px; font-family: 'Inter', Arial, sans-serif;">
                 Info Pêche Magazine — La passion de la pêche au coup
               </div>
             </div>
@@ -252,29 +280,37 @@ serve(async (req) => {
           to: [ADMIN_EMAIL],
           subject: `🎣 Nouvelle commande — ${customerName} — ${totalFormatted}`,
           html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-              <h2 style="color: #1a5c2e;">Nouvelle commande reçue !</h2>
-              <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-                <tr><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Client</td><td style="padding: 8px; border-bottom: 1px solid #eee;">${customerName}</td></tr>
-                <tr><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Email</td><td style="padding: 8px; border-bottom: 1px solid #eee;">${customerEmail}</td></tr>
-                <tr><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Téléphone</td><td style="padding: 8px; border-bottom: 1px solid #eee;">${order?.phone || "Non renseigné"}</td></tr>
-                <tr><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Type</td><td style="padding: 8px; border-bottom: 1px solid #eee;">${order?.order_type === "subscription" ? "Abonnement" : "Achat unique"}</td></tr>
-                <tr><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Total</td><td style="padding: 8px; border-bottom: 1px solid #eee; font-size: 18px; color: #1a5c2e; font-weight: bold;">${totalFormatted}</td></tr>
-              </table>
-              <h3>Articles :</h3>
-              <pre style="background: #f5f5f5; padding: 15px; border-radius: 5px; white-space: pre-wrap;">${lineItemsSummary}</pre>
-              ${order ? `
-              <h3>Adresse de livraison :</h3>
-              <p>
-                ${order.address_line1}<br>
-                ${order.address_line2 ? order.address_line2 + "<br>" : ""}
-                ${order.postal_code} ${order.city}<br>
-                ${order.country}
-              </p>
-              ` : ""}
-              <p style="margin-top: 20px; padding: 10px; background: #e8f5e9; border-radius: 5px; color: #2e7d32;">
-                💳 Paiement confirmé via Stripe — Session: ${session_id}
-              </p>
+            <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
+              <div style="background: #ffffff; padding: 20px 15px 12px; text-align: center; border-bottom: 3px solid #d41227;">
+                <img src="https://www.info-peche.fr/images/info-peche-logo.png" alt="Info Pêche" style="height: 50px;" />
+              </div>
+              <div style="padding: 25px;">
+                <h2 style="color: #d41227; font-family: 'Playfair Display', Georgia, serif;">Nouvelle commande reçue !</h2>
+                <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+                  <tr><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Client</td><td style="padding: 8px; border-bottom: 1px solid #eee;">${customerName}</td></tr>
+                  <tr><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Email</td><td style="padding: 8px; border-bottom: 1px solid #eee;">${customerEmail}</td></tr>
+                  <tr><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Téléphone</td><td style="padding: 8px; border-bottom: 1px solid #eee;">${order?.phone || "Non renseigné"}</td></tr>
+                  <tr><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Type</td><td style="padding: 8px; border-bottom: 1px solid #eee;">${isSubscription ? "Abonnement" : "Achat unique"}</td></tr>
+                  <tr><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Total</td><td style="padding: 8px; border-bottom: 1px solid #eee; font-size: 18px; color: #d41227; font-weight: bold;">${totalFormatted}</td></tr>
+                </table>
+                <h3>Articles :</h3>
+                <pre style="background: #fef9e7; padding: 15px; border-radius: 5px; white-space: pre-wrap; border-left: 4px solid #f5c800;">${lineItemsSummary}</pre>
+                ${order ? `
+                <h3>Adresse de livraison :</h3>
+                <p>
+                  ${order.address_line1}<br>
+                  ${order.address_line2 ? order.address_line2 + "<br>" : ""}
+                  ${order.postal_code} ${order.city}<br>
+                  ${order.country}
+                </p>
+                ` : ""}
+                <p style="margin-top: 20px; padding: 10px; background: #fef9e7; border-radius: 5px; color: #d41227; border-left: 4px solid #f5c800;">
+                  💳 Paiement confirmé via Stripe — Session: ${session_id}
+                </p>
+              </div>
+              <div style="background: #d41227; text-align: center; padding: 12px; color: #ffffff; font-size: 12px;">
+                Info Pêche Magazine — Administration
+              </div>
             </div>
           `,
         }),

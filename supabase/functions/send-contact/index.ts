@@ -40,15 +40,23 @@ serve(async (req) => {
         reply_to: email,
         subject: `[Contact] ${subject}`,
         html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #1a5c2e;">Nouveau message de contact</h2>
-            <table style="width: 100%; border-collapse: collapse;">
-              <tr><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Nom</td><td style="padding: 8px; border-bottom: 1px solid #eee;">${name}</td></tr>
-              <tr><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Email</td><td style="padding: 8px; border-bottom: 1px solid #eee;">${email}</td></tr>
-              <tr><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Sujet</td><td style="padding: 8px; border-bottom: 1px solid #eee;">${subject}</td></tr>
-            </table>
-            <div style="margin-top: 20px; padding: 15px; background: #f5f5f5; border-radius: 5px;">
-              <p style="white-space: pre-wrap; margin: 0;">${message}</p>
+          <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
+            <div style="background: #ffffff; padding: 20px 15px 12px; text-align: center; border-bottom: 3px solid #d41227;">
+              <img src="https://www.info-peche.fr/images/info-peche-logo.png" alt="Info Pêche" style="height: 50px;" />
+            </div>
+            <div style="padding: 25px;">
+              <h2 style="color: #d41227; font-family: 'Playfair Display', Georgia, serif;">Nouveau message de contact</h2>
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Nom</td><td style="padding: 8px; border-bottom: 1px solid #eee;">${name}</td></tr>
+                <tr><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Email</td><td style="padding: 8px; border-bottom: 1px solid #eee;">${email}</td></tr>
+                <tr><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Sujet</td><td style="padding: 8px; border-bottom: 1px solid #eee;">${subject}</td></tr>
+              </table>
+              <div style="margin-top: 20px; padding: 15px; background: #fef9e7; border-left: 4px solid #f5c800; border-radius: 5px;">
+                <p style="white-space: pre-wrap; margin: 0;">${message}</p>
+              </div>
+            </div>
+            <div style="background: #d41227; text-align: center; padding: 12px; color: #ffffff; font-size: 12px;">
+              Info Pêche Magazine — Administration
             </div>
           </div>
         `,

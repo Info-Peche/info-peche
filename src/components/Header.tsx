@@ -9,7 +9,8 @@ const logo = "/images/info-peche-logo.png";
 
 const resourceLinks = [
   { name: "Anciens numéros", href: "/boutique" },
-  { name: "Événements", href: "/evenements" },
+  { name: "Specimen Trophy", href: "/specimen-trophy" },
+  { name: "Bons plans pêche", href: "https://bons-coins.info-peche.fr/", external: true },
   { name: "Blog", href: "/blog" },
   { name: "Contact", href: "/contact" },
 ];
@@ -120,20 +121,33 @@ const Header = () => {
                   transition={{ duration: 0.15 }}
                   className="absolute top-full mt-2 left-0 w-52 bg-popover border border-border rounded-lg shadow-lg overflow-hidden z-50"
                 >
-                  {resourceLinks.map((link) => (
-                    <Link
-                      key={link.name}
-                      to={link.href}
-                      onClick={() => setIsResourcesOpen(false)}
-                      className={`block px-4 py-3 text-sm transition-colors ${
-                        (link as any).highlight
-                          ? "text-primary font-bold bg-primary/5 hover:bg-primary/10"
-                          : "text-foreground/80 hover:bg-muted hover:text-primary"
-                      }`}
-                    >
-                      {link.name}
-                    </Link>
-                  ))}
+                  {resourceLinks.map((link) =>
+                    (link as any).external ? (
+                      <a
+                        key={link.name}
+                        href={link.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => setIsResourcesOpen(false)}
+                        className="block px-4 py-3 text-sm text-foreground/80 hover:bg-muted hover:text-primary transition-colors"
+                      >
+                        {link.name}
+                      </a>
+                    ) : (
+                      <Link
+                        key={link.name}
+                        to={link.href}
+                        onClick={() => setIsResourcesOpen(false)}
+                        className={`block px-4 py-3 text-sm transition-colors ${
+                          (link as any).highlight
+                            ? "text-primary font-bold bg-primary/5 hover:bg-primary/10"
+                            : "text-foreground/80 hover:bg-muted hover:text-primary"
+                        }`}
+                      >
+                        {link.name}
+                      </Link>
+                    )
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -233,16 +247,29 @@ const Header = () => {
                     exit={{ opacity: 0, height: 0 }}
                     className="pl-4 space-y-1"
                   >
-                    {resourceLinks.map((link) => (
-                      <Link
-                        key={link.name}
-                        to={link.href}
-                        className="block text-foreground/70 hover:text-primary font-medium p-2 text-sm"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                      >
-                        {link.name}
-                      </Link>
-                    ))}
+                    {resourceLinks.map((link) =>
+                      (link as any).external ? (
+                        <a
+                          key={link.name}
+                          href={link.href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block text-foreground/70 hover:text-primary font-medium p-2 text-sm"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          {link.name}
+                        </a>
+                      ) : (
+                        <Link
+                          key={link.name}
+                          to={link.href}
+                          className="block text-foreground/70 hover:text-primary font-medium p-2 text-sm"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          {link.name}
+                        </Link>
+                      )
+                    )}
                   </motion.div>
                 )}
               </AnimatePresence>

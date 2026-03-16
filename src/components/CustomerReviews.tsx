@@ -279,12 +279,18 @@ const CustomerReviews = () => {
                 className="break-inside-avoid mb-4 bg-card rounded-xl overflow-hidden border border-border shadow-sm"
               >
                 {review.avatar_url && (
-                  <img
-                    src={review.avatar_url}
-                    alt={review.author_name}
-                    className="w-full object-cover"
-                    loading="lazy"
-                  />
+                  <div className="w-full h-[280px] overflow-hidden">
+                    <img
+                      src={review.avatar_url}
+                      alt={review.author_name}
+                      className="w-full h-full object-cover"
+                      style={{
+                        transform: `scale(${review.avatar_zoom ?? 1})`,
+                        objectPosition: `center ${review.avatar_position ?? 50}%`,
+                      }}
+                      loading="lazy"
+                    />
+                  </div>
                 )}
                 <div className="px-3.5 py-3">
                   <div className="flex items-center gap-1.5 mb-1.5">

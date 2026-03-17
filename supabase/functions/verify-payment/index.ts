@@ -23,9 +23,11 @@ const SUBSCRIPTION_LABELS: Record<string, string> = {
 
 // Enrich line item name with issue number if applicable
 const enrichItemName = (productName: string, items: any[]): string => {
+  const lower = productName.toLowerCase();
+  // Skip subscriptions — they contain "numéros" but shouldn't get issue numbers
+  if (lower.includes("abonnement")) return productName;
   // Check if this is an "ancien numéro" or single issue purchase
-  if (productName.toLowerCase().includes("ancien num") || productName.toLowerCase().includes("numéro")) {
-    // Try to find issue number from cart items
+  if (lower.includes("ancien num") || lower.includes("numéro")) {
     for (const item of items) {
       const issueNum = item.issue_number || item.name?.match(/N°?\s*(\d+)/)?.[1] || "";
       if (issueNum) {

@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useCanonical } from "@/hooks/useCanonical";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight, Lock, Calendar, User, Search, X } from "lucide-react";

@@ -451,19 +451,21 @@ const AdminBlogEditor = () => {
     });
   };
 
-  const handleSave = async () => {
+  const handleSave = async (saveStatus?: "draft" | "published") => {
     if (!title.trim() || !slug.trim() || !excerpt.trim()) {
       toast.error("Titre, slug et chapeau sont obligatoires"); return;
     }
     setSaving(true);
     const selectedAuthor = authors?.find(a => a.id === authorId);
     const authorName = selectedAuthor?.name || author;
-    const articleData = {
+    const finalStatus = saveStatus || (editingArticle as any)?.status || "published";
+    const articleData: any = {
       title: title.trim(), slug: slug.trim(), excerpt: excerpt.trim(),
       content: htmlContent, cover_image: coverImage, category,
       author: authorName, is_free: isFree, related_issue_id: relatedIssueId,
       published_at: publishedAt.toISOString(),
       key_points: keyPoints.filter(p => p.trim()),
+      status: finalStatus,
     };
     let error;
     if (editingArticle) {
@@ -473,7 +475,7 @@ const AdminBlogEditor = () => {
     }
     if (error) toast.error("Erreur : " + error.message);
     else {
-      toast.success(editingArticle ? "Article mis à jour" : "Article créé");
+      toast.success(finalStatus === "draft" ? "Brouillon enregistré" : (editingArticle ? "Article mis à jour" : "Article publié"));
       queryClient.invalidateQueries({ queryKey: ["admin-blog-articles"] });
       setView("list"); resetForm();
     }

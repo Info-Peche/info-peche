@@ -62,7 +62,7 @@ const JsonLd = () => {
         price: "26.50",
         priceCurrency: "EUR",
         availability: "https://schema.org/InStock",
-        url: `${window.location.origin}/#abonnements`,
+        url: "https://www.info-peche.fr/#abonnements",
       },
       {
         "@type": "Offer",
@@ -70,7 +70,7 @@ const JsonLd = () => {
         price: "48.00",
         priceCurrency: "EUR",
         availability: "https://schema.org/InStock",
-        url: `${window.location.origin}/#abonnements`,
+        url: "https://www.info-peche.fr/#abonnements",
       },
     ],
     aggregateRating: reviewCount > 0 ? {

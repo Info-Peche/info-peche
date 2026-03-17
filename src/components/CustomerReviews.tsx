@@ -123,7 +123,7 @@ const CustomerReviews = () => {
   };
 
   return (
-    <section id="avis" className="py-16 md:py-24 bg-secondary/20">
+    <section id="avis" ref={sectionRef} className="py-16 md:py-24 bg-secondary/20">
       <div className="container px-4 mx-auto">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-8 md:mb-10">

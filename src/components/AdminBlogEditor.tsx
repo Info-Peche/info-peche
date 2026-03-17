@@ -601,9 +601,13 @@ const AdminBlogEditor = () => {
               {previewMode ? <Edit className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
               {previewMode ? "Éditer" : "Aperçu"}
             </Button>
-            <Button onClick={handleSave} disabled={saving}>
+            <Button variant="outline" onClick={() => handleSave("draft")} disabled={saving}>
+              {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <FileText className="w-4 h-4 mr-2" />}
+              Brouillon
+            </Button>
+            <Button onClick={() => handleSave("published")} disabled={saving}>
               {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-              Enregistrer
+              Publier
             </Button>
           </>
         )}

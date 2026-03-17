@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { useCanonical } from "@/hooks/useCanonical";
+import { usePageSeo } from "@/hooks/usePageSeo";
 import { motion } from "framer-motion";
 import { Calendar, MapPin, ArrowRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -34,7 +34,11 @@ const events = [
 ];
 
 const Events = () => {
-  useCanonical("/evenements");
+  usePageSeo({
+    title: "Événements Pêche au Coup — Salons & Compétitions | Info Pêche",
+    description: "Calendrier des événements pêche au coup : salons, compétitions, rencontres entre passionnés. Retrouvez les dates clés avec Info Pêche.",
+    canonical: "/evenements",
+  });
   return (
     <>
       <div className="min-h-screen bg-background">

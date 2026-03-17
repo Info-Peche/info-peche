@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { useCanonical } from "@/hooks/useCanonical";
+import { usePageSeo } from "@/hooks/usePageSeo";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -99,7 +99,11 @@ function FlyToSpot({ spot }: { spot: FishingSpot | null }) {
 }
 
 const FishingSpots = () => {
-  useCanonical("/coins-peche");
+  usePageSeo({
+    title: "Coins de Pêche — Carte des meilleurs spots | Info Pêche",
+    description: "Découvrez les meilleurs coins de pêche au coup en France : plans d'eau, carpodromes et rivières. Carte interactive avec espèces présentes et accès.",
+    canonical: "/coins-peche",
+  });
   const [spots, setSpots] = useState<FishingSpot[]>([]);
   const [search, setSearch] = useState("");
   const [activeTypes, setActiveTypes] = useState<Set<string>>(new Set(["plan_eau", "carpodrome", "riviere"]));

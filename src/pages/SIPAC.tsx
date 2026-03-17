@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useCanonical } from "@/hooks/useCanonical";
+import { useState, useMemo } from "react";
+import { usePageSeo } from "@/hooks/usePageSeo";
 import { motion } from "framer-motion";
 import { Calendar, MapPin, ExternalLink, Users, ShoppingBag, Mic, Trophy, Heart, Facebook, Send, Mail, Phone, Building2, Clock, Euro, Car, Train, Bus, Dices, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -65,7 +65,31 @@ const highlights = [
 ];
 
 const SIPAC = () => {
-  useCanonical("/sipac");
+  const sipacSchema = useMemo(() => ({
+    "@context": "https://schema.org",
+    "@type": "Event",
+    name: "SIPAC 2026 — Salon International des Pêches au Coup",
+    description: "4e édition du Salon International des Pêches au Coup à Amiens. Matériel, conférences, compétitions et rencontres entre passionnés.",
+    startDate: "2026-11-07T09:00:00+01:00",
+    endDate: "2026-11-08T18:00:00+01:00",
+    eventStatus: "https://schema.org/EventScheduled",
+    eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+    location: {
+      "@type": "Place",
+      name: "Mégacité Amiens",
+      address: { "@type": "PostalAddress", streetAddress: "Avenue de l'Hippodrome", addressLocality: "Amiens", postalCode: "80000", addressCountry: "FR" },
+    },
+    organizer: { "@type": "Organization", name: "Info Pêche", url: "https://www.info-peche.fr" },
+    image: "https://www.info-peche.fr/images/sipac/sipac-banner-desktop.jpg",
+  }), []);
+
+  usePageSeo({
+    title: "SIPAC 2026 — Salon International des Pêches au Coup | Info Pêche",
+    description: "Retrouvez le SIPAC 2026 à Amiens les 7 et 8 novembre : matériel, conférences, compétitions et rencontres entre passionnés de pêche au coup.",
+    canonical: "/sipac",
+    ogImage: "https://www.info-peche.fr/images/sipac/sipac-banner-desktop.jpg",
+    jsonLd: sipacSchema,
+  });
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);

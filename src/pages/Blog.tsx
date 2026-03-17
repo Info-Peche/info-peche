@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useCanonical } from "@/hooks/useCanonical";
+import { usePageSeo } from "@/hooks/usePageSeo";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight, Lock, Calendar, User, Search, X } from "lucide-react";
@@ -24,7 +24,11 @@ const categoryColors: Record<string, string> = {
 };
 
 const Blog = () => {
-  useCanonical("/blog");
+  usePageSeo({
+    title: "Blog Pêche au Coup — Techniques, Matériel & Compétitions | Info Pêche",
+    description: "Articles et conseils de pêche au coup : techniques, tests de matériel, reportages compétition et guides pour débutants. Le blog du magazine Info Pêche.",
+    canonical: "/blog",
+  });
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Tous");
 

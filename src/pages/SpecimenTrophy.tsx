@@ -1,5 +1,6 @@
+import { useMemo } from "react";
 import { motion } from "framer-motion";
-import { useCanonical } from "@/hooks/useCanonical";
+import { usePageSeo } from "@/hooks/usePageSeo";
 import { Camera, Trophy, Fish, Calendar, Users, ExternalLink, Facebook } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -31,7 +32,22 @@ const partnerLogos = [
 const otherPartners = ["Fun Fishing", "Garbolino", "Nytro", "Cresta"];
 
 const SpecimenTrophy = () => {
-  useCanonical("/specimen-trophy");
+  const specimenSchema = useMemo(() => ({
+    "@context": "https://schema.org",
+    "@type": "SportsEvent",
+    name: "Specimen Trophy — Concours de pêche au coup",
+    description: "Concours photo de pêche au coup : enregistrez vos plus beaux spécimens parmi 8 espèces éligibles et tentez de remporter des prix.",
+    organizer: { "@type": "Organization", name: "Info Pêche", url: "https://www.info-peche.fr" },
+    image: "https://www.info-peche.fr/images/specimen/specimen-banner.png",
+  }), []);
+
+  usePageSeo({
+    title: "Specimen Trophy — Concours de pêche au coup | Info Pêche",
+    description: "Participez au Specimen Trophy : concours photo avec 8 espèces éligibles (gardon, brème, tanche…). Enregistrez vos prises et gagnez des prix avec Info Pêche.",
+    canonical: "/specimen-trophy",
+    ogImage: "https://www.info-peche.fr/images/specimen/specimen-banner.png",
+    jsonLd: specimenSchema,
+  });
   return (
     <div className="min-h-screen bg-background">
       <Header />

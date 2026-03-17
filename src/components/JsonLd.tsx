@@ -54,7 +54,7 @@ const JsonLd = () => {
         price: "14.50",
         priceCurrency: "EUR",
         availability: "https://schema.org/InStock",
-        url: `${window.location.origin}/#abonnements`,
+        url: "https://www.info-peche.fr/#abonnements",
       },
       {
         "@type": "Offer",

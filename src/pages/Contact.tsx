@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useCanonical } from "@/hooks/useCanonical";
+import { usePageSeo } from "@/hooks/usePageSeo";
 import { motion } from "framer-motion";
 import { Send, Loader2, CheckCircle, Mail, Phone, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";

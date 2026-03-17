@@ -227,12 +227,17 @@ const AdminDashboard = () => {
   };
 
   const getExportFormulaLabel = (order: Order) => {
+    if (order.items && Array.isArray(order.items) && order.items.length > 0) {
+      const labels = order.items.map((item: any) => {
+        const priceId = item.price_id || "";
+        if (SUBSCRIPTION_LABELS[priceId]) return SUBSCRIPTION_LABELS[priceId];
+        return getItemLabel(item);
+      });
+      return labels.join(" + ");
+    }
     if (isSubscription(order)) {
       const subType = order.subscription_type || "";
       return SUBSCRIPTION_LABELS[subType] || subType || "Abonnement";
-    }
-    if (order.items && Array.isArray(order.items)) {
-      return order.items.map((item: any) => getItemLabel(item)).join(", ");
     }
     return "—";
   };

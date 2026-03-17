@@ -279,7 +279,7 @@ const CustomerReviews = () => {
                 className="break-inside-avoid mb-4 bg-card rounded-xl overflow-hidden border border-border shadow-sm"
               >
                 {review.avatar_url && (
-                  <div className="w-full h-[280px] overflow-hidden">
+                  <div className="w-full aspect-[3/4] overflow-hidden">
                     <img
                       src={review.avatar_url}
                       alt={review.author_name}

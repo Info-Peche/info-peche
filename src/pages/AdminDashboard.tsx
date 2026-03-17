@@ -72,6 +72,7 @@ type Order = {
   billing_city: string | null;
   billing_postal_code: string | null;
   billing_country: string | null;
+  order_number: number | null;
 };
 
 type ColumnKey = "date" | "client" | "email" | "tel" | "paiement_type" | "formule" | "total" | "paiement_status" | "fin_abo" | "renouvellement" | "client_depuis" | "ville" | "pays" | "commentaire";
@@ -225,10 +226,26 @@ const AdminDashboard = () => {
     toast.success(!current ? "Commande marquée traitée" : "Commande remise en attente");
   };
 
+  const getExportFormulaLabel = (order: Order) => {
+    if (order.items && Array.isArray(order.items) && order.items.length > 0) {
+      const labels = order.items.map((item: any) => {
+        const priceId = item.price_id || "";
+        if (SUBSCRIPTION_LABELS[priceId]) return SUBSCRIPTION_LABELS[priceId];
+        return getItemLabel(item);
+      });
+      return labels.join(" + ");
+    }
+    if (isSubscription(order)) {
+      const subType = order.subscription_type || "";
+      return SUBSCRIPTION_LABELS[subType] || subType || "Abonnement";
+    }
+    return "—";
+  };
+
   const exportXLSX = async () => {
     const XLSX = await import("xlsx");
     const data = filteredOrders.map(o => ({
-      "ID commande": o.id,
+      "N° commande": o.order_number ? `#${o.order_number}` : "",
       "Date": new Date(o.created_at).toLocaleDateString("fr-FR"),
       "Nom": o.last_name,
       "Prénom": o.first_name,
@@ -241,7 +258,7 @@ const AdminDashboard = () => {
       "Téléphone": o.phone || "",
       "Commentaire": o.comment || "",
       "N° abonné": o.subscriber_number || "",
-      "Type abonnement": o.subscription_type || "",
+      "Formule": getExportFormulaLabel(o),
       "Début abo": o.subscription_start_date ? new Date(o.subscription_start_date).toLocaleDateString("fr-FR") : "",
       "Fin abo": o.subscription_end_date ? new Date(o.subscription_end_date).toLocaleDateString("fr-FR") : "",
       "Montant (€)": (o.total_amount / 100).toFixed(2),
@@ -305,14 +322,16 @@ const AdminDashboard = () => {
   };
 
   const getFormulaLabel = (order: Order) => {
+    const itemCount = Array.isArray(order.items) ? order.items.length : 0;
+    // Multiple items (with or without subscription)
+    if (itemCount > 1) {
+      return "Commandes multiples";
+    }
     if (isSubscription(order)) {
       const subType = order.subscription_type || "";
       return SUBSCRIPTION_LABELS[subType] || subType || "Abonnement";
     }
-    if (order.items && Array.isArray(order.items) && order.items.length > 1) {
-      return "Multiples";
-    }
-    if (order.items && Array.isArray(order.items) && order.items.length === 1) {
+    if (itemCount === 1) {
       return getItemLabel(order.items[0]);
     }
     return "—";
@@ -380,7 +399,7 @@ const AdminDashboard = () => {
         return <Badge variant="outline" className="text-xs">{getPaymentMethodLabel(order.payment_method)}</Badge>;
       case "formule": {
         const label = getFormulaLabel(order);
-        const isMultiple = !isSubscription(order) && Array.isArray(order.items) && order.items.length > 1;
+        const isMultiple = Array.isArray(order.items) && order.items.length > 1;
         if (isMultiple) {
           const isExpanded = expandedOrders.has(order.id);
           return (
@@ -482,7 +501,7 @@ const AdminDashboard = () => {
           </thead>
           <tbody>
             {orderList.map(order => {
-              const isMultiple = !isSubscription(order) && Array.isArray(order.items) && order.items.length > 1;
+              const isMultiple = Array.isArray(order.items) && order.items.length > 1;
               const isExpanded = expandedOrders.has(order.id);
               return (
                 <>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useCanonical } from "@/hooks/useCanonical";
 import { motion } from "framer-motion";
 import { Send, Loader2, CheckCircle, Mail, Phone, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ import Footer from "@/components/Footer";
 import SideCart from "@/components/SideCart";
 
 const Contact = () => {
+  useCanonical("/contact");
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);

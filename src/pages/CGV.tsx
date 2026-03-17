@@ -1,8 +1,11 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SideCart from "@/components/SideCart";
+import { useCanonical } from "@/hooks/useCanonical";
 
-const CGV = () => (
+const CGV = () => {
+  useCanonical("/cgv");
+  return (
   <div className="min-h-screen bg-background">
     <Header />
     <SideCart />
@@ -134,5 +137,6 @@ const CGV = () => (
     <Footer />
   </div>
 );
+};
 
 export default CGV;

@@ -10,8 +10,11 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Search, Loader2, Download, Edit, Trash2, Users } from "lucide-react";
+import { Search, Loader2, Download, Edit, Trash2, Users, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 type Client = {
@@ -32,15 +35,52 @@ type Client = {
   total_orders: number;
   total_spent: number;
   notes: string | null;
+  subscriber_number: string | null;
   created_at: string;
   updated_at: string;
 };
+
+const SUBSCRIPTION_LABELS: Record<string, string> = {
+  "price_1T11hVKbRd4yKDMHHCpMLRc3": "Abo 2 ans",
+  "price_1T11hkKbRd4yKDMH6WlS54AH": "Abo 1 an",
+  "price_1T11i1KbRd4yKDMHppfC8rE9": "Abo 6 mois",
+};
+
+const SUBSCRIPTION_OPTIONS = [
+  { value: "", label: "Aucun" },
+  { value: "price_1T11hVKbRd4yKDMHHCpMLRc3", label: "Abonnement 2 ans" },
+  { value: "price_1T11hkKbRd4yKDMH6WlS54AH", label: "Abonnement 1 an" },
+  { value: "price_1T11i1KbRd4yKDMHppfC8rE9", label: "Abonnement 6 mois" },
+];
+
+const subLabel = (type: string | null) => {
+  if (!type) return "—";
+  return SUBSCRIPTION_LABELS[type] || type;
+};
+
+const emptyClient = (): Partial<Client> => ({
+  email: "",
+  first_name: "",
+  last_name: "",
+  phone: "",
+  address_line1: "",
+  address_line2: "",
+  city: "",
+  postal_code: "",
+  country: "FR",
+  subscription_type: "",
+  notes: "",
+  is_active_subscriber: false,
+  total_orders: 0,
+  total_spent: 0,
+});
 
 const AdminCRM = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [editClient, setEditClient] = useState<Client | null>(null);
+  const [newClient, setNewClient] = useState<Partial<Client> | null>(null);
   const [saving, setSaving] = useState(false);
 
   const fetchClients = async () => {
@@ -66,7 +106,8 @@ const AdminCRM = () => {
       (c.first_name || "").toLowerCase().includes(q) ||
       (c.last_name || "").toLowerCase().includes(q) ||
       (c.city || "").toLowerCase().includes(q) ||
-      (c.phone || "").toLowerCase().includes(q)
+      (c.phone || "").toLowerCase().includes(q) ||
+      (c.subscriber_number || "").toLowerCase().includes(q)
     );
   });
 
@@ -84,7 +125,7 @@ const AdminCRM = () => {
         city: editClient.city,
         postal_code: editClient.postal_code,
         country: editClient.country,
-        subscription_type: editClient.subscription_type,
+        subscription_type: editClient.subscription_type || null,
         is_active_subscriber: editClient.is_active_subscriber,
         notes: editClient.notes,
       } as any)
@@ -95,6 +136,50 @@ const AdminCRM = () => {
     } else {
       toast.success("Client mis à jour");
       setEditClient(null);
+      fetchClients();
+    }
+  };
+
+  const handleCreateClient = async () => {
+    if (!newClient?.email) {
+      toast.error("L'email est obligatoire");
+      return;
+    }
+    setSaving(true);
+
+    // Get next subscriber number if subscription selected
+    let subscriberNumber: string | null = null;
+    if (newClient.subscription_type) {
+      const { data: subNum } = await supabase.rpc("nextval_subscriber_number" as any);
+      subscriberNumber = `ABONNE_${subNum || 1}`;
+    }
+
+    const { error } = await supabase.from("clients").insert({
+      email: newClient.email.toLowerCase(),
+      first_name: newClient.first_name || null,
+      last_name: newClient.last_name || null,
+      phone: newClient.phone || null,
+      address_line1: newClient.address_line1 || null,
+      address_line2: newClient.address_line2 || null,
+      city: newClient.city || null,
+      postal_code: newClient.postal_code || null,
+      country: newClient.country || "FR",
+      subscription_type: newClient.subscription_type || null,
+      is_active_subscriber: !!newClient.subscription_type,
+      subscriber_number: subscriberNumber,
+      notes: newClient.notes || null,
+    } as any);
+
+    setSaving(false);
+    if (error) {
+      if (error.code === "23505") {
+        toast.error("Un client avec cet email existe déjà");
+      } else {
+        toast.error("Erreur lors de la création");
+      }
+    } else {
+      toast.success(`Client créé${subscriberNumber ? ` — ${subscriberNumber}` : ""}`);
+      setNewClient(null);
       fetchClients();
     }
   };
@@ -110,33 +195,115 @@ const AdminCRM = () => {
     }
   };
 
-  const exportCSV = () => {
-    const headers = ["Email", "Prénom", "Nom", "Téléphone", "Adresse", "CP", "Ville", "Pays", "Type abo", "Début abo", "Fin abo", "Actif", "Commandes", "Total dépensé", "Notes", "Créé le"];
-    const rows = clients.map((c) => [
-      c.email, c.first_name || "", c.last_name || "", c.phone || "",
-      c.address_line1 || "", c.postal_code || "", c.city || "", c.country || "",
-      c.subscription_type || "", c.subscription_start_date ? new Date(c.subscription_start_date).toLocaleDateString("fr-FR") : "",
-      c.subscription_end_date ? new Date(c.subscription_end_date).toLocaleDateString("fr-FR") : "",
-      c.is_active_subscriber ? "Oui" : "Non", c.total_orders, (c.total_spent / 100).toFixed(2),
-      c.notes || "", new Date(c.created_at).toLocaleDateString("fr-FR"),
-    ]);
-    const csv = [headers.join(";"), ...rows.map((r) => r.map((v) => `"${v}"`).join(";"))].join("\n");
-    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `crm-clients-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
+  const exportXLSX = async () => {
+    const XLSX = await import("xlsx");
+    const data = clients.map((c) => ({
+      "N° abonné": c.subscriber_number || "",
+      "Email": c.email,
+      "Prénom": c.first_name || "",
+      "Nom": c.last_name || "",
+      "Téléphone": c.phone || "",
+      "Adresse": c.address_line1 || "",
+      "CP": c.postal_code || "",
+      "Ville": c.city || "",
+      "Pays": c.country || "",
+      "Formule": subLabel(c.subscription_type),
+      "Début abo": c.subscription_start_date ? new Date(c.subscription_start_date).toLocaleDateString("fr-FR") : "",
+      "Fin abo": c.subscription_end_date ? new Date(c.subscription_end_date).toLocaleDateString("fr-FR") : "",
+      "Actif": c.is_active_subscriber ? "Oui" : "Non",
+      "Commandes": c.total_orders,
+      "Total dépensé (€)": (c.total_spent / 100).toFixed(2),
+      "Notes": c.notes || "",
+      "Depuis": new Date(c.created_at).toLocaleDateString("fr-FR"),
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Clients");
+    XLSX.writeFile(wb, `crm-clients-${new Date().toISOString().slice(0, 10)}.xlsx`);
   };
 
-  const subLabel = (type: string | null) => {
-    const map: Record<string, string> = {
-      "sub-6months": "6 mois",
-      "sub-1year": "1 an",
-      "sub-2years": "2 ans",
-    };
-    return type ? map[type] || type : "—";
-  };
+  const renderClientForm = (client: Partial<Client>, onChange: (c: Partial<Client>) => void, onSave: () => void, title: string) => (
+    <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogHeader>
+        <DialogTitle>{title}</DialogTitle>
+      </DialogHeader>
+      <div className="space-y-3">
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label>Prénom</Label>
+            <Input value={client.first_name || ""} onChange={(e) => onChange({ ...client, first_name: e.target.value })} />
+          </div>
+          <div>
+            <Label>Nom</Label>
+            <Input value={client.last_name || ""} onChange={(e) => onChange({ ...client, last_name: e.target.value })} />
+          </div>
+        </div>
+        <div>
+          <Label>Email *</Label>
+          <Input
+            value={client.email || ""}
+            onChange={(e) => onChange({ ...client, email: e.target.value })}
+            disabled={!!editClient && client === editClient}
+            className={!!editClient && client === editClient ? "bg-muted" : ""}
+          />
+        </div>
+        <div>
+          <Label>Téléphone</Label>
+          <Input value={client.phone || ""} onChange={(e) => onChange({ ...client, phone: e.target.value })} />
+        </div>
+        <div>
+          <Label>Adresse 1</Label>
+          <Input value={client.address_line1 || ""} onChange={(e) => onChange({ ...client, address_line1: e.target.value })} />
+        </div>
+        <div>
+          <Label>Adresse 2</Label>
+          <Input value={client.address_line2 || ""} onChange={(e) => onChange({ ...client, address_line2: e.target.value })} />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label>Code postal</Label>
+            <Input value={client.postal_code || ""} onChange={(e) => onChange({ ...client, postal_code: e.target.value })} />
+          </div>
+          <div>
+            <Label>Ville</Label>
+            <Input value={client.city || ""} onChange={(e) => onChange({ ...client, city: e.target.value })} />
+          </div>
+        </div>
+        <div>
+          <Label>Type d'abonnement</Label>
+          <Select
+            value={client.subscription_type || ""}
+            onValueChange={(v) => onChange({ ...client, subscription_type: v || null })}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Sélectionner..." />
+            </SelectTrigger>
+            <SelectContent>
+              {SUBSCRIPTION_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value || "none"} value={opt.value || "none"}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        {client.subscriber_number && (
+          <div>
+            <Label>N° abonné</Label>
+            <Input value={client.subscriber_number} disabled className="bg-muted font-mono" />
+          </div>
+        )}
+        <div>
+          <Label>Notes</Label>
+          <Textarea value={client.notes || ""} onChange={(e) => onChange({ ...client, notes: e.target.value })} rows={3} />
+        </div>
+        <Button onClick={onSave} disabled={saving} className="w-full">
+          {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+          Enregistrer
+        </Button>
+      </div>
+    </DialogContent>
+  );
 
   return (
     <div className="space-y-4">
@@ -153,8 +320,11 @@ const AdminCRM = () => {
         <Badge variant="secondary" className="gap-1">
           <Users className="w-3 h-3" /> {clients.length} clients
         </Badge>
-        <Button variant="outline" size="sm" onClick={exportCSV}>
-          <Download className="w-4 h-4 mr-2" /> Exporter CSV
+        <Button variant="default" size="sm" onClick={() => setNewClient(emptyClient())}>
+          <Plus className="w-4 h-4 mr-2" /> Nouveau client
+        </Button>
+        <Button variant="outline" size="sm" onClick={exportXLSX}>
+          <Download className="w-4 h-4 mr-2" /> Exporter Excel
         </Button>
       </div>
 
@@ -167,11 +337,12 @@ const AdminCRM = () => {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>N° abonné</TableHead>
                 <TableHead>Client</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Tél</TableHead>
                 <TableHead>Ville</TableHead>
-                <TableHead>Abonnement</TableHead>
+                <TableHead>Formule</TableHead>
                 <TableHead>Statut</TableHead>
                 <TableHead>Commandes</TableHead>
                 <TableHead>Total</TableHead>
@@ -182,6 +353,9 @@ const AdminCRM = () => {
             <TableBody>
               {filtered.map((c) => (
                 <TableRow key={c.id}>
+                  <TableCell className="font-mono text-xs text-primary font-medium">
+                    {c.subscriber_number || "—"}
+                  </TableCell>
                   <TableCell className="font-medium whitespace-nowrap">
                     {c.first_name || c.last_name ? `${c.first_name || ""} ${c.last_name || ""}`.trim() : "—"}
                   </TableCell>
@@ -220,59 +394,12 @@ const AdminCRM = () => {
 
       {/* Edit dialog */}
       <Dialog open={!!editClient} onOpenChange={(open) => !open && setEditClient(null)}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Modifier le client</DialogTitle>
-          </DialogHeader>
-          {editClient && (
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>Prénom</Label>
-                  <Input value={editClient.first_name || ""} onChange={(e) => setEditClient({ ...editClient, first_name: e.target.value })} />
-                </div>
-                <div>
-                  <Label>Nom</Label>
-                  <Input value={editClient.last_name || ""} onChange={(e) => setEditClient({ ...editClient, last_name: e.target.value })} />
-                </div>
-              </div>
-              <div>
-                <Label>Email</Label>
-                <Input value={editClient.email} disabled className="bg-muted" />
-              </div>
-              <div>
-                <Label>Téléphone</Label>
-                <Input value={editClient.phone || ""} onChange={(e) => setEditClient({ ...editClient, phone: e.target.value })} />
-              </div>
-              <div>
-                <Label>Adresse</Label>
-                <Input value={editClient.address_line1 || ""} onChange={(e) => setEditClient({ ...editClient, address_line1: e.target.value })} />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>Code postal</Label>
-                  <Input value={editClient.postal_code || ""} onChange={(e) => setEditClient({ ...editClient, postal_code: e.target.value })} />
-                </div>
-                <div>
-                  <Label>Ville</Label>
-                  <Input value={editClient.city || ""} onChange={(e) => setEditClient({ ...editClient, city: e.target.value })} />
-                </div>
-              </div>
-              <div>
-                <Label>Type d'abonnement</Label>
-                <Input value={editClient.subscription_type || ""} onChange={(e) => setEditClient({ ...editClient, subscription_type: e.target.value })} />
-              </div>
-              <div>
-                <Label>Notes</Label>
-                <Textarea value={editClient.notes || ""} onChange={(e) => setEditClient({ ...editClient, notes: e.target.value })} rows={3} />
-              </div>
-              <Button onClick={handleSave} disabled={saving} className="w-full">
-                {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                Enregistrer
-              </Button>
-            </div>
-          )}
-        </DialogContent>
+        {editClient && renderClientForm(editClient, (c) => setEditClient(c as Client), handleSave, "Modifier le client")}
+      </Dialog>
+
+      {/* Create dialog */}
+      <Dialog open={!!newClient} onOpenChange={(open) => !open && setNewClient(null)}>
+        {newClient && renderClientForm(newClient, (c) => setNewClient(c), handleCreateClient, "Nouveau client")}
       </Dialog>
     </div>
   );

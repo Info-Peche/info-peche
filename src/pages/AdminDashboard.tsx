@@ -72,6 +72,7 @@ type Order = {
   billing_city: string | null;
   billing_postal_code: string | null;
   billing_country: string | null;
+  order_number: number | null;
 };
 
 type ColumnKey = "date" | "client" | "email" | "tel" | "paiement_type" | "formule" | "total" | "paiement_status" | "fin_abo" | "renouvellement" | "client_depuis" | "ville" | "pays" | "commentaire";
@@ -225,10 +226,21 @@ const AdminDashboard = () => {
     toast.success(!current ? "Commande marquée traitée" : "Commande remise en attente");
   };
 
+  const getExportFormulaLabel = (order: Order) => {
+    if (isSubscription(order)) {
+      const subType = order.subscription_type || "";
+      return SUBSCRIPTION_LABELS[subType] || subType || "Abonnement";
+    }
+    if (order.items && Array.isArray(order.items)) {
+      return order.items.map((item: any) => getItemLabel(item)).join(", ");
+    }
+    return "—";
+  };
+
   const exportXLSX = async () => {
     const XLSX = await import("xlsx");
     const data = filteredOrders.map(o => ({
-      "ID commande": o.id,
+      "N° commande": o.order_number ? `#${o.order_number}` : "",
       "Date": new Date(o.created_at).toLocaleDateString("fr-FR"),
       "Nom": o.last_name,
       "Prénom": o.first_name,
@@ -241,7 +253,7 @@ const AdminDashboard = () => {
       "Téléphone": o.phone || "",
       "Commentaire": o.comment || "",
       "N° abonné": o.subscriber_number || "",
-      "Type abonnement": o.subscription_type || "",
+      "Formule": getExportFormulaLabel(o),
       "Début abo": o.subscription_start_date ? new Date(o.subscription_start_date).toLocaleDateString("fr-FR") : "",
       "Fin abo": o.subscription_end_date ? new Date(o.subscription_end_date).toLocaleDateString("fr-FR") : "",
       "Montant (€)": (o.total_amount / 100).toFixed(2),

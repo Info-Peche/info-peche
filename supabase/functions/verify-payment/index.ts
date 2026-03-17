@@ -15,6 +15,29 @@ const logStep = (step: string, details?: any) => {
 
 const ADMIN_EMAIL = "jeanfrancois.darnet@info-peche.fr";
 
+const SUBSCRIPTION_LABELS: Record<string, string> = {
+  "price_1T11hVKbRd4yKDMHHCpMLRc3": "Abonnement 2 ans",
+  "price_1T11hkKbRd4yKDMH6WlS54AH": "Abonnement 1 an",
+  "price_1T11i1KbRd4yKDMHppfC8rE9": "Abonnement 6 mois",
+};
+
+// Enrich line item name with issue number if applicable
+const enrichItemName = (productName: string, items: any[]): string => {
+  // Check if this is an "ancien numéro" or single issue purchase
+  if (productName.toLowerCase().includes("ancien num") || productName.toLowerCase().includes("numéro")) {
+    // Try to find issue number from cart items
+    for (const item of items) {
+      const issueNum = item.issue_number || item.name?.match(/N°?\s*(\d+)/)?.[1] || "";
+      if (issueNum) {
+        if (!productName.includes(`N°${issueNum}`) && !productName.includes(`(N°${issueNum})`)) {
+          return `${productName} (N°${issueNum})`;
+        }
+      }
+    }
+  }
+  return productName;
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -31,7 +54,6 @@ serve(async (req) => {
       apiVersion: "2025-08-27.basil",
     });
 
-    // Retrieve the checkout session with line items
     const session = await stripe.checkout.sessions.retrieve(session_id, {
       expand: ["line_items", "line_items.data.price.product"],
     });
@@ -48,28 +70,35 @@ serve(async (req) => {
       });
     }
 
-    // Update order in database
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
       { auth: { persistSession: false } }
     );
 
+    // Get next order number
+    const { data: orderNumData } = await supabaseAdmin.rpc("nextval_order_number" as any);
+    const orderNumber = orderNumData || 1;
+    logStep("Order number assigned", { orderNumber });
+
+    // Parse cart items from metadata for enrichment
+    const meta = session.metadata || {};
+    const cartItems = meta.items_json ? JSON.parse(meta.items_json) : [];
+
     // Build update payload
     const updatePayload: Record<string, any> = {
       payment_status: "paid",
       status: "confirmed",
       stripe_payment_intent_id: session.payment_intent as string || null,
+      order_number: orderNumber,
     };
 
-    // Handle subscription ID
     if (session.subscription) {
       updatePayload.stripe_subscription_id = typeof session.subscription === "string"
         ? session.subscription
         : session.subscription.id;
     }
 
-    // If this is a subscription, retrieve subscription separately and extract dates
     if (session.mode === "subscription" && session.subscription) {
       try {
         const subId = typeof session.subscription === "string"
@@ -87,14 +116,9 @@ serve(async (req) => {
         }
         updatePayload.is_recurring = true;
 
-        // Detect payment method type
         if (sub.default_payment_method && typeof sub.default_payment_method !== "string") {
           const pmType = sub.default_payment_method.type;
-          const methodMap: Record<string, string> = {
-            card: "card",
-            sepa_debit: "sepa_debit",
-            paypal: "paypal",
-          };
+          const methodMap: Record<string, string> = { card: "card", sepa_debit: "sepa_debit", paypal: "paypal" };
           updatePayload.payment_method = methodMap[pmType] || "card";
         }
 
@@ -118,13 +142,9 @@ serve(async (req) => {
 
     let order = orderData && orderData.length > 0 ? orderData[0] : null;
 
-    // If no order found, create one from Stripe session metadata
     if (!order) {
       logStep("No existing order found, creating from session metadata");
-      const meta = session.metadata || {};
-      const itemsJson = meta.items_json ? JSON.parse(meta.items_json) : [];
       const hasSubscription = session.mode === "subscription";
-      const shippingCents = parseInt(meta.shipping_cents || "0", 10);
 
       const { data: newOrder, error: insertError } = await supabaseAdmin
         .from("orders")
@@ -141,7 +161,7 @@ serve(async (req) => {
           order_type: hasSubscription ? "subscription_paper" : "single_issue",
           payment_method: "card",
           is_recurring: hasSubscription,
-          items: itemsJson,
+          items: cartItems,
           total_amount: session.amount_total || 0,
           stripe_checkout_session_id: session_id,
           payment_status: "paid",
@@ -151,12 +171,13 @@ serve(async (req) => {
           comment: meta.comment || null,
           subscription_start_date: updatePayload.subscription_start_date || null,
           subscription_end_date: updatePayload.subscription_end_date || null,
-          subscription_type: hasSubscription ? itemsJson[0]?.price_id : null,
+          subscription_type: hasSubscription ? cartItems[0]?.price_id : null,
           billing_address_line1: meta.billing_different === "true" ? meta.billing_address_line1 : null,
           billing_address_line2: meta.billing_different === "true" ? meta.billing_address_line2 : null,
           billing_city: meta.billing_different === "true" ? meta.billing_city : null,
           billing_postal_code: meta.billing_different === "true" ? meta.billing_postal_code : null,
           billing_country: meta.billing_different === "true" ? meta.billing_country : null,
+          order_number: orderNumber,
         })
         .select()
         .single();
@@ -189,10 +210,19 @@ serve(async (req) => {
       }
     }
 
-    // Upsert client into CRM
+    // Upsert client into CRM + assign subscriber number if subscription
+    let subscriberNumber: string | null = null;
     if (order) {
       try {
         const isSubscription = session.mode === "subscription";
+
+        // If subscription, get next subscriber number
+        if (isSubscription) {
+          const { data: subNumData } = await supabaseAdmin.rpc("nextval_subscriber_number" as any);
+          subscriberNumber = `ABONNE_${subNumData || 1}`;
+          logStep("Subscriber number assigned", { subscriberNumber });
+        }
+
         await supabaseAdmin.rpc("upsert_client" as any, {
           _email: order.email,
           _first_name: order.first_name || null,
@@ -209,6 +239,17 @@ serve(async (req) => {
           _is_active_subscriber: isSubscription,
           _order_total: session.amount_total || 0,
         });
+
+        // Update subscriber_number on client if subscription
+        if (isSubscription && subscriberNumber) {
+          await supabaseAdmin
+            .from("clients")
+            .update({ subscriber_number: subscriberNumber } as any)
+            .eq("email", order.email.toLowerCase())
+            .is("subscriber_number", null); // Only set if not already set
+          logStep("Client subscriber_number set", { subscriberNumber });
+        }
+
         logStep("CRM client upserted", { email: order.email });
       } catch (crmErr) {
         logStep("CRM upsert error (non-blocking)", { error: crmErr instanceof Error ? crmErr.message : String(crmErr) });
@@ -217,10 +258,12 @@ serve(async (req) => {
 
     const customerEmail = session.customer_details?.email || order?.email;
     const customerName = `${order?.first_name || ""} ${order?.last_name || ""}`.trim();
+    const orderNumDisplay = `#${orderNumber}`;
 
-    // Build line items summary
+    // Build line items summary with enriched names
     const lineItemsSummary = session.line_items?.data.map((li: any) => {
-      const productName = li.price?.product?.name || li.description || "Produit";
+      let productName = li.price?.product?.name || li.description || "Produit";
+      productName = enrichItemName(productName, cartItems);
       return `• ${productName} × ${li.quantity} — ${(li.amount_total / 100).toFixed(2)}€`;
     }).join("\n") || "Détails non disponibles";
 
@@ -229,8 +272,9 @@ serve(async (req) => {
     // Send emails via Resend
     const resendKey = Deno.env.get("RESEND_API_KEY");
     if (resendKey && customerEmail) {
-      // 1. Email to customer — with account access CTA
       const isSubscription = session.mode === "subscription";
+      
+      // 1. Email to customer
       const customerEmailResult = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: {
@@ -240,7 +284,7 @@ serve(async (req) => {
         body: JSON.stringify({
           from: "Info Pêche <commandes@info-peche.fr>",
           to: [customerEmail],
-          subject: "✅ Confirmation de votre commande Info Pêche",
+          subject: `✅ Confirmation de votre commande ${orderNumDisplay} — Info Pêche`,
           html: `
             <div style="font-family: 'Playfair Display', Georgia, serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
               <div style="background: #ffffff; padding: 25px 20px 15px; text-align: center; border-bottom: 3px solid #d41227;">
@@ -249,7 +293,7 @@ serve(async (req) => {
               <div style="padding: 30px 25px;">
                 <h2 style="color: #1a1a1a; margin: 0 0 15px; font-family: 'Playfair Display', Georgia, serif;">Merci pour votre commande, ${customerName} !</h2>
                 <p style="color: #555; line-height: 1.6; font-family: 'Inter', Arial, sans-serif; font-size: 15px;">
-                  Votre paiement a été confirmé avec succès. Voici le récapitulatif :
+                  Votre paiement a été confirmé avec succès. Voici le récapitulatif de votre commande <strong>${orderNumDisplay}</strong> :
                 </p>
                 <div style="background: #fef9e7; border-left: 4px solid #f5c800; padding: 20px; border-radius: 6px; margin: 20px 0;">
                   <pre style="font-family: 'Inter', Arial, sans-serif; white-space: pre-wrap; margin: 0; color: #333; font-size: 14px;">${lineItemsSummary}</pre>
@@ -271,6 +315,7 @@ serve(async (req) => {
                 <div style="background: #fef9e7; padding: 20px; border-radius: 8px; margin: 25px 0; text-align: center; border: 1px solid #f5c800;">
                   <h3 style="color: #d41227; margin: 0 0 10px; font-family: 'Playfair Display', Georgia, serif;">🎣 Accédez à votre espace abonné</h3>
                   <p style="color: #555; line-height: 1.6; margin: 0 0 15px; font-family: 'Inter', Arial, sans-serif; font-size: 14px;">
+                    Votre numéro d'abonné : <strong>${subscriberNumber || "—"}</strong><br>
                     Votre compte est rattaché à votre adresse email <strong>${customerEmail}</strong>.<br>
                     Lors de votre première connexion, cliquez sur <em>« Mot de passe oublié »</em> pour créer votre mot de passe et finaliser vos accès.
                   </p>
@@ -304,19 +349,20 @@ serve(async (req) => {
         body: JSON.stringify({
           from: "Info Pêche <commandes@info-peche.fr>",
           to: [ADMIN_EMAIL],
-          subject: `🎣 Nouvelle commande — ${customerName} — ${totalFormatted}`,
+          subject: `🎣 Commande ${orderNumDisplay} — ${customerName} — ${totalFormatted}`,
           html: `
             <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
               <div style="background: #ffffff; padding: 20px 15px 12px; text-align: center; border-bottom: 3px solid #d41227;">
                 <img src="https://www.info-peche.fr/images/info-peche-logo.png" alt="Info Pêche" style="height: 50px;" />
               </div>
               <div style="padding: 25px;">
-                <h2 style="color: #d41227; font-family: 'Playfair Display', Georgia, serif;">Nouvelle commande reçue !</h2>
+                <h2 style="color: #d41227; font-family: 'Playfair Display', Georgia, serif;">Commande ${orderNumDisplay}</h2>
                 <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
                   <tr><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Client</td><td style="padding: 8px; border-bottom: 1px solid #eee;">${customerName}</td></tr>
                   <tr><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Email</td><td style="padding: 8px; border-bottom: 1px solid #eee;">${customerEmail}</td></tr>
                   <tr><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Téléphone</td><td style="padding: 8px; border-bottom: 1px solid #eee;">${order?.phone || "Non renseigné"}</td></tr>
                   <tr><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Type</td><td style="padding: 8px; border-bottom: 1px solid #eee;">${isSubscription ? "Abonnement" : "Achat unique"}</td></tr>
+                  ${subscriberNumber ? `<tr><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">N° abonné</td><td style="padding: 8px; border-bottom: 1px solid #eee;">${subscriberNumber}</td></tr>` : ""}
                   <tr><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Total</td><td style="padding: 8px; border-bottom: 1px solid #eee; font-size: 18px; color: #d41227; font-weight: bold;">${totalFormatted}</td></tr>
                 </table>
                 <h3>Articles :</h3>
@@ -354,6 +400,7 @@ serve(async (req) => {
       customer_email: customerEmail,
       total: totalFormatted,
       order_type: order?.order_type || session.mode,
+      order_number: orderNumber,
       line_items: session.line_items?.data.map((li: any) => ({
         name: li.price?.product?.name || li.description,
         quantity: li.quantity,

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useCanonical } from "@/hooks/useCanonical";
+import { useState, useMemo } from "react";
+import { usePageSeo } from "@/hooks/usePageSeo";
 import { motion } from "framer-motion";
 import { Calendar, MapPin, ExternalLink, Users, ShoppingBag, Mic, Trophy, Heart, Facebook, Send, Mail, Phone, Building2, Clock, Euro, Car, Train, Bus, Dices, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";

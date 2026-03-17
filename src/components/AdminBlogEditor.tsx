@@ -500,7 +500,22 @@ const AdminBlogEditor = () => {
         <TabsContent value="articles">
           <div className="space-y-6">
             <div className="flex items-center justify-between flex-wrap gap-3">
-              <h2 className="text-xl font-bold">Articles de blog</h2>
+              <div className="flex items-center gap-3">
+                <h2 className="text-xl font-bold">Articles de blog</h2>
+                {articles && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="flex items-center gap-1.5 text-nature font-medium">
+                      <span className="w-2 h-2 rounded-full bg-nature inline-block" />
+                      {articles.filter(a => (a as any).status !== "draft").length} en ligne
+                    </span>
+                    <span className="text-muted-foreground">·</span>
+                    <span className="flex items-center gap-1.5 text-accent font-medium">
+                      <span className="w-2 h-2 rounded-full bg-accent inline-block" />
+                      {articles.filter(a => (a as any).status === "draft").length} brouillon(s)
+                    </span>
+                  </div>
+                )}
+              </div>
               <Button onClick={() => openEditor()} className="gap-2">
                 <Plus className="w-4 h-4" /> Nouvel article
               </Button>
@@ -510,7 +525,7 @@ const AdminBlogEditor = () => {
             ) : (
               <div className="space-y-3">
                 {articles?.map(article => (
-                  <Card key={article.id} className="hover:shadow-md transition-shadow">
+                  <Card key={article.id} className={cn("hover:shadow-md transition-shadow", (article as any).status === "draft" && "border-accent/50 bg-accent/5")}>
                     <CardContent className="p-4 flex items-center gap-4">
                       {article.cover_image ? (
                         <img src={article.cover_image} alt="" className="w-16 h-16 object-cover rounded-lg flex-shrink-0" />
@@ -522,6 +537,11 @@ const AdminBlogEditor = () => {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <h3 className="font-semibold truncate">{article.title}</h3>
+                          {(article as any).status === "draft" ? (
+                            <Badge className="text-xs flex-shrink-0 bg-accent/20 text-accent-foreground border-accent/30">Brouillon</Badge>
+                          ) : (
+                            <Badge className="text-xs flex-shrink-0 bg-nature/20 text-nature border-nature/30">En ligne</Badge>
+                          )}
                           <Badge variant={article.is_free ? "secondary" : "default"} className="text-xs flex-shrink-0">
                             {article.is_free ? "Libre" : "Premium"}
                           </Badge>

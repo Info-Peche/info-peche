@@ -22,6 +22,8 @@ interface Review {
 }
 
 const CustomerReviews = () => {
+  const [searchParams] = useSearchParams();
+  const sectionRef = useRef<HTMLElement>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -35,6 +37,16 @@ const CustomerReviews = () => {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  // Auto-open form if ?avis=1 in URL
+  useEffect(() => {
+    if (searchParams.get("avis") === "1") {
+      setShowForm(true);
+      setTimeout(() => {
+        sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 300);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const fetchReviews = async () => {

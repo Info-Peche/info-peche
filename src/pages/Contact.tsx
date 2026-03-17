@@ -14,6 +14,7 @@ import Footer from "@/components/Footer";
 import SideCart from "@/components/SideCart";
 
 const Contact = () => {
+  useCanonical("/contact");
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);

@@ -31,6 +31,7 @@ const partnerLogos = [
 const otherPartners = ["Fun Fishing", "Garbolino", "Nytro", "Cresta"];
 
 const SpecimenTrophy = () => {
+  useCanonical("/specimen-trophy");
   return (
     <div className="min-h-screen bg-background">
       <Header />

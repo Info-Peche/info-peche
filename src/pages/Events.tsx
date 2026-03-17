@@ -34,6 +34,7 @@ const events = [
 ];
 
 const Events = () => {
+  useCanonical("/evenements");
   return (
     <>
       <div className="min-h-screen bg-background">

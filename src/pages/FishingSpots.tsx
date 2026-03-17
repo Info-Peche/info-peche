@@ -99,6 +99,7 @@ function FlyToSpot({ spot }: { spot: FishingSpot | null }) {
 }
 
 const FishingSpots = () => {
+  useCanonical("/coins-peche");
   const [spots, setSpots] = useState<FishingSpot[]>([]);
   const [search, setSearch] = useState("");
   const [activeTypes, setActiveTypes] = useState<Set<string>>(new Set(["plan_eau", "carpodrome", "riviere"]));

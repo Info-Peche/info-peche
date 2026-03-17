@@ -244,6 +244,7 @@ const ShopContent = () => {
 };
 
 const Shop = () => {
+  useCanonical("/boutique");
   return (
     <div className="min-h-screen bg-background">
       <Header />

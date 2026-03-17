@@ -24,6 +24,7 @@ const categoryColors: Record<string, string> = {
 };
 
 const Blog = () => {
+  useCanonical("/blog");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Tous");
 

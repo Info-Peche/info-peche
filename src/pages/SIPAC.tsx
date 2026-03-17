@@ -65,6 +65,7 @@ const highlights = [
 ];
 
 const SIPAC = () => {
+  useCanonical("/sipac");
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);

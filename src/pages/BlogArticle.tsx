@@ -211,6 +211,14 @@ const BlogArticle = () => {
 
   const showPaywall = article && !article.is_free && !(user && hasAccessToBlog);
 
+  // Canonical for blog articles
+  useEffect(() => {
+    if (!slug) return;
+    let link = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+    if (!link) { link = document.createElement("link"); link.setAttribute("rel", "canonical"); document.head.appendChild(link); }
+    link.setAttribute("href", `https://www.info-peche.fr/blog/${slug}`);
+  }, [slug]);
+
   // SEO
   useEffect(() => {
     if (!article) return;

@@ -16,6 +16,7 @@ import SideCart from "@/components/SideCart";
 import JsonLd from "@/components/JsonLd";
 
 const Index = () => {
+  useCanonical("/");
   return (
     <div className="min-h-screen bg-background font-sans selection:bg-accent/30 overflow-x-hidden">
       <JsonLd />

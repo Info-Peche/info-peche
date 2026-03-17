@@ -1,5 +1,6 @@
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
+import { useCanonical } from "@/hooks/useCanonical";
 import TrustBar from "@/components/TrustBar";
 import LatestEdition from "@/components/LatestEdition";
 
@@ -15,6 +16,7 @@ import SideCart from "@/components/SideCart";
 import JsonLd from "@/components/JsonLd";
 
 const Index = () => {
+  useCanonical("/");
   return (
     <div className="min-h-screen bg-background font-sans selection:bg-accent/30 overflow-x-hidden">
       <JsonLd />

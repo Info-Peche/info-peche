@@ -12,5 +12,11 @@ Allow: /
 
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /admin/login
+Disallow: /commande
+Disallow: /commande-confirmee
+Disallow: /lire
+Disallow: /reset-password
 
-Sitemap: https://info-peche.fr/sitemap.xml
+Sitemap: https://www.info-peche.fr/sitemap.xml

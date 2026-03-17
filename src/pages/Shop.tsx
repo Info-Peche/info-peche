@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useCanonical } from "@/hooks/useCanonical";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ShoppingBag, Monitor, Package, AlertCircle, BookOpen, Truck, Eye, Calendar } from "lucide-react";
@@ -243,6 +244,7 @@ const ShopContent = () => {
 };
 
 const Shop = () => {
+  useCanonical("/boutique");
   return (
     <div className="min-h-screen bg-background">
       <Header />

@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { useCanonical } from "@/hooks/useCanonical";
 import { Camera, Trophy, Fish, Calendar, Users, ExternalLink, Facebook } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -30,6 +31,7 @@ const partnerLogos = [
 const otherPartners = ["Fun Fishing", "Garbolino", "Nytro", "Cresta"];
 
 const SpecimenTrophy = () => {
+  useCanonical("/specimen-trophy");
   return (
     <div className="min-h-screen bg-background">
       <Header />

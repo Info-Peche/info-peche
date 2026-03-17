@@ -1,25 +1,4 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-
 const JsonLd = () => {
-  const [avgRating, setAvgRating] = useState(4.8);
-  const [reviewCount, setReviewCount] = useState(0);
-
-  useEffect(() => {
-    const fetchStats = async () => {
-      const { data, error } = await supabase
-        .from("reviews")
-        .select("rating")
-        .eq("is_approved", true);
-
-      if (!error && data && data.length > 0) {
-        const avg = data.reduce((sum, r) => sum + r.rating, 0) / data.length;
-        setAvgRating(Math.round(avg * 10) / 10);
-        setReviewCount(data.length);
-      }
-    };
-    fetchStats();
-  }, []);
 
   const organizationSchema = {
     "@context": "https://schema.org",

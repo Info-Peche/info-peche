@@ -211,29 +211,28 @@ const BlogArticle = () => {
 
   const showPaywall = article && !article.is_free && !(user && hasAccessToBlog);
 
-  // Canonical for blog articles
-  useEffect(() => {
-    if (!slug) return;
-    let link = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
-    if (!link) { link = document.createElement("link"); link.setAttribute("rel", "canonical"); document.head.appendChild(link); }
-    link.setAttribute("href", `https://www.info-peche.fr/blog/${slug}`);
-  }, [slug]);
-
-  // SEO
+  // SEO — canonical + meta + JSON-LD for article
   useEffect(() => {
     if (!article) return;
     document.title = `${article.title} | Info Pêche`;
-    const setMeta = (name: string, content: string) => {
-      let el = document.querySelector(`meta[name="${name}"]`) || document.querySelector(`meta[property="${name}"]`);
-      if (!el) { el = document.createElement("meta"); el.setAttribute(name.startsWith("og:") ? "property" : "name", name); document.head.appendChild(el); }
+
+    const setMeta = (attr: string, key: string, content: string) => {
+      let el = document.querySelector(`meta[${attr}="${key}"]`) as HTMLMetaElement | null;
+      if (!el) { el = document.createElement("meta"); el.setAttribute(attr, key); document.head.appendChild(el); }
       el.setAttribute("content", content);
     };
-    setMeta("description", article.excerpt.substring(0, 160));
-    setMeta("og:title", article.title);
-    setMeta("og:description", article.excerpt.substring(0, 160));
-    setMeta("og:type", "article");
-    if (article.cover_image) setMeta("og:image", article.cover_image);
+    setMeta("name", "description", article.excerpt.substring(0, 160));
+    setMeta("property", "og:title", article.title);
+    setMeta("property", "og:description", article.excerpt.substring(0, 160));
+    setMeta("property", "og:type", "article");
+    if (article.cover_image) setMeta("property", "og:image", article.cover_image);
 
+    // Canonical
+    let link = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+    if (!link) { link = document.createElement("link"); link.setAttribute("rel", "canonical"); document.head.appendChild(link); }
+    link.setAttribute("href", `https://www.info-peche.fr/blog/${slug}`);
+
+    // JSON-LD Article
     let scriptEl = document.querySelector('script[data-jsonld="article"]') as HTMLScriptElement | null;
     if (!scriptEl) { scriptEl = document.createElement("script"); scriptEl.type = "application/ld+json"; scriptEl.setAttribute("data-jsonld", "article"); document.head.appendChild(scriptEl); }
     scriptEl.textContent = JSON.stringify({
@@ -241,12 +240,12 @@ const BlogArticle = () => {
       headline: article.title, description: article.excerpt,
       image: article.cover_image || undefined,
       author: { "@type": "Person", name: article.author || "Info Pêche" },
-      publisher: { "@type": "Organization", name: "Info Pêche" },
+      publisher: { "@type": "Organization", name: "Info Pêche", url: "https://www.info-peche.fr" },
       datePublished: article.published_at, dateModified: article.updated_at || article.published_at,
-      mainEntityOfPage: window.location.href,
+      mainEntityOfPage: `https://www.info-peche.fr/blog/${slug}`,
     });
-    return () => { document.title = "Info Pêche"; scriptEl?.remove(); };
-  }, [article]);
+    return () => { document.title = "Info Pêche — Le magazine de référence de la pêche au coup"; scriptEl?.remove(); };
+  }, [article, slug]);
 
   useEffect(() => {
     document.documentElement.style.scrollBehavior = "smooth";

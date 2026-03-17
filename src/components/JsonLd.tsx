@@ -86,10 +86,10 @@ const JsonLd = () => {
     "@context": "https://schema.org",
     "@type": "WebSite",
     name: "Info Pêche",
-    url: window.location.origin,
+    url: "https://www.info-peche.fr",
     potentialAction: {
       "@type": "SearchAction",
-      target: `${window.location.origin}/blog?q={search_term_string}`,
+      target: "https://www.info-peche.fr/blog?q={search_term_string}",
       "query-input": "required name=search_term_string",
     },
   };

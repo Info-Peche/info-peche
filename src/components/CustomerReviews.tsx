@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Star, Send, CheckCircle, Camera, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,8 @@ interface Review {
 }
 
 const CustomerReviews = () => {
+  const [searchParams] = useSearchParams();
+  const sectionRef = useRef<HTMLElement>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -34,6 +37,16 @@ const CustomerReviews = () => {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  // Auto-open form if ?avis=1 in URL
+  useEffect(() => {
+    if (searchParams.get("avis") === "1") {
+      setShowForm(true);
+      setTimeout(() => {
+        sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 300);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const fetchReviews = async () => {
@@ -110,7 +123,7 @@ const CustomerReviews = () => {
   };
 
   return (
-    <section id="avis" className="py-16 md:py-24 bg-secondary/20">
+    <section id="avis" ref={sectionRef} className="py-16 md:py-24 bg-secondary/20">
       <div className="container px-4 mx-auto">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-8 md:mb-10">

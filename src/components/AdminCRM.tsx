@@ -323,8 +323,8 @@ const AdminCRM = () => {
         <Button variant="default" size="sm" onClick={() => setNewClient(emptyClient())}>
           <Plus className="w-4 h-4 mr-2" /> Nouveau client
         </Button>
-        <Button variant="outline" size="sm" onClick={exportCSV}>
-          <Download className="w-4 h-4 mr-2" /> Exporter CSV
+        <Button variant="outline" size="sm" onClick={exportXLSX}>
+          <Download className="w-4 h-4 mr-2" /> Exporter Excel
         </Button>
       </div>
 

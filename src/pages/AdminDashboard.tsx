@@ -394,7 +394,7 @@ const AdminDashboard = () => {
         return <Badge variant="outline" className="text-xs">{getPaymentMethodLabel(order.payment_method)}</Badge>;
       case "formule": {
         const label = getFormulaLabel(order);
-        const isMultiple = !isSubscription(order) && Array.isArray(order.items) && order.items.length > 1;
+        const isMultiple = Array.isArray(order.items) && order.items.length > 1;
         if (isMultiple) {
           const isExpanded = expandedOrders.has(order.id);
           return (

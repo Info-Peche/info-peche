@@ -72,6 +72,7 @@ type Order = {
   billing_city: string | null;
   billing_postal_code: string | null;
   billing_country: string | null;
+  order_number: number | null;
 };
 
 type ColumnKey = "date" | "client" | "email" | "tel" | "paiement_type" | "formule" | "total" | "paiement_status" | "fin_abo" | "renouvellement" | "client_depuis" | "ville" | "pays" | "commentaire";

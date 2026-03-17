@@ -211,7 +211,15 @@ const BlogArticle = () => {
 
   const showPaywall = article && !article.is_free && !(user && hasAccessToBlog);
 
-  // SEO — canonical + meta + JSON-LD for article
+  // Canonical — set immediately from slug (no need to wait for article data)
+  useEffect(() => {
+    if (!slug) return;
+    let link = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+    if (!link) { link = document.createElement("link"); link.setAttribute("rel", "canonical"); document.head.appendChild(link); }
+    link.setAttribute("href", `https://www.info-peche.fr/blog/${slug}`);
+  }, [slug]);
+
+  // SEO — meta + JSON-LD (after article loads)
   useEffect(() => {
     if (!article) return;
     document.title = `${article.title} | Info Pêche`;
@@ -226,11 +234,6 @@ const BlogArticle = () => {
     setMeta("property", "og:description", article.excerpt.substring(0, 160));
     setMeta("property", "og:type", "article");
     if (article.cover_image) setMeta("property", "og:image", article.cover_image);
-
-    // Canonical
-    let link = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
-    if (!link) { link = document.createElement("link"); link.setAttribute("rel", "canonical"); document.head.appendChild(link); }
-    link.setAttribute("href", `https://www.info-peche.fr/blog/${slug}`);
 
     // JSON-LD Article
     let scriptEl = document.querySelector('script[data-jsonld="article"]') as HTMLScriptElement | null;

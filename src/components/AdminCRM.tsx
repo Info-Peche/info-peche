@@ -221,7 +221,6 @@ const AdminCRM = () => {
     XLSX.utils.book_append_sheet(wb, ws, "Clients");
     XLSX.writeFile(wb, `crm-clients-${new Date().toISOString().slice(0, 10)}.xlsx`);
   };
-  };
 
   const renderClientForm = (client: Partial<Client>, onChange: (c: Partial<Client>) => void, onSave: () => void, title: string) => (
     <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">

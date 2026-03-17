@@ -29,6 +29,7 @@ export type Database = {
           published_at: string | null
           related_issue_id: string | null
           slug: string
+          status: string
           title: string
           updated_at: string | null
         }
@@ -46,6 +47,7 @@ export type Database = {
           published_at?: string | null
           related_issue_id?: string | null
           slug: string
+          status?: string
           title: string
           updated_at?: string | null
         }
@@ -63,6 +65,7 @@ export type Database = {
           published_at?: string | null
           related_issue_id?: string | null
           slug?: string
+          status?: string
           title?: string
           updated_at?: string | null
         }

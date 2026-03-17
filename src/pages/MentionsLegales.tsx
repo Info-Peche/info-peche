@@ -1,8 +1,11 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SideCart from "@/components/SideCart";
+import { useCanonical } from "@/hooks/useCanonical";
 
-const MentionsLegales = () => (
+const MentionsLegales = () => {
+  useCanonical("/mentions-legales");
+  return (
   <div className="min-h-screen bg-background">
     <Header />
     <SideCart />

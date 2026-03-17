@@ -227,12 +227,17 @@ const AdminDashboard = () => {
   };
 
   const getExportFormulaLabel = (order: Order) => {
+    if (order.items && Array.isArray(order.items) && order.items.length > 0) {
+      const labels = order.items.map((item: any) => {
+        const priceId = item.price_id || "";
+        if (SUBSCRIPTION_LABELS[priceId]) return SUBSCRIPTION_LABELS[priceId];
+        return getItemLabel(item);
+      });
+      return labels.join(" + ");
+    }
     if (isSubscription(order)) {
       const subType = order.subscription_type || "";
       return SUBSCRIPTION_LABELS[subType] || subType || "Abonnement";
-    }
-    if (order.items && Array.isArray(order.items)) {
-      return order.items.map((item: any) => getItemLabel(item)).join(", ");
     }
     return "—";
   };
@@ -317,14 +322,16 @@ const AdminDashboard = () => {
   };
 
   const getFormulaLabel = (order: Order) => {
+    const itemCount = Array.isArray(order.items) ? order.items.length : 0;
+    // Multiple items (with or without subscription)
+    if (itemCount > 1) {
+      return "Commandes multiples";
+    }
     if (isSubscription(order)) {
       const subType = order.subscription_type || "";
       return SUBSCRIPTION_LABELS[subType] || subType || "Abonnement";
     }
-    if (order.items && Array.isArray(order.items) && order.items.length > 1) {
-      return "Multiples";
-    }
-    if (order.items && Array.isArray(order.items) && order.items.length === 1) {
+    if (itemCount === 1) {
       return getItemLabel(order.items[0]);
     }
     return "—";
@@ -392,7 +399,7 @@ const AdminDashboard = () => {
         return <Badge variant="outline" className="text-xs">{getPaymentMethodLabel(order.payment_method)}</Badge>;
       case "formule": {
         const label = getFormulaLabel(order);
-        const isMultiple = !isSubscription(order) && Array.isArray(order.items) && order.items.length > 1;
+        const isMultiple = Array.isArray(order.items) && order.items.length > 1;
         if (isMultiple) {
           const isExpanded = expandedOrders.has(order.id);
           return (
@@ -494,7 +501,7 @@ const AdminDashboard = () => {
           </thead>
           <tbody>
             {orderList.map(order => {
-              const isMultiple = !isSubscription(order) && Array.isArray(order.items) && order.items.length > 1;
+              const isMultiple = Array.isArray(order.items) && order.items.length > 1;
               const isExpanded = expandedOrders.has(order.id);
               return (
                 <>

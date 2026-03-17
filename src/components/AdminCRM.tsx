@@ -195,34 +195,31 @@ const AdminCRM = () => {
     }
   };
 
-  const exportCSV = () => {
-    const headers = ["N° abonné", "Email", "Prénom", "Nom", "Téléphone", "Adresse", "CP", "Ville", "Pays", "Formule", "Début abo", "Fin abo", "Actif", "Commandes", "Total dépensé", "Notes", "Depuis"];
-    const rows = clients.map((c) => [
-      c.subscriber_number || "",
-      c.email,
-      c.first_name || "",
-      c.last_name || "",
-      c.phone || "",
-      c.address_line1 || "",
-      c.postal_code || "",
-      c.city || "",
-      c.country || "",
-      subLabel(c.subscription_type),
-      c.subscription_start_date ? new Date(c.subscription_start_date).toLocaleDateString("fr-FR") : "",
-      c.subscription_end_date ? new Date(c.subscription_end_date).toLocaleDateString("fr-FR") : "",
-      c.is_active_subscriber ? "Oui" : "Non",
-      c.total_orders,
-      (c.total_spent / 100).toFixed(2),
-      c.notes || "",
-      new Date(c.created_at).toLocaleDateString("fr-FR"),
-    ]);
-    const csv = [headers.join(";"), ...rows.map((r) => r.map((v) => `"${v}"`).join(";"))].join("\n");
-    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `crm-clients-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
+  const exportXLSX = async () => {
+    const XLSX = await import("xlsx");
+    const data = clients.map((c) => ({
+      "N° abonné": c.subscriber_number || "",
+      "Email": c.email,
+      "Prénom": c.first_name || "",
+      "Nom": c.last_name || "",
+      "Téléphone": c.phone || "",
+      "Adresse": c.address_line1 || "",
+      "CP": c.postal_code || "",
+      "Ville": c.city || "",
+      "Pays": c.country || "",
+      "Formule": subLabel(c.subscription_type),
+      "Début abo": c.subscription_start_date ? new Date(c.subscription_start_date).toLocaleDateString("fr-FR") : "",
+      "Fin abo": c.subscription_end_date ? new Date(c.subscription_end_date).toLocaleDateString("fr-FR") : "",
+      "Actif": c.is_active_subscriber ? "Oui" : "Non",
+      "Commandes": c.total_orders,
+      "Total dépensé (€)": (c.total_spent / 100).toFixed(2),
+      "Notes": c.notes || "",
+      "Depuis": new Date(c.created_at).toLocaleDateString("fr-FR"),
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Clients");
+    XLSX.writeFile(wb, `crm-clients-${new Date().toISOString().slice(0, 10)}.xlsx`);
   };
 
   const renderClientForm = (client: Partial<Client>, onChange: (c: Partial<Client>) => void, onSave: () => void, title: string) => (
@@ -326,8 +323,8 @@ const AdminCRM = () => {
         <Button variant="default" size="sm" onClick={() => setNewClient(emptyClient())}>
           <Plus className="w-4 h-4 mr-2" /> Nouveau client
         </Button>
-        <Button variant="outline" size="sm" onClick={exportCSV}>
-          <Download className="w-4 h-4 mr-2" /> Exporter CSV
+        <Button variant="outline" size="sm" onClick={exportXLSX}>
+          <Download className="w-4 h-4 mr-2" /> Exporter Excel
         </Button>
       </div>
 

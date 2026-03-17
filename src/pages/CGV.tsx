@@ -137,5 +137,6 @@ const CGV = () => {
     <Footer />
   </div>
 );
+};
 
 export default CGV;

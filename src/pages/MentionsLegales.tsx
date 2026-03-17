@@ -115,5 +115,6 @@ const MentionsLegales = () => {
     <Footer />
   </div>
 );
+};
 
 export default MentionsLegales;

@@ -110,6 +110,7 @@ export type Database = {
           notes: string | null
           phone: string | null
           postal_code: string | null
+          subscriber_number: string | null
           subscription_end_date: string | null
           subscription_start_date: string | null
           subscription_type: string | null
@@ -131,6 +132,7 @@ export type Database = {
           notes?: string | null
           phone?: string | null
           postal_code?: string | null
+          subscriber_number?: string | null
           subscription_end_date?: string | null
           subscription_start_date?: string | null
           subscription_type?: string | null
@@ -152,6 +154,7 @@ export type Database = {
           notes?: string | null
           phone?: string | null
           postal_code?: string | null
+          subscriber_number?: string | null
           subscription_end_date?: string | null
           subscription_start_date?: string | null
           subscription_type?: string | null
@@ -322,6 +325,7 @@ export type Database = {
           is_recurring: boolean
           items: Json
           last_name: string
+          order_number: number | null
           order_type: string
           payment_method: string
           payment_status: string
@@ -357,6 +361,7 @@ export type Database = {
           is_recurring?: boolean
           items?: Json
           last_name: string
+          order_number?: number | null
           order_type: string
           payment_method: string
           payment_status?: string
@@ -392,6 +397,7 @@ export type Database = {
           is_recurring?: boolean
           items?: Json
           last_name?: string
+          order_number?: number | null
           order_type?: string
           payment_method?: string
           payment_status?: string

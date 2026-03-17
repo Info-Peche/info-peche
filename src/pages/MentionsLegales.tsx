@@ -1,10 +1,14 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SideCart from "@/components/SideCart";
-import { useCanonical } from "@/hooks/useCanonical";
+import { usePageSeo } from "@/hooks/usePageSeo";
 
 const MentionsLegales = () => {
-  useCanonical("/mentions-legales");
+  usePageSeo({
+    title: "Mentions Légales — Info Pêche",
+    description: "Mentions légales du site Info Pêche : éditeur, hébergeur, conditions d'utilisation et politique de confidentialité.",
+    canonical: "/mentions-legales",
+  });
   return (
   <div className="min-h-screen bg-background">
     <Header />

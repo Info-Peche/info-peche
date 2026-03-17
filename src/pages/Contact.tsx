@@ -14,7 +14,11 @@ import Footer from "@/components/Footer";
 import SideCart from "@/components/SideCart";
 
 const Contact = () => {
-  useCanonical("/contact");
+  usePageSeo({
+    title: "Contact — Info Pêche | Magazine de pêche au coup",
+    description: "Contactez la rédaction d'Info Pêche : questions, abonnements, partenariats. Nous sommes à votre écoute pour tout sujet lié à la pêche au coup.",
+    canonical: "/contact",
+  });
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);

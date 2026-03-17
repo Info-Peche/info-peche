@@ -34,7 +34,11 @@ const events = [
 ];
 
 const Events = () => {
-  useCanonical("/evenements");
+  usePageSeo({
+    title: "Événements Pêche au Coup — Salons & Compétitions | Info Pêche",
+    description: "Calendrier des événements pêche au coup : salons, compétitions, rencontres entre passionnés. Retrouvez les dates clés avec Info Pêche.",
+    canonical: "/evenements",
+  });
   return (
     <>
       <div className="min-h-screen bg-background">

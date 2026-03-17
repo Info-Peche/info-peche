@@ -1,10 +1,14 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SideCart from "@/components/SideCart";
-import { useCanonical } from "@/hooks/useCanonical";
+import { usePageSeo } from "@/hooks/usePageSeo";
 
 const CGV = () => {
-  useCanonical("/cgv");
+  usePageSeo({
+    title: "Conditions Générales de Vente — Info Pêche",
+    description: "Conditions générales de vente du magazine Info Pêche : abonnements, commandes, livraison, retours et remboursements.",
+    canonical: "/cgv",
+  });
   return (
   <div className="min-h-screen bg-background">
     <Header />

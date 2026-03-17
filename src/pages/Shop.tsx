@@ -244,7 +244,11 @@ const ShopContent = () => {
 };
 
 const Shop = () => {
-  useCanonical("/boutique");
+  usePageSeo({
+    title: "Boutique — Anciens numéros Info Pêche | Pêche au coup",
+    description: "Retrouvez tous les anciens numéros du magazine Info Pêche en version papier ou numérique. Commandez vos numéros préférés de pêche au coup.",
+    canonical: "/boutique",
+  });
   return (
     <div className="min-h-screen bg-background">
       <Header />

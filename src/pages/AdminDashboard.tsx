@@ -317,14 +317,16 @@ const AdminDashboard = () => {
   };
 
   const getFormulaLabel = (order: Order) => {
+    const itemCount = Array.isArray(order.items) ? order.items.length : 0;
+    // Multiple items (with or without subscription)
+    if (itemCount > 1) {
+      return "Commandes multiples";
+    }
     if (isSubscription(order)) {
       const subType = order.subscription_type || "";
       return SUBSCRIPTION_LABELS[subType] || subType || "Abonnement";
     }
-    if (order.items && Array.isArray(order.items) && order.items.length > 1) {
-      return "Multiples";
-    }
-    if (order.items && Array.isArray(order.items) && order.items.length === 1) {
+    if (itemCount === 1) {
       return getItemLabel(order.items[0]);
     }
     return "—";

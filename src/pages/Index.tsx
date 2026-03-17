@@ -1,5 +1,6 @@
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
+import { useCanonical } from "@/hooks/useCanonical";
 import TrustBar from "@/components/TrustBar";
 import LatestEdition from "@/components/LatestEdition";
 

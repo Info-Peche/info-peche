@@ -506,6 +506,8 @@ export type Database = {
         }
         Returns: boolean
       }
+      nextval_order_number: { Args: never; Returns: number }
+      nextval_subscriber_number: { Args: never; Returns: number }
       upsert_client: {
         Args: {
           _address_line1?: string

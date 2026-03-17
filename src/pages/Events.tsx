@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useCanonical } from "@/hooks/useCanonical";
 import { motion } from "framer-motion";
 import { Calendar, MapPin, ArrowRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";

@@ -170,7 +170,7 @@ const AdminReviewManager = () => {
                       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Cadrage photo</p>
                       <div className="flex gap-6">
                         {/* Preview */}
-                        <div className="w-32 h-40 rounded-lg overflow-hidden border border-border flex-shrink-0 bg-muted">
+                        <div className="w-32 aspect-[3/4] rounded-lg overflow-hidden border border-border flex-shrink-0 bg-muted">
                           <img
                             src={review.avatar_url}
                             alt="Aperçu"

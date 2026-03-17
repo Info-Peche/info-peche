@@ -40,6 +40,7 @@ type BlogArticle = {
   paywall_preview_length: number | null;
   related_issue_id: string | null;
   key_points: string[] | null;
+  status: string;
 };
 
 // "import" = paste raw text + image URL map, "editor" = TipTap WYSIWYG

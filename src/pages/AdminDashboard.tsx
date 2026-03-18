@@ -573,6 +573,14 @@ const AdminDashboard = () => {
                       </td>
                     ))}
                     <td className="p-1 align-middle text-center">
+                      <div className="flex items-center gap-0.5 justify-center">
+                        <button
+                          onClick={() => setInvoiceOrder(order)}
+                          className="p-1 rounded hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
+                          title="Voir la facture"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                        </button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <button className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" title="Supprimer">

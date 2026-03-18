@@ -33,7 +33,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { LogOut, Search, Package, Loader2, Download, Newspaper, RefreshCw, CalendarClock, SlidersHorizontal, FileText, GripVertical, BarChart3, PackageOpen, Trash2, ChevronDown, ChevronRight, MessageSquare, Users, Contact, Eye } from "lucide-react";
+import { LogOut, Search, Package, Loader2, Download, Newspaper, RefreshCw, CalendarClock, SlidersHorizontal, FileText, GripVertical, BarChart3, PackageOpen, Trash2, ChevronDown, ChevronRight, MessageSquare, Users, Contact, Eye, Archive } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import AdminEditionManager from "@/components/AdminEditionManager";
@@ -107,6 +107,8 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [authChecked, setAuthChecked] = useState(false);
+  const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
+  const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
 
   // Column visibility
   const [visibleColumns, setVisibleColumns] = useState<Set<ColumnKey>>(() => {
@@ -220,17 +222,60 @@ const AdminDashboard = () => {
     navigate("/admin/login");
   };
 
-  const toggleProcessed = async (orderId: string, current: boolean) => {
+  const toggleSelectOrder = (orderId: string) => {
+    setSelectedOrders(prev => {
+      const next = new Set(prev);
+      if (next.has(orderId)) next.delete(orderId);
+      else next.add(orderId);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = (orderList: Order[]) => {
+    const allSelected = orderList.every(o => selectedOrders.has(o.id));
+    if (allSelected) {
+      setSelectedOrders(prev => {
+        const next = new Set(prev);
+        orderList.forEach(o => next.delete(o.id));
+        return next;
+      });
+    } else {
+      setSelectedOrders(prev => {
+        const next = new Set(prev);
+        orderList.forEach(o => next.add(o.id));
+        return next;
+      });
+    }
+  };
+
+  const archiveSelected = async () => {
+    const ids = [...selectedOrders];
+    if (ids.length === 0) return;
     const { error } = await supabase
       .from("orders")
-      .update({ is_processed: !current } as any)
+      .update({ is_processed: true } as any)
+      .in("id", ids);
+    if (error) {
+      toast.error("Erreur lors de l'archivage");
+      return;
+    }
+    setOrders(prev => prev.map(o => ids.includes(o.id) ? { ...o, is_processed: true } : o));
+    setSelectedOrders(new Set());
+    setShowArchiveConfirm(false);
+    toast.success(`${ids.length} commande${ids.length > 1 ? "s" : ""} archivée${ids.length > 1 ? "s" : ""}`);
+  };
+
+  const unarchiveOrder = async (orderId: string) => {
+    const { error } = await supabase
+      .from("orders")
+      .update({ is_processed: false } as any)
       .eq("id", orderId);
     if (error) {
       toast.error("Erreur lors de la mise à jour");
       return;
     }
-    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, is_processed: !current } : o));
-    toast.success(!current ? "Commande marquée traitée" : "Commande remise en attente");
+    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, is_processed: false } : o));
+    toast.success("Commande remise en attente");
   };
 
   const getExportFormulaLabel = (order: Order) => {
@@ -249,9 +294,9 @@ const AdminDashboard = () => {
     return "—";
   };
 
-  const exportXLSX = async () => {
+  const doExport = async (orderList: Order[], label: string) => {
     const XLSX = await import("xlsx");
-    const data = filteredOrders.map(o => ({
+    const data = orderList.map(o => ({
       "N° commande": o.order_number ? `#${o.order_number}` : "",
       "Date": new Date(o.created_at).toLocaleDateString("fr-FR"),
       "Nom": o.last_name,
@@ -283,7 +328,14 @@ const AdminDashboard = () => {
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Commandes");
-    XLSX.writeFile(wb, `commandes-infopeche-${new Date().toISOString().slice(0, 10)}.xlsx`);
+    XLSX.writeFile(wb, `commandes-${label}-${new Date().toISOString().slice(0, 10)}.xlsx`);
+  };
+
+  const [showExportArchiveConfirm, setShowExportArchiveConfirm] = useState(false);
+
+  const exportActiveAndArchive = async () => {
+    await doExport(activeOrders, "a-traiter");
+    setShowExportArchiveConfirm(true);
   };
 
   const filteredOrders = orders.filter(o => {
@@ -512,7 +564,7 @@ const AdminDashboard = () => {
     setDragOverCol(null);
   };
 
-  const renderOrderTable = (orderList: Order[]) => (
+  const renderOrderTable = (orderList: Order[], selectable: boolean = false) => (
     <div className="bg-card rounded-xl border border-border overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-max min-w-full text-sm" style={{ tableLayout: "fixed" }}>
@@ -525,7 +577,14 @@ const AdminDashboard = () => {
           </colgroup>
           <thead>
             <tr className="border-b">
-              <th className="h-12 px-2 text-left align-middle font-medium text-muted-foreground" style={{ width: 40 }}>✓</th>
+              <th className="h-12 px-2 text-left align-middle font-medium text-muted-foreground" style={{ width: 40 }}>
+                {selectable ? (
+                  <Checkbox
+                    checked={orderList.length > 0 && orderList.every(o => selectedOrders.has(o.id))}
+                    onCheckedChange={() => toggleSelectAll(orderList)}
+                  />
+                ) : null}
+              </th>
               {visibleCols.map(c => (
                 <th
                   key={c.key}
@@ -558,10 +617,17 @@ const AdminDashboard = () => {
                 <>
                   <tr key={order.id} className="border-b transition-colors hover:bg-muted/50">
                     <td className="p-2 align-middle">
-                      <Checkbox
-                        checked={order.is_processed}
-                        onCheckedChange={() => toggleProcessed(order.id, order.is_processed)}
-                      />
+                      {selectable ? (
+                        <Checkbox
+                          checked={selectedOrders.has(order.id)}
+                          onCheckedChange={() => toggleSelectOrder(order.id)}
+                        />
+                      ) : (
+                        <Checkbox
+                          checked={order.is_processed}
+                          onCheckedChange={() => unarchiveOrder(order.id)}
+                        />
+                      )}
                     </td>
                     {visibleCols.map(c => (
                       <td
@@ -748,9 +814,43 @@ const AdminDashboard = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-               <Button variant="outline" size="sm" onClick={exportXLSX}>
-                 <Download className="w-4 h-4 mr-2" /> Exporter Excel
-               </Button>
+               <DropdownMenu>
+                 <DropdownMenuTrigger asChild>
+                   <Button variant="outline" size="sm">
+                     <Download className="w-4 h-4 mr-2" /> Exporter Excel <ChevronDown className="w-3 h-3 ml-1" />
+                   </Button>
+                 </DropdownMenuTrigger>
+                 <DropdownMenuContent align="end">
+                   <DropdownMenuLabel>Exporter</DropdownMenuLabel>
+                   <DropdownMenuSeparator />
+                   <button
+                     className="relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
+                     onClick={() => doExport(activeOrders, "a-traiter")}
+                   >
+                     Commandes à traiter ({activeOrders.length})
+                   </button>
+                   <button
+                     className="relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
+                     onClick={exportActiveAndArchive}
+                   >
+                     À traiter + archiver ensuite
+                   </button>
+                   <DropdownMenuSeparator />
+                   <button
+                     className="relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
+                     onClick={() => doExport(archivedOrders, "archivees")}
+                   >
+                     Commandes archivées ({archivedOrders.length})
+                   </button>
+                   <DropdownMenuSeparator />
+                   <button
+                     className="relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
+                     onClick={() => doExport(filteredOrders, "toutes")}
+                   >
+                     Toutes les commandes ({filteredOrders.length})
+                   </button>
+                 </DropdownMenuContent>
+               </DropdownMenu>
             </div>
 
             <Tabs defaultValue="active" className="space-y-4">
@@ -764,6 +864,17 @@ const AdminDashboard = () => {
               </TabsList>
 
               <TabsContent value="active">
+                {selectedOrders.size > 0 && (
+                  <div className="flex items-center gap-3 mb-4 p-3 bg-muted/50 rounded-lg border border-border">
+                    <span className="text-sm font-medium">{selectedOrders.size} commande{selectedOrders.size > 1 ? "s" : ""} sélectionnée{selectedOrders.size > 1 ? "s" : ""}</span>
+                    <Button size="sm" variant="outline" onClick={() => setShowArchiveConfirm(true)}>
+                      <Archive className="w-4 h-4 mr-2" /> Archiver la sélection
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => setSelectedOrders(new Set())}>
+                      Désélectionner
+                    </Button>
+                  </div>
+                )}
                 {loading ? (
                   <div className="text-center py-20">
                     <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto" />
@@ -772,7 +883,7 @@ const AdminDashboard = () => {
                   <div className="text-center py-20 text-muted-foreground">
                     Aucune commande à traiter.
                   </div>
-                ) : renderOrderTable(activeOrders)}
+                ) : renderOrderTable(activeOrders, true)}
               </TabsContent>
 
               <TabsContent value="archived">
@@ -784,12 +895,58 @@ const AdminDashboard = () => {
                   <div className="text-center py-20 text-muted-foreground">
                     Aucune commande archivée.
                   </div>
-                ) : renderOrderTable(archivedOrders)}
+                ) : renderOrderTable(archivedOrders, false)}
               </TabsContent>
             </Tabs>
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* Archive confirmation dialog */}
+      <AlertDialog open={showArchiveConfirm} onOpenChange={setShowArchiveConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Archiver {selectedOrders.size} commande{selectedOrders.size > 1 ? "s" : ""} ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Les commandes sélectionnées seront déplacées dans l'onglet "Archivées".
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={archiveSelected}>
+              Oui, archiver
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Export + archive confirmation dialog */}
+      <AlertDialog open={showExportArchiveConfirm} onOpenChange={setShowExportArchiveConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Archiver les commandes exportées ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              L'export est terminé. Voulez-vous archiver les {activeOrders.length} commande{activeOrders.length > 1 ? "s" : ""} "à traiter" ?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Non, garder en "à traiter"</AlertDialogCancel>
+            <AlertDialogAction onClick={async () => {
+              const ids = activeOrders.map(o => o.id);
+              const { error } = await supabase
+                .from("orders")
+                .update({ is_processed: true } as any)
+                .in("id", ids);
+              if (error) { toast.error("Erreur"); return; }
+              setOrders(prev => prev.map(o => ids.includes(o.id) ? { ...o, is_processed: true } : o));
+              setShowExportArchiveConfirm(false);
+              toast.success(`${ids.length} commandes archivées`);
+            }}>
+              Oui, archiver
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Invoice Dialog */}
       <Dialog open={!!invoiceOrder} onOpenChange={(open) => !open && setInvoiceOrder(null)}>

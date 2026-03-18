@@ -280,6 +280,7 @@ const AdminBlogEditor = () => {
     setRelatedIssueId(null); setPreviewMode(false);
     setAuthorId(null); setPublishedAt(new Date()); setKeyPoints([]);
     setImageRefMap({}); setEditStep("import");
+    setIsFeatured(false); setDisplayOrder(null);
   };
 
   const openEditor = (article?: BlogArticle) => {

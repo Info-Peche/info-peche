@@ -864,6 +864,17 @@ const AdminDashboard = () => {
               </TabsList>
 
               <TabsContent value="active">
+                {selectedOrders.size > 0 && (
+                  <div className="flex items-center gap-3 mb-4 p-3 bg-muted/50 rounded-lg border border-border">
+                    <span className="text-sm font-medium">{selectedOrders.size} commande{selectedOrders.size > 1 ? "s" : ""} sélectionnée{selectedOrders.size > 1 ? "s" : ""}</span>
+                    <Button size="sm" variant="outline" onClick={() => setShowArchiveConfirm(true)}>
+                      <Archive className="w-4 h-4 mr-2" /> Archiver la sélection
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => setSelectedOrders(new Set())}>
+                      Désélectionner
+                    </Button>
+                  </div>
+                )}
                 {loading ? (
                   <div className="text-center py-20">
                     <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto" />
@@ -872,7 +883,7 @@ const AdminDashboard = () => {
                   <div className="text-center py-20 text-muted-foreground">
                     Aucune commande à traiter.
                   </div>
-                ) : renderOrderTable(activeOrders)}
+                ) : renderOrderTable(activeOrders, true)}
               </TabsContent>
 
               <TabsContent value="archived">
@@ -884,12 +895,58 @@ const AdminDashboard = () => {
                   <div className="text-center py-20 text-muted-foreground">
                     Aucune commande archivée.
                   </div>
-                ) : renderOrderTable(archivedOrders)}
+                ) : renderOrderTable(archivedOrders, false)}
               </TabsContent>
             </Tabs>
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* Archive confirmation dialog */}
+      <AlertDialog open={showArchiveConfirm} onOpenChange={setShowArchiveConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Archiver {selectedOrders.size} commande{selectedOrders.size > 1 ? "s" : ""} ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Les commandes sélectionnées seront déplacées dans l'onglet "Archivées".
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={archiveSelected}>
+              Oui, archiver
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Export + archive confirmation dialog */}
+      <AlertDialog open={showExportArchiveConfirm} onOpenChange={setShowExportArchiveConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Archiver les commandes exportées ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              L'export est terminé. Voulez-vous archiver les {activeOrders.length} commande{activeOrders.length > 1 ? "s" : ""} "à traiter" ?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Non, garder en "à traiter"</AlertDialogCancel>
+            <AlertDialogAction onClick={async () => {
+              const ids = activeOrders.map(o => o.id);
+              const { error } = await supabase
+                .from("orders")
+                .update({ is_processed: true } as any)
+                .in("id", ids);
+              if (error) { toast.error("Erreur"); return; }
+              setOrders(prev => prev.map(o => ids.includes(o.id) ? { ...o, is_processed: true } : o));
+              setShowExportArchiveConfirm(false);
+              toast.success(`${ids.length} commandes archivées`);
+            }}>
+              Oui, archiver
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Invoice Dialog */}
       <Dialog open={!!invoiceOrder} onOpenChange={(open) => !open && setInvoiceOrder(null)}>

@@ -40,6 +40,8 @@ const CheckoutContent = () => {
     postal_code: "",
     country: "FR",
     comment: "",
+    billing_first_name: "",
+    billing_last_name: "",
     billing_address_line1: "",
     billing_address_line2: "",
     billing_city: "",

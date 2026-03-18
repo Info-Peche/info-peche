@@ -107,6 +107,8 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [authChecked, setAuthChecked] = useState(false);
+  const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
+  const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
 
   // Column visibility
   const [visibleColumns, setVisibleColumns] = useState<Set<ColumnKey>>(() => {
@@ -220,17 +222,60 @@ const AdminDashboard = () => {
     navigate("/admin/login");
   };
 
-  const toggleProcessed = async (orderId: string, current: boolean) => {
+  const toggleSelectOrder = (orderId: string) => {
+    setSelectedOrders(prev => {
+      const next = new Set(prev);
+      if (next.has(orderId)) next.delete(orderId);
+      else next.add(orderId);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = (orderList: Order[]) => {
+    const allSelected = orderList.every(o => selectedOrders.has(o.id));
+    if (allSelected) {
+      setSelectedOrders(prev => {
+        const next = new Set(prev);
+        orderList.forEach(o => next.delete(o.id));
+        return next;
+      });
+    } else {
+      setSelectedOrders(prev => {
+        const next = new Set(prev);
+        orderList.forEach(o => next.add(o.id));
+        return next;
+      });
+    }
+  };
+
+  const archiveSelected = async () => {
+    const ids = [...selectedOrders];
+    if (ids.length === 0) return;
     const { error } = await supabase
       .from("orders")
-      .update({ is_processed: !current } as any)
+      .update({ is_processed: true } as any)
+      .in("id", ids);
+    if (error) {
+      toast.error("Erreur lors de l'archivage");
+      return;
+    }
+    setOrders(prev => prev.map(o => ids.includes(o.id) ? { ...o, is_processed: true } : o));
+    setSelectedOrders(new Set());
+    setShowArchiveConfirm(false);
+    toast.success(`${ids.length} commande${ids.length > 1 ? "s" : ""} archivée${ids.length > 1 ? "s" : ""}`);
+  };
+
+  const unarchiveOrder = async (orderId: string) => {
+    const { error } = await supabase
+      .from("orders")
+      .update({ is_processed: false } as any)
       .eq("id", orderId);
     if (error) {
       toast.error("Erreur lors de la mise à jour");
       return;
     }
-    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, is_processed: !current } : o));
-    toast.success(!current ? "Commande marquée traitée" : "Commande remise en attente");
+    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, is_processed: false } : o));
+    toast.success("Commande remise en attente");
   };
 
   const getExportFormulaLabel = (order: Order) => {

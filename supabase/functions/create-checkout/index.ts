@@ -154,6 +154,8 @@ serve(async (req) => {
       payment_status: "pending",
       status: "pending",
       comment: customer_info.comment || null,
+      billing_first_name: customer_info.billing_different ? customer_info.billing_first_name : null,
+      billing_last_name: customer_info.billing_different ? customer_info.billing_last_name : null,
       billing_address_line1: customer_info.billing_different ? customer_info.billing_address_line1 : null,
       billing_address_line2: customer_info.billing_different ? customer_info.billing_address_line2 : null,
       billing_city: customer_info.billing_different ? customer_info.billing_city : null,

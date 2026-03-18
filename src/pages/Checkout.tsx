@@ -250,6 +250,28 @@ const CheckoutContent = () => {
                     animate={{ opacity: 1, height: "auto" }}
                     className="space-y-4 pt-2"
                   >
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="billing_first_name">Prénom *</Label>
+                        <Input
+                          id="billing_first_name"
+                          name="billing_first_name"
+                          required
+                          value={form.billing_first_name}
+                          onChange={handleChange}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="billing_last_name">Nom *</Label>
+                        <Input
+                          id="billing_last_name"
+                          name="billing_last_name"
+                          required
+                          value={form.billing_last_name}
+                          onChange={handleChange}
+                        />
+                      </div>
+                    </div>
                     <div>
                       <Label htmlFor="billing_address_line1">Adresse de facturation *</Label>
                       <Input

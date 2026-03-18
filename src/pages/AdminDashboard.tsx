@@ -79,7 +79,7 @@ type Order = {
   order_number: number | null;
 };
 
-type ColumnKey = "date" | "client" | "email" | "tel" | "paiement_type" | "formule" | "total" | "paiement_status" | "fin_abo" | "renouvellement" | "client_depuis" | "ville" | "pays" | "commentaire";
+type ColumnKey = "date" | "client" | "email" | "tel" | "paiement_type" | "formule" | "total" | "paiement_status" | "fin_abo" | "renouvellement" | "client_depuis" | "ville" | "pays" | "commentaire" | "factu_nom" | "factu_adresse" | "factu_ville";
 
 const ALL_COLUMNS: { key: ColumnKey; label: string; defaultVisible: boolean; minWidth: number; defaultWidth: number }[] = [
   { key: "date", label: "Date", defaultVisible: true, minWidth: 80, defaultWidth: 100 },
@@ -95,6 +95,9 @@ const ALL_COLUMNS: { key: ColumnKey; label: string; defaultVisible: boolean; min
   { key: "client_depuis", label: "Client depuis", defaultVisible: true, minWidth: 90, defaultWidth: 110 },
   { key: "ville", label: "Ville", defaultVisible: true, minWidth: 80, defaultWidth: 120 },
   { key: "pays", label: "Pays", defaultVisible: false, minWidth: 50, defaultWidth: 70 },
+  { key: "factu_nom", label: "Factu. Nom", defaultVisible: false, minWidth: 100, defaultWidth: 140 },
+  { key: "factu_adresse", label: "Factu. Adresse", defaultVisible: false, minWidth: 120, defaultWidth: 160 },
+  { key: "factu_ville", label: "Factu. Ville", defaultVisible: false, minWidth: 80, defaultWidth: 120 },
   { key: "commentaire", label: "Commentaire", defaultVisible: true, minWidth: 100, defaultWidth: 160 },
 ];
 

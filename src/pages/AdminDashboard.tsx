@@ -33,7 +33,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { LogOut, Search, Package, Loader2, Download, Newspaper, RefreshCw, CalendarClock, SlidersHorizontal, FileText, GripVertical, BarChart3, PackageOpen, Trash2, ChevronDown, ChevronRight, MessageSquare, Users, Contact } from "lucide-react";
+import { LogOut, Search, Package, Loader2, Download, Newspaper, RefreshCw, CalendarClock, SlidersHorizontal, FileText, GripVertical, BarChart3, PackageOpen, Trash2, ChevronDown, ChevronRight, MessageSquare, Users, Contact, Eye } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import AdminEditionManager from "@/components/AdminEditionManager";
 import AdminBlogEditor from "@/components/AdminBlogEditor";
@@ -68,14 +69,17 @@ type Order = {
   subscription_start_date: string | null;
   subscription_end_date: string | null;
   is_processed: boolean;
+  billing_first_name: string | null;
+  billing_last_name: string | null;
   billing_address_line1: string | null;
+  billing_address_line2: string | null;
   billing_city: string | null;
   billing_postal_code: string | null;
   billing_country: string | null;
   order_number: number | null;
 };
 
-type ColumnKey = "date" | "client" | "email" | "tel" | "paiement_type" | "formule" | "total" | "paiement_status" | "fin_abo" | "renouvellement" | "client_depuis" | "ville" | "pays" | "commentaire";
+type ColumnKey = "date" | "client" | "email" | "tel" | "paiement_type" | "formule" | "total" | "paiement_status" | "fin_abo" | "renouvellement" | "client_depuis" | "ville" | "pays" | "commentaire" | "factu_nom" | "factu_adresse" | "factu_ville";
 
 const ALL_COLUMNS: { key: ColumnKey; label: string; defaultVisible: boolean; minWidth: number; defaultWidth: number }[] = [
   { key: "date", label: "Date", defaultVisible: true, minWidth: 80, defaultWidth: 100 },
@@ -91,6 +95,9 @@ const ALL_COLUMNS: { key: ColumnKey; label: string; defaultVisible: boolean; min
   { key: "client_depuis", label: "Client depuis", defaultVisible: true, minWidth: 90, defaultWidth: 110 },
   { key: "ville", label: "Ville", defaultVisible: true, minWidth: 80, defaultWidth: 120 },
   { key: "pays", label: "Pays", defaultVisible: false, minWidth: 50, defaultWidth: 70 },
+  { key: "factu_nom", label: "Factu. Nom", defaultVisible: false, minWidth: 100, defaultWidth: 140 },
+  { key: "factu_adresse", label: "Factu. Adresse", defaultVisible: false, minWidth: 120, defaultWidth: 160 },
+  { key: "factu_ville", label: "Factu. Ville", defaultVisible: false, minWidth: 80, defaultWidth: 120 },
   { key: "commentaire", label: "Commentaire", defaultVisible: true, minWidth: 100, defaultWidth: 160 },
 ];
 
@@ -254,6 +261,13 @@ const AdminDashboard = () => {
       "Code postal": o.postal_code,
       "Ville": o.city,
       "Pays": o.country,
+      "Factu. Prénom": o.billing_first_name || "",
+      "Factu. Nom": o.billing_last_name || "",
+      "Factu. Adresse 1": o.billing_address_line1 || "",
+      "Factu. Adresse 2": o.billing_address_line2 || "",
+      "Factu. Code postal": o.billing_postal_code || "",
+      "Factu. Ville": o.billing_city || "",
+      "Factu. Pays": o.billing_country || "",
       "Email": o.email,
       "Téléphone": o.phone || "",
       "Commentaire": o.comment || "",
@@ -338,6 +352,30 @@ const AdminDashboard = () => {
   };
 
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
+  const [invoiceOrder, setInvoiceOrder] = useState<Order | null>(null);
+
+  const printInvoice = () => {
+    const el = document.getElementById("invoice-print-area");
+    if (!el) return;
+    const w = window.open("", "_blank", "width=800,height=1000");
+    if (!w) return;
+    w.document.write(`<!DOCTYPE html><html><head><title>Facture</title><style>
+      body{font-family:Arial,sans-serif;padding:40px;color:#222;max-width:700px;margin:0 auto}
+      h1{font-size:24px;margin-bottom:4px}
+      .header{display:flex;justify-content:space-between;margin-bottom:30px}
+      .section{margin-bottom:20px}
+      .label{font-weight:bold;font-size:12px;color:#666;text-transform:uppercase;margin-bottom:4px}
+      table{width:100%;border-collapse:collapse;margin-top:10px}
+      th,td{text-align:left;padding:8px 12px;border-bottom:1px solid #ddd;font-size:13px}
+      th{background:#f5f5f5;font-weight:600}
+      .total-row td{font-weight:bold;font-size:15px;border-top:2px solid #333}
+      .footer{margin-top:40px;font-size:11px;color:#888;text-align:center}
+      @media print{body{padding:20px}}
+    </style></head><body>${el.innerHTML}<div class="footer">Info Pêche — Magazine de pêche au coup<br/>contact@info-peche.fr — www.info-peche.fr</div></body></html>`);
+    w.document.close();
+    w.focus();
+    setTimeout(() => w.print(), 300);
+  };
 
   const toggleExpand = (orderId: string) => {
     setExpandedOrders(prev => {
@@ -436,6 +474,19 @@ const AdminDashboard = () => {
         return order.country || "—";
       case "commentaire":
         return <span className="truncate block" title={order.comment || ""}>{order.comment || "—"}</span>;
+      case "factu_nom": {
+        const fn = order.billing_first_name;
+        const ln = order.billing_last_name;
+        return fn || ln ? `${fn || ""} ${ln || ""}`.trim() : "—";
+      }
+      case "factu_adresse": {
+        const parts = [order.billing_address_line1, order.billing_address_line2].filter(Boolean);
+        return parts.length > 0 ? parts.join(", ") : "—";
+      }
+      case "factu_ville": {
+        if (!order.billing_city) return "—";
+        return `${order.billing_postal_code || ""} ${order.billing_city}`.trim();
+      }
     }
   };
 
@@ -496,7 +547,7 @@ const AdminDashboard = () => {
                   />
                 </th>
               ))}
-              <th className="h-12 px-2 text-center align-middle font-medium text-muted-foreground" style={{ width: 40 }}></th>
+              <th className="h-12 px-2 text-center align-middle font-medium text-muted-foreground" style={{ width: 70 }}></th>
             </tr>
           </thead>
           <tbody>
@@ -522,6 +573,14 @@ const AdminDashboard = () => {
                       </td>
                     ))}
                     <td className="p-1 align-middle text-center">
+                      <div className="flex items-center gap-0.5 justify-center">
+                        <button
+                          onClick={() => setInvoiceOrder(order)}
+                          className="p-1 rounded hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
+                          title="Voir la facture"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                        </button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <button className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" title="Supprimer">
@@ -546,6 +605,7 @@ const AdminDashboard = () => {
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>
+                      </div>
                     </td>
                   </tr>
                   {isMultiple && isExpanded && (
@@ -730,6 +790,97 @@ const AdminDashboard = () => {
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* Invoice Dialog */}
+      <Dialog open={!!invoiceOrder} onOpenChange={(open) => !open && setInvoiceOrder(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              <span>Facture {invoiceOrder?.order_number ? `#${invoiceOrder.order_number}` : ""}</span>
+              <Button size="sm" variant="outline" onClick={printInvoice}>
+                <Download className="w-4 h-4 mr-2" /> Imprimer / PDF
+              </Button>
+            </DialogTitle>
+          </DialogHeader>
+          {invoiceOrder && (
+            <div id="invoice-print-area">
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 24 }}>
+                <div>
+                  <h1 style={{ fontSize: 22, fontWeight: "bold", marginBottom: 4 }}>FACTURE</h1>
+                  <p style={{ fontSize: 13, color: "#666" }}>
+                    N° {invoiceOrder.order_number ? `${invoiceOrder.order_number}` : invoiceOrder.id.slice(0, 8)}
+                  </p>
+                  <p style={{ fontSize: 13, color: "#666" }}>
+                    Date : {new Date(invoiceOrder.created_at).toLocaleDateString("fr-FR")}
+                  </p>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <p style={{ fontWeight: "bold", fontSize: 14 }}>Info Pêche</p>
+                  <p style={{ fontSize: 12, color: "#666" }}>Magazine de pêche au coup</p>
+                  <p style={{ fontSize: 12, color: "#666" }}>contact@info-peche.fr</p>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", gap: 40, marginBottom: 24 }}>
+                <div>
+                  <p style={{ fontWeight: "bold", fontSize: 11, color: "#888", textTransform: "uppercase", marginBottom: 4 }}>Adresse de livraison</p>
+                  <p style={{ fontSize: 13 }}>{invoiceOrder.first_name} {invoiceOrder.last_name}</p>
+                  <p style={{ fontSize: 13 }}>{invoiceOrder.address_line1}</p>
+                  {invoiceOrder.address_line2 && <p style={{ fontSize: 13 }}>{invoiceOrder.address_line2}</p>}
+                  <p style={{ fontSize: 13 }}>{invoiceOrder.postal_code} {invoiceOrder.city}</p>
+                  <p style={{ fontSize: 13 }}>{invoiceOrder.country}</p>
+                </div>
+                {invoiceOrder.billing_address_line1 && (
+                  <div>
+                    <p style={{ fontWeight: "bold", fontSize: 11, color: "#888", textTransform: "uppercase", marginBottom: 4 }}>Adresse de facturation</p>
+                    <p style={{ fontSize: 13 }}>{invoiceOrder.billing_first_name} {invoiceOrder.billing_last_name}</p>
+                    <p style={{ fontSize: 13 }}>{invoiceOrder.billing_address_line1}</p>
+                    {invoiceOrder.billing_address_line2 && <p style={{ fontSize: 13 }}>{invoiceOrder.billing_address_line2}</p>}
+                    <p style={{ fontSize: 13 }}>{invoiceOrder.billing_postal_code} {invoiceOrder.billing_city}</p>
+                    <p style={{ fontSize: 13 }}>{invoiceOrder.billing_country}</p>
+                  </div>
+                )}
+              </div>
+
+              <p style={{ fontSize: 13, marginBottom: 8 }}><strong>Email :</strong> {invoiceOrder.email}</p>
+              {invoiceOrder.subscriber_number && (
+                <p style={{ fontSize: 13, marginBottom: 8 }}><strong>N° abonné :</strong> {invoiceOrder.subscriber_number}</p>
+              )}
+
+              <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 16 }}>
+                <thead>
+                  <tr>
+                    <th style={{ textAlign: "left", padding: "8px 12px", borderBottom: "2px solid #ddd", fontSize: 12, background: "#f5f5f5" }}>Article</th>
+                    <th style={{ textAlign: "center", padding: "8px 12px", borderBottom: "2px solid #ddd", fontSize: 12, background: "#f5f5f5" }}>Qté</th>
+                    <th style={{ textAlign: "right", padding: "8px 12px", borderBottom: "2px solid #ddd", fontSize: 12, background: "#f5f5f5" }}>Prix</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Array.isArray(invoiceOrder.items) && invoiceOrder.items.map((item: any, idx: number) => (
+                    <tr key={idx}>
+                      <td style={{ padding: "8px 12px", borderBottom: "1px solid #eee", fontSize: 13 }}>{getItemLabel(item)}</td>
+                      <td style={{ padding: "8px 12px", borderBottom: "1px solid #eee", fontSize: 13, textAlign: "center" }}>{item.quantity || 1}</td>
+                      <td style={{ padding: "8px 12px", borderBottom: "1px solid #eee", fontSize: 13, textAlign: "right" }}>
+                        {item.unit_amount ? `${((item.unit_amount * (item.quantity || 1)) / 100).toFixed(2)}€` : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                  <tr>
+                    <td colSpan={2} style={{ padding: "10px 12px", fontWeight: "bold", fontSize: 14, borderTop: "2px solid #333" }}>Total</td>
+                    <td style={{ padding: "10px 12px", fontWeight: "bold", fontSize: 14, textAlign: "right", borderTop: "2px solid #333" }}>
+                      {(invoiceOrder.total_amount / 100).toFixed(2)}€
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p style={{ marginTop: 16, fontSize: 12, color: "#888" }}>
+                Paiement : {getPaymentMethodLabel(invoiceOrder.payment_method)} — Statut : {invoiceOrder.payment_status}
+              </p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

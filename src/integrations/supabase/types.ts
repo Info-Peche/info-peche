@@ -315,6 +315,8 @@ export type Database = {
           billing_address_line2: string | null
           billing_city: string | null
           billing_country: string | null
+          billing_first_name: string | null
+          billing_last_name: string | null
           billing_postal_code: string | null
           city: string
           comment: string | null
@@ -351,6 +353,8 @@ export type Database = {
           billing_address_line2?: string | null
           billing_city?: string | null
           billing_country?: string | null
+          billing_first_name?: string | null
+          billing_last_name?: string | null
           billing_postal_code?: string | null
           city: string
           comment?: string | null
@@ -387,6 +391,8 @@ export type Database = {
           billing_address_line2?: string | null
           billing_city?: string | null
           billing_country?: string | null
+          billing_first_name?: string | null
+          billing_last_name?: string | null
           billing_postal_code?: string | null
           city?: string
           comment?: string | null

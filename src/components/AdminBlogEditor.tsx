@@ -295,6 +295,8 @@ const AdminBlogEditor = () => {
       setHtmlContent(convertLegacyToHtml(article.content));
       setRelatedIssueId(article.related_issue_id);
       setKeyPoints(article.key_points || []);
+      setIsFeatured(article.is_featured || false);
+      setDisplayOrder(article.display_order ?? null);
       setRawText("");
       setImageRefMap({});
       // Existing article → go straight to editor

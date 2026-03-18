@@ -33,7 +33,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { LogOut, Search, Package, Loader2, Download, Newspaper, RefreshCw, CalendarClock, SlidersHorizontal, FileText, GripVertical, BarChart3, PackageOpen, Trash2, ChevronDown, ChevronRight, MessageSquare, Users, Contact } from "lucide-react";
+import { LogOut, Search, Package, Loader2, Download, Newspaper, RefreshCw, CalendarClock, SlidersHorizontal, FileText, GripVertical, BarChart3, PackageOpen, Trash2, ChevronDown, ChevronRight, MessageSquare, Users, Contact, Eye } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import AdminEditionManager from "@/components/AdminEditionManager";
 import AdminBlogEditor from "@/components/AdminBlogEditor";

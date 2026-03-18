@@ -473,6 +473,8 @@ const AdminBlogEditor = () => {
       published_at: publishedAt.toISOString(),
       key_points: keyPoints.filter(p => p.trim()),
       status: finalStatus,
+      is_featured: isFeatured,
+      display_order: displayOrder,
     };
     let error;
     if (editingArticle) {

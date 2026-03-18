@@ -35,6 +35,8 @@ type BlogArticle = {
   cover_image: string | null;
   category: string | null;
   is_free: boolean;
+  is_featured: boolean;
+  display_order: number | null;
   author: string | null;
   published_at: string | null;
   paywall_preview_length: number | null;

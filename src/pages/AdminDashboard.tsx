@@ -443,6 +443,19 @@ const AdminDashboard = () => {
         return order.country || "—";
       case "commentaire":
         return <span className="truncate block" title={order.comment || ""}>{order.comment || "—"}</span>;
+      case "factu_nom": {
+        const fn = order.billing_first_name;
+        const ln = order.billing_last_name;
+        return fn || ln ? `${fn || ""} ${ln || ""}`.trim() : "—";
+      }
+      case "factu_adresse": {
+        const parts = [order.billing_address_line1, order.billing_address_line2].filter(Boolean);
+        return parts.length > 0 ? parts.join(", ") : "—";
+      }
+      case "factu_ville": {
+        if (!order.billing_city) return "—";
+        return `${order.billing_postal_code || ""} ${order.billing_city}`.trim();
+      }
     }
   };
 

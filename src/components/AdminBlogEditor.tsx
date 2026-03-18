@@ -837,6 +837,22 @@ const AdminBlogEditor = () => {
                   <Label htmlFor="is_free_import" className="cursor-pointer">Article en accès libre</Label>
                 </div>
                 <p className="text-xs text-muted-foreground">{isFree ? "✅ Accessible à tout le monde" : "🔒 Réservé aux abonnés"}</p>
+                <div className="flex items-center gap-3 pt-2 border-t border-border">
+                  <Checkbox id="is_featured_import" checked={isFeatured} onCheckedChange={(checked) => setIsFeatured(checked === true)} />
+                  <Label htmlFor="is_featured_import" className="cursor-pointer">⭐ Article à la une</Label>
+                </div>
+                {isFeatured && <p className="text-xs text-primary">Cet article sera mis en avant en haut du blog</p>}
+                <div className="space-y-2 pt-2">
+                  <Label>Ordre d'affichage (optionnel)</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={displayOrder ?? ""}
+                    onChange={e => setDisplayOrder(e.target.value ? parseInt(e.target.value) : null)}
+                    placeholder="Auto (date de publication)"
+                  />
+                  <p className="text-xs text-muted-foreground">Plus le chiffre est petit, plus l'article apparaît haut. Vide = tri par date.</p>
+                </div>
               </CardContent>
             </Card>
 

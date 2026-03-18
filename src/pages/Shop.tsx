@@ -36,7 +36,7 @@ const ShopContent = () => {
         .from("digital_issues")
         .select("*")
         .eq("is_archived", true)
-        .order("published_at", { ascending: false });
+        .order("issue_number", { ascending: false });
       if (error) throw error;
       return data;
     },

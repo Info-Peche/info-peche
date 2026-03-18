@@ -814,9 +814,43 @@ const AdminDashboard = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-               <Button variant="outline" size="sm" onClick={exportXLSX}>
-                 <Download className="w-4 h-4 mr-2" /> Exporter Excel
-               </Button>
+               <DropdownMenu>
+                 <DropdownMenuTrigger asChild>
+                   <Button variant="outline" size="sm">
+                     <Download className="w-4 h-4 mr-2" /> Exporter Excel <ChevronDown className="w-3 h-3 ml-1" />
+                   </Button>
+                 </DropdownMenuTrigger>
+                 <DropdownMenuContent align="end">
+                   <DropdownMenuLabel>Exporter</DropdownMenuLabel>
+                   <DropdownMenuSeparator />
+                   <button
+                     className="relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
+                     onClick={() => doExport(activeOrders, "a-traiter")}
+                   >
+                     Commandes à traiter ({activeOrders.length})
+                   </button>
+                   <button
+                     className="relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
+                     onClick={exportActiveAndArchive}
+                   >
+                     À traiter + archiver ensuite
+                   </button>
+                   <DropdownMenuSeparator />
+                   <button
+                     className="relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
+                     onClick={() => doExport(archivedOrders, "archivees")}
+                   >
+                     Commandes archivées ({archivedOrders.length})
+                   </button>
+                   <DropdownMenuSeparator />
+                   <button
+                     className="relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
+                     onClick={() => doExport(filteredOrders, "toutes")}
+                   >
+                     Toutes les commandes ({filteredOrders.length})
+                   </button>
+                 </DropdownMenuContent>
+               </DropdownMenu>
             </div>
 
             <Tabs defaultValue="active" className="space-y-4">

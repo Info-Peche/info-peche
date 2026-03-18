@@ -352,6 +352,30 @@ const AdminDashboard = () => {
   };
 
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
+  const [invoiceOrder, setInvoiceOrder] = useState<Order | null>(null);
+
+  const printInvoice = () => {
+    const el = document.getElementById("invoice-print-area");
+    if (!el) return;
+    const w = window.open("", "_blank", "width=800,height=1000");
+    if (!w) return;
+    w.document.write(`<!DOCTYPE html><html><head><title>Facture</title><style>
+      body{font-family:Arial,sans-serif;padding:40px;color:#222;max-width:700px;margin:0 auto}
+      h1{font-size:24px;margin-bottom:4px}
+      .header{display:flex;justify-content:space-between;margin-bottom:30px}
+      .section{margin-bottom:20px}
+      .label{font-weight:bold;font-size:12px;color:#666;text-transform:uppercase;margin-bottom:4px}
+      table{width:100%;border-collapse:collapse;margin-top:10px}
+      th,td{text-align:left;padding:8px 12px;border-bottom:1px solid #ddd;font-size:13px}
+      th{background:#f5f5f5;font-weight:600}
+      .total-row td{font-weight:bold;font-size:15px;border-top:2px solid #333}
+      .footer{margin-top:40px;font-size:11px;color:#888;text-align:center}
+      @media print{body{padding:20px}}
+    </style></head><body>${el.innerHTML}<div class="footer">Info Pêche — Magazine de pêche au coup<br/>contact@info-peche.fr — www.info-peche.fr</div></body></html>`);
+    w.document.close();
+    w.focus();
+    setTimeout(() => w.print(), 300);
+  };
 
   const toggleExpand = (orderId: string) => {
     setExpandedOrders(prev => {

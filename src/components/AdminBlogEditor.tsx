@@ -35,6 +35,8 @@ type BlogArticle = {
   cover_image: string | null;
   category: string | null;
   is_free: boolean;
+  is_featured: boolean;
+  display_order: number | null;
   author: string | null;
   published_at: string | null;
   paywall_preview_length: number | null;
@@ -220,6 +222,8 @@ const AdminBlogEditor = () => {
   const [relatedIssueId, setRelatedIssueId] = useState<string | null>(null);
   const [publishedAt, setPublishedAt] = useState<Date>(new Date());
   const [keyPoints, setKeyPoints] = useState<string[]>([]);
+  const [isFeatured, setIsFeatured] = useState(false);
+  const [displayOrder, setDisplayOrder] = useState<number | null>(null);
 
   // Import step state
   const [rawText, setRawText] = useState("");
@@ -276,6 +280,7 @@ const AdminBlogEditor = () => {
     setRelatedIssueId(null); setPreviewMode(false);
     setAuthorId(null); setPublishedAt(new Date()); setKeyPoints([]);
     setImageRefMap({}); setEditStep("import");
+    setIsFeatured(false); setDisplayOrder(null);
   };
 
   const openEditor = (article?: BlogArticle) => {
@@ -290,6 +295,8 @@ const AdminBlogEditor = () => {
       setHtmlContent(convertLegacyToHtml(article.content));
       setRelatedIssueId(article.related_issue_id);
       setKeyPoints(article.key_points || []);
+      setIsFeatured(article.is_featured || false);
+      setDisplayOrder(article.display_order ?? null);
       setRawText("");
       setImageRefMap({});
       // Existing article → go straight to editor
@@ -466,6 +473,8 @@ const AdminBlogEditor = () => {
       published_at: publishedAt.toISOString(),
       key_points: keyPoints.filter(p => p.trim()),
       status: finalStatus,
+      is_featured: isFeatured,
+      display_order: displayOrder,
     };
     let error;
     if (editingArticle) {
@@ -545,6 +554,9 @@ const AdminBlogEditor = () => {
                           <Badge variant={article.is_free ? "secondary" : "default"} className="text-xs flex-shrink-0">
                             {article.is_free ? "Libre" : "Premium"}
                           </Badge>
+                          {(article as any).is_featured && (
+                            <Badge className="text-xs flex-shrink-0 bg-yellow-100 text-yellow-800 border-yellow-300">⭐ À la une</Badge>
+                          )}
                           {article.category && <Badge variant="outline" className="text-xs flex-shrink-0">{article.category}</Badge>}
                         </div>
                         <p className="text-sm text-muted-foreground truncate">{article.excerpt}</p>
@@ -828,6 +840,22 @@ const AdminBlogEditor = () => {
                   <Label htmlFor="is_free_import" className="cursor-pointer">Article en accès libre</Label>
                 </div>
                 <p className="text-xs text-muted-foreground">{isFree ? "✅ Accessible à tout le monde" : "🔒 Réservé aux abonnés"}</p>
+                <div className="flex items-center gap-3 pt-2 border-t border-border">
+                  <Checkbox id="is_featured_import" checked={isFeatured} onCheckedChange={(checked) => setIsFeatured(checked === true)} />
+                  <Label htmlFor="is_featured_import" className="cursor-pointer">⭐ Article à la une</Label>
+                </div>
+                {isFeatured && <p className="text-xs text-primary">Cet article sera mis en avant en haut du blog</p>}
+                <div className="space-y-2 pt-2">
+                  <Label>Ordre d'affichage (optionnel)</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={displayOrder ?? ""}
+                    onChange={e => setDisplayOrder(e.target.value ? parseInt(e.target.value) : null)}
+                    placeholder="Auto (date de publication)"
+                  />
+                  <p className="text-xs text-muted-foreground">Plus le chiffre est petit, plus l'article apparaît haut. Vide = tri par date.</p>
+                </div>
               </CardContent>
             </Card>
 
@@ -1025,6 +1053,22 @@ const AdminBlogEditor = () => {
                       <Label htmlFor="is_free_edit" className="cursor-pointer">Article en accès libre</Label>
                     </div>
                     <p className="text-xs text-muted-foreground">{isFree ? "✅ Accessible à tout le monde" : "🔒 Réservé aux abonnés"}</p>
+                    <div className="flex items-center gap-3 pt-2 border-t border-border">
+                      <Checkbox id="is_featured_edit" checked={isFeatured} onCheckedChange={(checked) => setIsFeatured(checked === true)} />
+                      <Label htmlFor="is_featured_edit" className="cursor-pointer">⭐ Article à la une</Label>
+                    </div>
+                    {isFeatured && <p className="text-xs text-primary">Cet article sera mis en avant en haut du blog</p>}
+                    <div className="space-y-2 pt-2">
+                      <Label>Ordre d'affichage (optionnel)</Label>
+                      <Input
+                        type="number"
+                        min="1"
+                        value={displayOrder ?? ""}
+                        onChange={e => setDisplayOrder(e.target.value ? parseInt(e.target.value) : null)}
+                        placeholder="Auto (date de publication)"
+                      />
+                      <p className="text-xs text-muted-foreground">Plus le chiffre est petit, plus l'article apparaît haut. Vide = tri par date.</p>
+                    </div>
                   </CardContent>
                 </Card>
 

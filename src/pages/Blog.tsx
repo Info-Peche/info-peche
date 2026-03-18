@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, Lock, Calendar, User, Search, X } from "lucide-react";
+import { ArrowRight, Lock, Calendar, User, Search, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
@@ -11,8 +11,10 @@ import SideCart from "@/components/SideCart";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 
 const CATEGORIES = ["Tous", "Technique", "Compétition", "Matériel", "Débutant", "Reportage", "Famille"];
+const ARTICLES_PER_PAGE = 12;
 
 const categoryColors: Record<string, string> = {
   Technique: "bg-primary/10 text-primary",
@@ -31,13 +33,14 @@ const Blog = () => {
   });
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Tous");
+  const [currentPage, setCurrentPage] = useState(1);
 
   const { data: articles, isLoading } = useQuery({
     queryKey: ["blog-articles"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("blog_articles")
-        .select("id, slug, title, excerpt, cover_image, category, is_free, author, published_at")
+        .select("id, slug, title, excerpt, cover_image, category, is_free, author, published_at, is_featured, display_order")
         .eq("status", "published")
         .order("published_at", { ascending: false });
       if (error) throw error;
@@ -45,20 +48,69 @@ const Blog = () => {
     },
   });
 
+  // Reset page when filters change
+  const handleCategoryChange = (cat: string) => {
+    setSelectedCategory(cat);
+    setCurrentPage(1);
+  };
+  const handleSearchChange = (val: string) => {
+    setSearchQuery(val);
+    setCurrentPage(1);
+  };
+
+  // Featured article: the one marked is_featured (first one if multiple)
+  const featuredArticle = useMemo(() => {
+    if (!articles) return null;
+    return articles.find(a => a.is_featured) || null;
+  }, [articles]);
+
+  // Filtered + sorted articles (excluding featured from list)
   const filtered = useMemo(() => {
     if (!articles) return [];
-    return articles.filter(a => {
-      const matchesCategory = selectedCategory === "Tous" || a.category === selectedCategory;
-      const matchesSearch = !searchQuery ||
-        a.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        a.excerpt.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (a.author && a.author.toLowerCase().includes(searchQuery.toLowerCase()));
-      return matchesCategory && matchesSearch;
-    });
-  }, [articles, searchQuery, selectedCategory]);
+    return articles
+      .filter(a => {
+        // Exclude the featured article from the grid
+        if (featuredArticle && a.id === featuredArticle.id) return false;
+        const matchesCategory = selectedCategory === "Tous" || a.category === selectedCategory;
+        const matchesSearch = !searchQuery ||
+          a.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          a.excerpt.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (a.author && a.author.toLowerCase().includes(searchQuery.toLowerCase()));
+        return matchesCategory && matchesSearch;
+      })
+      .sort((a, b) => {
+        // Articles with display_order come first, sorted by display_order ASC
+        if (a.display_order != null && b.display_order != null) return a.display_order - b.display_order;
+        if (a.display_order != null) return -1;
+        if (b.display_order != null) return 1;
+        // Then by published_at DESC
+        return new Date(b.published_at!).getTime() - new Date(a.published_at!).getTime();
+      });
+  }, [articles, searchQuery, selectedCategory, featuredArticle]);
 
-  const featured = filtered?.[0];
-  const rest = filtered?.slice(1);
+  // Pagination
+  const totalPages = Math.ceil(filtered.length / ARTICLES_PER_PAGE);
+  const paginatedArticles = filtered.slice((currentPage - 1) * ARTICLES_PER_PAGE, currentPage * ARTICLES_PER_PAGE);
+
+  // Show featured only on page 1 without filters
+  const showFeatured = featuredArticle && currentPage === 1 && selectedCategory === "Tous" && !searchQuery;
+
+  // Generate page numbers to display
+  const getPageNumbers = () => {
+    const pages: (number | "ellipsis")[] = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (currentPage > 3) pages.push("ellipsis");
+      for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
+        pages.push(i);
+      }
+      if (currentPage < totalPages - 2) pages.push("ellipsis");
+      pages.push(totalPages);
+    }
+    return pages;
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -94,12 +146,12 @@ const Blog = () => {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
+                onChange={e => handleSearchChange(e.target.value)}
                 placeholder="Rechercher un article, un thème, un auteur..."
                 className="pl-10 pr-10"
               />
               {searchQuery && (
-                <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                <button onClick={() => handleSearchChange("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                   <X className="w-4 h-4" />
                 </button>
               )}
@@ -108,7 +160,7 @@ const Blog = () => {
               {CATEGORIES.map(cat => (
                 <button
                   key={cat}
-                  onClick={() => setSelectedCategory(cat)}
+                  onClick={() => handleCategoryChange(cat)}
                   className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
                     selectedCategory === cat
                       ? "bg-primary text-primary-foreground shadow-sm"
@@ -136,45 +188,49 @@ const Blog = () => {
             </div>
           ) : (
             <>
-              {featured && (
+              {/* Featured Article */}
+              {showFeatured && (
                 <motion.div
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.15 }}
                   className="mb-14"
                 >
-                  <Link to={`/blog/${featured.slug}`}>
+                  <Link to={`/blog/${featuredArticle.slug}`}>
                     <div className="group relative overflow-hidden rounded-2xl shadow-xl h-[350px] md:h-[450px]">
                       <img
-                        src={featured.cover_image || "https://images.unsplash.com/photo-1500375592092-40eb2168fd21?w=1200&h=600&fit=crop"}
-                        alt={featured.title}
+                        src={featuredArticle.cover_image || "https://images.unsplash.com/photo-1500375592092-40eb2168fd21?w=1200&h=600&fit=crop"}
+                        alt={featuredArticle.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                       <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10">
                         <div className="flex items-center gap-3 mb-3">
                           <span className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider">
-                            {featured.category}
+                            À la une
                           </span>
-                          {!featured.is_free && (
+                          <span className="bg-white/20 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider">
+                            {featuredArticle.category}
+                          </span>
+                          {!featuredArticle.is_free && (
                             <span className="bg-white/20 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
                               <Lock className="h-3 w-3" /> Premium
                             </span>
                           )}
                         </div>
                         <h2 className="text-2xl md:text-4xl font-bold text-white mb-3 font-[Playfair_Display] leading-tight max-w-3xl">
-                          {featured.title}
+                          {featuredArticle.title}
                         </h2>
                         <p className="text-white/70 text-sm md:text-base max-w-2xl line-clamp-2 mb-4">
-                          {featured.excerpt}
+                          {featuredArticle.excerpt}
                         </p>
                         <div className="flex items-center gap-4 text-white/60 text-sm">
                           <span className="flex items-center gap-1.5">
                             <Calendar className="h-4 w-4" />
-                            {new Date(featured.published_at).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
+                            {new Date(featuredArticle.published_at!).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
                           </span>
                           <span className="flex items-center gap-1.5">
-                            <User className="h-4 w-4" /> {featured.author}
+                            <User className="h-4 w-4" /> {featuredArticle.author}
                           </span>
                         </div>
                       </div>
@@ -183,14 +239,15 @@ const Blog = () => {
                 </motion.div>
               )}
 
-              {rest && rest.length > 0 && (
+              {/* Articles Grid */}
+              {paginatedArticles.length > 0 && (
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {rest.map((article, index) => (
+                  {paginatedArticles.map((article, index) => (
                     <motion.div
                       key={article.id}
                       initial={{ opacity: 0, y: 30 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.15 + index * 0.08 }}
+                      transition={{ delay: 0.15 + index * 0.05 }}
                     >
                       <Link to={`/blog/${article.slug}`} className="group block h-full">
                         <div className="bg-card border border-border/50 rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 h-full flex flex-col">
@@ -213,7 +270,7 @@ const Blog = () => {
                           </div>
                           <div className="p-5 flex flex-col flex-1">
                             <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3">
-                              <span>{new Date(article.published_at).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}</span>
+                              <span>{new Date(article.published_at!).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}</span>
                               <span>•</span>
                               <span>{article.author}</span>
                             </div>
@@ -235,12 +292,57 @@ const Blog = () => {
                 </div>
               )}
 
-              {filtered.length === 0 && (
+              {filtered.length === 0 && !showFeatured && (
                 <p className="text-center text-muted-foreground py-12">
                   {searchQuery || selectedCategory !== "Tous"
                     ? "Aucun article trouvé pour cette recherche."
                     : "Aucun article pour le moment."}
                 </p>
+              )}
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <nav className="flex items-center justify-center gap-2 mt-16" aria-label="Pagination du blog">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="gap-1"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    <span className="hidden sm:inline">Précédent</span>
+                  </Button>
+
+                  <div className="flex items-center gap-1">
+                    {getPageNumbers().map((page, idx) =>
+                      page === "ellipsis" ? (
+                        <span key={`ellipsis-${idx}`} className="px-2 text-muted-foreground">…</span>
+                      ) : (
+                        <Button
+                          key={page}
+                          variant={currentPage === page ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setCurrentPage(page)}
+                          className="min-w-[36px]"
+                        >
+                          {page}
+                        </Button>
+                      )
+                    )}
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="gap-1"
+                  >
+                    <span className="hidden sm:inline">Suivant</span>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </nav>
               )}
             </>
           )}

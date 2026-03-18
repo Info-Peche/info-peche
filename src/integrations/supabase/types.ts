@@ -21,8 +21,10 @@ export type Database = {
           content: string
           cover_image: string | null
           created_at: string | null
+          display_order: number | null
           excerpt: string
           id: string
+          is_featured: boolean
           is_free: boolean
           key_points: string[] | null
           paywall_preview_length: number | null
@@ -39,8 +41,10 @@ export type Database = {
           content: string
           cover_image?: string | null
           created_at?: string | null
+          display_order?: number | null
           excerpt: string
           id?: string
+          is_featured?: boolean
           is_free?: boolean
           key_points?: string[] | null
           paywall_preview_length?: number | null
@@ -57,8 +61,10 @@ export type Database = {
           content?: string
           cover_image?: string | null
           created_at?: string | null
+          display_order?: number | null
           excerpt?: string
           id?: string
+          is_featured?: boolean
           is_free?: boolean
           key_points?: string[] | null
           paywall_preview_length?: number | null

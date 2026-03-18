@@ -294,9 +294,9 @@ const AdminDashboard = () => {
     return "—";
   };
 
-  const exportXLSX = async () => {
+  const doExport = async (orderList: Order[], label: string) => {
     const XLSX = await import("xlsx");
-    const data = filteredOrders.map(o => ({
+    const data = orderList.map(o => ({
       "N° commande": o.order_number ? `#${o.order_number}` : "",
       "Date": new Date(o.created_at).toLocaleDateString("fr-FR"),
       "Nom": o.last_name,
@@ -328,7 +328,14 @@ const AdminDashboard = () => {
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Commandes");
-    XLSX.writeFile(wb, `commandes-infopeche-${new Date().toISOString().slice(0, 10)}.xlsx`);
+    XLSX.writeFile(wb, `commandes-${label}-${new Date().toISOString().slice(0, 10)}.xlsx`);
+  };
+
+  const [showExportArchiveConfirm, setShowExportArchiveConfirm] = useState(false);
+
+  const exportActiveAndArchive = async () => {
+    await doExport(activeOrders, "a-traiter");
+    setShowExportArchiveConfirm(true);
   };
 
   const filteredOrders = orders.filter(o => {

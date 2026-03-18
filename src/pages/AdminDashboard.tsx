@@ -547,7 +547,7 @@ const AdminDashboard = () => {
                   />
                 </th>
               ))}
-              <th className="h-12 px-2 text-center align-middle font-medium text-muted-foreground" style={{ width: 40 }}></th>
+              <th className="h-12 px-2 text-center align-middle font-medium text-muted-foreground" style={{ width: 70 }}></th>
             </tr>
           </thead>
           <tbody>

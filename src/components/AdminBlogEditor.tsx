@@ -222,6 +222,8 @@ const AdminBlogEditor = () => {
   const [relatedIssueId, setRelatedIssueId] = useState<string | null>(null);
   const [publishedAt, setPublishedAt] = useState<Date>(new Date());
   const [keyPoints, setKeyPoints] = useState<string[]>([]);
+  const [isFeatured, setIsFeatured] = useState(false);
+  const [displayOrder, setDisplayOrder] = useState<number | null>(null);
 
   // Import step state
   const [rawText, setRawText] = useState("");

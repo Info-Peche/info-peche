@@ -554,6 +554,9 @@ const AdminBlogEditor = () => {
                           <Badge variant={article.is_free ? "secondary" : "default"} className="text-xs flex-shrink-0">
                             {article.is_free ? "Libre" : "Premium"}
                           </Badge>
+                          {(article as any).is_featured && (
+                            <Badge className="text-xs flex-shrink-0 bg-yellow-100 text-yellow-800 border-yellow-300">⭐ À la une</Badge>
+                          )}
                           {article.category && <Badge variant="outline" className="text-xs flex-shrink-0">{article.category}</Badge>}
                         </div>
                         <p className="text-sm text-muted-foreground truncate">{article.excerpt}</p>

@@ -1109,19 +1109,28 @@ const AdminDashboard = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {Array.isArray(invoiceOrder.items) && invoiceOrder.items.map((item: any, idx: number) => (
+                  {invoiceProductItems.map((item: any, idx: number) => (
                     <tr key={idx}>
                       <td style={{ padding: "8px 12px", borderBottom: "1px solid #eee", fontSize: 13 }}>{getItemLabel(item)}</td>
                       <td style={{ padding: "8px 12px", borderBottom: "1px solid #eee", fontSize: 13, textAlign: "center" }}>{item.quantity || 1}</td>
                       <td style={{ padding: "8px 12px", borderBottom: "1px solid #eee", fontSize: 13, textAlign: "right" }}>
-                        {item.unit_amount ? `${((item.unit_amount * (item.quantity || 1)) / 100).toFixed(2)}€` : "—"}
+                        {getLineTotalCents(item) > 0 ? `${(getLineTotalCents(item) / 100).toFixed(2)}€` : "—"}
                       </td>
                     </tr>
                   ))}
+                  {!!invoiceAmounts?.shippingCents && invoiceAmounts.shippingCents > 0 && (
+                    <tr>
+                      <td style={{ padding: "8px 12px", borderBottom: "1px solid #eee", fontSize: 13 }}>Frais de livraison</td>
+                      <td style={{ padding: "8px 12px", borderBottom: "1px solid #eee", fontSize: 13, textAlign: "center" }}>1</td>
+                      <td style={{ padding: "8px 12px", borderBottom: "1px solid #eee", fontSize: 13, textAlign: "right" }}>
+                        {(invoiceAmounts.shippingCents / 100).toFixed(2)}€
+                      </td>
+                    </tr>
+                  )}
                   <tr>
                     <td colSpan={2} style={{ padding: "10px 12px", fontWeight: "bold", fontSize: 14, borderTop: "2px solid #333" }}>Total</td>
                     <td style={{ padding: "10px 12px", fontWeight: "bold", fontSize: 14, textAlign: "right", borderTop: "2px solid #333" }}>
-                      {(invoiceOrder.total_amount / 100).toFixed(2)}€
+                      {invoiceAmounts ? `${(invoiceAmounts.totalAmountCents / 100).toFixed(2)}€` : "—"}
                     </td>
                   </tr>
                 </tbody>

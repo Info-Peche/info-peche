@@ -89,7 +89,7 @@ const ALL_COLUMNS: { key: ColumnKey; label: string; defaultVisible: boolean; min
   { key: "tel", label: "Tél", defaultVisible: true, minWidth: 80, defaultWidth: 110 },
   { key: "paiement_type", label: "Type de paiement", defaultVisible: true, minWidth: 80, defaultWidth: 120 },
   { key: "formule", label: "Formule", defaultVisible: true, minWidth: 80, defaultWidth: 120 },
-  { key: "total", label: "Total", defaultVisible: true, minWidth: 60, defaultWidth: 80 },
+  { key: "total", label: "Paiement net", defaultVisible: true, minWidth: 90, defaultWidth: 110 },
   { key: "paiement_status", label: "Paiement", defaultVisible: true, minWidth: 80, defaultWidth: 100 },
   { key: "fin_abo", label: "Fin abo", defaultVisible: true, minWidth: 80, defaultWidth: 100 },
   { key: "renouvellement", label: "Renouvellement", defaultVisible: true, minWidth: 100, defaultWidth: 140 },

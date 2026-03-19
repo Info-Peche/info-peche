@@ -495,6 +495,8 @@ const AdminDashboard = () => {
 
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
   const [invoiceOrder, setInvoiceOrder] = useState<Order | null>(null);
+  const invoiceAmounts = invoiceOrder ? getOrderAmounts(invoiceOrder) : null;
+  const invoiceProductItems = invoiceOrder ? getOrderProductItems(invoiceOrder) : [];
 
   const printInvoice = () => {
     const el = document.getElementById("invoice-print-area");

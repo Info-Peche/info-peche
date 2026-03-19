@@ -590,7 +590,7 @@ const AdminDashboard = () => {
               className="flex items-center gap-1 text-primary hover:underline font-medium"
             >
               {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-              {label} ({order.items.length})
+              {label} ({productItems.length})
             </button>
           );
         }

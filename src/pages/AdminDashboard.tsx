@@ -1031,12 +1031,8 @@ const AdminDashboard = () => {
             <AlertDialogCancel>Non, garder en "à traiter"</AlertDialogCancel>
             <AlertDialogAction onClick={async () => {
               const ids = activeOrders.map(o => o.id);
-              const { error } = await supabase
-                .from("orders")
-                .update({ is_processed: true } as any)
-                .in("id", ids);
-              if (error) { toast.error("Erreur"); return; }
-              setOrders(prev => prev.map(o => ids.includes(o.id) ? { ...o, is_processed: true } : o));
+              const ok = await updateArchiveStatus(ids, true);
+              if (!ok) return;
               setShowExportArchiveConfirm(false);
               toast.success(`${ids.length} commandes archivées`);
             }}>

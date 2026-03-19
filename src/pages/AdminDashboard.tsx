@@ -249,33 +249,36 @@ const AdminDashboard = () => {
     }
   };
 
-  const archiveSelected = async () => {
-    const ids = [...selectedOrders];
-    if (ids.length === 0) return;
+  const updateArchiveStatus = async (ids: string[], isProcessed: boolean) => {
+    if (ids.length === 0) return false;
+
     const { error } = await supabase
       .from("orders")
-      .update({ is_processed: true } as any)
+      .update({ is_processed: isProcessed } as any)
       .in("id", ids);
+
     if (error) {
-      toast.error("Erreur lors de l'archivage");
-      return;
+      toast.error(`Erreur lors de la mise à jour : ${error.message}`);
+      return false;
     }
-    setOrders(prev => prev.map(o => ids.includes(o.id) ? { ...o, is_processed: true } : o));
+
+    setOrders(prev => prev.map(o => ids.includes(o.id) ? { ...o, is_processed: isProcessed } : o));
+    return true;
+  };
+
+  const archiveSelected = async () => {
+    const ids = [...selectedOrders];
+    const ok = await updateArchiveStatus(ids, true);
+    if (!ok) return;
+
     setSelectedOrders(new Set());
     setShowArchiveConfirm(false);
     toast.success(`${ids.length} commande${ids.length > 1 ? "s" : ""} archivée${ids.length > 1 ? "s" : ""}`);
   };
 
   const unarchiveOrder = async (orderId: string) => {
-    const { error } = await supabase
-      .from("orders")
-      .update({ is_processed: false } as any)
-      .eq("id", orderId);
-    if (error) {
-      toast.error("Erreur lors de la mise à jour");
-      return;
-    }
-    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, is_processed: false } : o));
+    const ok = await updateArchiveStatus([orderId], false);
+    if (!ok) return;
     toast.success("Commande remise en attente");
   };
 

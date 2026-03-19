@@ -427,26 +427,43 @@ const AdminDashboard = () => {
   const isSubscription = (order: Order) => order.order_type.startsWith("subscription");
 
   const getItemLabel = (item: any) => {
-    const name = item.name || item.title || "";
-    const id = item.id || "";
-    const priceId = item.price_id || "";
-    const issueNum = item.issue_number || name.match(/N°?\s*(\d+)/)?.[1] || "";
+    const name = String(item?.name || item?.title || "");
+    const id = String(item?.id || "");
+    const priceId = String(item?.price_id || "");
 
-    // Blog article
-    if (id.startsWith("blog-") || (priceId === "price_1T123wKbRd4yKDMH1bI9GQqh" && item.unit_amount === 300 && !issueNum) || name.toLowerCase().includes("article blog")) {
+    const product = Object.values(PRODUCTS).find(
+      (p) => p.id === id || p.price_id === priceId,
+    );
+    if (product) return product.name;
+
+    const issueNum = item?.issue_number || name.match(/N°?\s*(\d+)/)?.[1] || "";
+
+    if (
+      id.startsWith("blog-") ||
+      (priceId === "price_1T123wKbRd4yKDMH1bI9GQqh" && item?.unit_amount === 300 && !issueNum) ||
+      name.toLowerCase().includes("article blog")
+    ) {
       return "Article blog";
     }
-    // Digital single issue
-    if (id.startsWith("digital-") || id === "mag-digital" || name.toLowerCase().includes("numérique") || name.toLowerCase().includes("digital")) {
+
+    if (
+      id.startsWith("digital-") ||
+      id === "mag-digital" ||
+      name.toLowerCase().includes("numérique") ||
+      name.toLowerCase().includes("digital")
+    ) {
       return issueNum ? `N°${issueNum} (digital)` : "Article digital";
     }
+
     if (priceId === "price_1T123wKbRd4yKDMH1bI9GQqh" && issueNum) {
       return `N°${issueNum} (digital)`;
     }
-    // Physical single issue
+
     if (issueNum) return `N°${issueNum} (papier)`;
+
     const num = name.match(/(\d+)/)?.[1];
     if (num) return `N°${num} (papier)`;
+
     return name || "—";
   };
 
@@ -457,18 +474,22 @@ const AdminDashboard = () => {
   };
 
   const getFormulaLabel = (order: Order) => {
-    const itemCount = Array.isArray(order.items) ? order.items.length : 0;
-    // Multiple items (with or without subscription)
+    const productItems = getOrderProductItems(order);
+    const itemCount = productItems.length;
+
     if (itemCount > 1) {
       return "Commandes multiples";
     }
+
     if (isSubscription(order)) {
       const subType = order.subscription_type || "";
       return SUBSCRIPTION_LABELS[subType] || subType || "Abonnement";
     }
+
     if (itemCount === 1) {
-      return getItemLabel(order.items[0]);
+      return getItemLabel(productItems[0]);
     }
+
     return "—";
   };
 

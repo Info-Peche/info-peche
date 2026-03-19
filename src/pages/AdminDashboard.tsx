@@ -705,7 +705,8 @@ const AdminDashboard = () => {
           </thead>
           <tbody>
             {orderList.map(order => {
-              const isMultiple = Array.isArray(order.items) && order.items.length > 1;
+              const productItems = getOrderProductItems(order);
+              const isMultiple = productItems.length > 1;
               const isExpanded = expandedOrders.has(order.id);
               return (
                 <>

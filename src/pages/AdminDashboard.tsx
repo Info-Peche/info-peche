@@ -777,11 +777,11 @@ const AdminDashboard = () => {
                       <td colSpan={visibleCols.length + 2} className="px-6 py-3">
                         <div className="text-xs space-y-1.5">
                           <p className="font-medium text-muted-foreground mb-2">Détail des articles :</p>
-                          {order.items.map((item: any, idx: number) => (
+                          {productItems.map((item: any, idx: number) => (
                             <div key={idx} className="flex items-center gap-3 text-foreground">
                               <span className="text-muted-foreground">{idx + 1}.</span>
                               <span className="font-medium">{getItemLabel(item)}</span>
-                              {item.price && <span className="text-muted-foreground">— {typeof item.price === 'number' ? `${item.price.toFixed(2)}€` : item.price}</span>}
+                              {item.price && <span className="text-muted-foreground">— {typeof item.price === "number" ? `${item.price.toFixed(2)}€` : item.price}</span>}
                             </div>
                           ))}
                         </div>

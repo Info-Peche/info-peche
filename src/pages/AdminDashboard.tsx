@@ -282,53 +282,118 @@ const AdminDashboard = () => {
     toast.success("Commande remise en attente");
   };
 
+  const getLineTotalCents = (item: any) => {
+    const quantity = typeof item?.quantity === "number" && item.quantity > 0 ? item.quantity : 1;
+    const unitAmount = typeof item?.unit_amount === "number"
+      ? item.unit_amount
+      : typeof item?.price === "number"
+        ? Math.round(item.price * 100)
+        : 0;
+
+    return unitAmount * quantity;
+  };
+
+  const isShippingItem = (item: any) => {
+    const id = String(item?.id || "").toLowerCase();
+    const name = String(item?.name || item?.title || "").toLowerCase();
+    const priceId = String(item?.price_id || "").toLowerCase();
+
+    return (
+      id.includes("shipping") ||
+      id.includes("livraison") ||
+      name.includes("livraison") ||
+      name.includes("frais de port") ||
+      name.includes("shipping") ||
+      priceId.includes("shipping")
+    );
+  };
+
+  const getOrderAmounts = (order: Order) => {
+    if (!Array.isArray(order.items) || order.items.length === 0) {
+      return { netAmountCents: order.total_amount, shippingCents: 0, totalAmountCents: order.total_amount };
+    }
+
+    const nonShippingSubtotal = order.items
+      .filter((item: any) => !isShippingItem(item))
+      .reduce((sum: number, item: any) => sum + getLineTotalCents(item), 0);
+
+    const shippingFromItems = order.items
+      .filter((item: any) => isShippingItem(item))
+      .reduce((sum: number, item: any) => sum + getLineTotalCents(item), 0);
+
+    const inferredShipping = Math.max(order.total_amount - nonShippingSubtotal, 0);
+    const shippingCents = shippingFromItems > 0 ? shippingFromItems : inferredShipping;
+    const netAmountCents = Math.max(order.total_amount - shippingCents, 0);
+
+    return {
+      netAmountCents,
+      shippingCents,
+      totalAmountCents: order.total_amount,
+    };
+  };
+
+  const getOrderProductItems = (order: Order) => {
+    if (!Array.isArray(order.items)) return [];
+    return order.items.filter((item: any) => !isShippingItem(item));
+  };
+
   const getExportFormulaLabel = (order: Order) => {
-    if (order.items && Array.isArray(order.items) && order.items.length > 0) {
-      const labels = order.items.map((item: any) => {
+    const productItems = getOrderProductItems(order);
+    if (productItems.length > 0) {
+      const labels = productItems.map((item: any) => {
         const priceId = item.price_id || "";
         if (SUBSCRIPTION_LABELS[priceId]) return SUBSCRIPTION_LABELS[priceId];
         return getItemLabel(item);
       });
       return labels.join(" + ");
     }
+
     if (isSubscription(order)) {
       const subType = order.subscription_type || "";
       return SUBSCRIPTION_LABELS[subType] || subType || "Abonnement";
     }
+
     return "—";
   };
 
   const doExport = async (orderList: Order[], label: string) => {
     const XLSX = await import("xlsx");
-    const data = orderList.map(o => ({
-      "N° commande": o.order_number ? `#${o.order_number}` : "",
-      "Date": new Date(o.created_at).toLocaleDateString("fr-FR"),
-      "Nom": o.last_name,
-      "Prénom": o.first_name,
-      "Adresse 1": o.address_line1,
-      "Adresse 2": o.address_line2 || "",
-      "Code postal": o.postal_code,
-      "Ville": o.city,
-      "Pays": o.country,
-      "Factu. Prénom": o.billing_first_name || "",
-      "Factu. Nom": o.billing_last_name || "",
-      "Factu. Adresse 1": o.billing_address_line1 || "",
-      "Factu. Adresse 2": o.billing_address_line2 || "",
-      "Factu. Code postal": o.billing_postal_code || "",
-      "Factu. Ville": o.billing_city || "",
-      "Factu. Pays": o.billing_country || "",
-      "Email": o.email,
-      "Téléphone": o.phone || "",
-      "Commentaire": o.comment || "",
-      "N° abonné": o.subscriber_number || "",
-      "Formule": getExportFormulaLabel(o),
-      "Début abo": o.subscription_start_date ? new Date(o.subscription_start_date).toLocaleDateString("fr-FR") : "",
-      "Fin abo": o.subscription_end_date ? new Date(o.subscription_end_date).toLocaleDateString("fr-FR") : "",
-      "Montant (€)": (o.total_amount / 100).toFixed(2),
-      "Mode de paiement": o.payment_method,
-      "Statut paiement": o.payment_status,
-      "Traité": o.is_processed ? "Oui" : "Non",
-    }));
+    const data = orderList.map((o) => {
+      const { netAmountCents, shippingCents, totalAmountCents } = getOrderAmounts(o);
+
+      return {
+        "N° commande": o.order_number ? `#${o.order_number}` : "",
+        "Date": new Date(o.created_at).toLocaleDateString("fr-FR"),
+        "Nom": o.last_name,
+        "Prénom": o.first_name,
+        "Adresse 1": o.address_line1,
+        "Adresse 2": o.address_line2 || "",
+        "Code postal": o.postal_code,
+        "Ville": o.city,
+        "Pays": o.country,
+        "Factu. Prénom": o.billing_first_name || "",
+        "Factu. Nom": o.billing_last_name || "",
+        "Factu. Adresse 1": o.billing_address_line1 || "",
+        "Factu. Adresse 2": o.billing_address_line2 || "",
+        "Factu. Code postal": o.billing_postal_code || "",
+        "Factu. Ville": o.billing_city || "",
+        "Factu. Pays": o.billing_country || "",
+        "Email": o.email,
+        "Téléphone": o.phone || "",
+        "Commentaire": o.comment || "",
+        "N° abonné": o.subscriber_number || "",
+        "Formule": getExportFormulaLabel(o),
+        "Début abo": o.subscription_start_date ? new Date(o.subscription_start_date).toLocaleDateString("fr-FR") : "",
+        "Fin abo": o.subscription_end_date ? new Date(o.subscription_end_date).toLocaleDateString("fr-FR") : "",
+        "Paiement net (€)": (netAmountCents / 100).toFixed(2),
+        "Frais de livraison (€)": (shippingCents / 100).toFixed(2),
+        "Paiement total (€)": (totalAmountCents / 100).toFixed(2),
+        "Mode de paiement": o.payment_method,
+        "Statut paiement": o.payment_status,
+        "Traité": o.is_processed ? "Oui" : "Non",
+      };
+    });
+
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Commandes");

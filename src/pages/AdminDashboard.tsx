@@ -1066,8 +1066,10 @@ const AdminDashboard = () => {
                   </p>
                 </div>
                 <div style={{ textAlign: "right" }}>
-                  <p style={{ fontWeight: "bold", fontSize: 14 }}>Info Pêche</p>
-                  <p style={{ fontSize: 12, color: "#666" }}>Magazine de pêche au coup</p>
+                  <p style={{ fontWeight: "bold", fontSize: 14 }}>B&D EDITIONS (Info Pêche)</p>
+                  <p style={{ fontSize: 12, color: "#666" }}>SAS au capital de 5 000 €</p>
+                  <p style={{ fontSize: 12, color: "#666" }}>SIREN 798 979 761 — SIRET 798 979 761 00029</p>
+                  <p style={{ fontSize: 12, color: "#666" }}>20 AVENUE DES LAURIERS ROSES, 13600 LA CIOTAT</p>
                   <p style={{ fontSize: 12, color: "#666" }}>contact@info-peche.fr</p>
                 </div>
               </div>

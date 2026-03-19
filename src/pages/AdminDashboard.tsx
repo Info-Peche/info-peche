@@ -43,6 +43,7 @@ import AdminStockManager from "@/components/AdminStockManager";
 import AdminReviewManager from "@/components/AdminReviewManager";
 import AdminAuthorManager from "@/components/AdminAuthorManager";
 import AdminCRM from "@/components/AdminCRM";
+import { PRODUCTS } from "@/lib/products";
 
 type Order = {
   id: string;

@@ -596,8 +596,10 @@ const AdminDashboard = () => {
         }
         return label;
       }
-      case "total":
-        return <span className="font-bold">{(order.total_amount / 100).toFixed(2)}€</span>;
+      case "total": {
+        const { netAmountCents } = getOrderAmounts(order);
+        return <span className="font-bold">{(netAmountCents / 100).toFixed(2)}€</span>;
+      }
       case "paiement_status":
         return <Badge variant={statusColor(order.payment_status) as any} className="text-xs">{order.payment_status}</Badge>;
       case "fin_abo":

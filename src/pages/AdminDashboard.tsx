@@ -515,7 +515,7 @@ const AdminDashboard = () => {
       .total-row td{font-weight:bold;font-size:15px;border-top:2px solid #333}
       .footer{margin-top:40px;font-size:11px;color:#888;text-align:center}
       @media print{body{padding:20px}}
-    </style></head><body>${el.innerHTML}<div class="footer">Info Pêche — Magazine de pêche au coup<br/>contact@info-peche.fr — www.info-peche.fr</div></body></html>`);
+    </style></head><body>${el.innerHTML}<div class="footer">B&D EDITIONS (Info Pêche) — SAS au capital de 5 000 €<br/>SIREN 798 979 761 — SIRET 798 979 761 00029<br/>20 AVENUE DES LAURIERS ROSES, 13600 LA CIOTAT — contact@info-peche.fr</div></body></html>`);
     w.document.close();
     w.focus();
     setTimeout(() => w.print(), 300);

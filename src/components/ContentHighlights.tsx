@@ -38,13 +38,13 @@ const BackIssuesSection = () => {
                 <MagazineFanVisual count={6} showBadge={false} className="scale-125 group-hover:scale-[1.3] transition-transform duration-500" />
                 <div className="absolute top-3 left-3 flex items-center gap-2 bg-primary text-primary-foreground py-1.5 px-3 rounded-full text-sm font-bold shadow z-10">
                   <Monitor className="w-4 h-4" />
-                  Lecture en ligne
+                  Version numérique
                 </div>
               </div>
 
               <div className="p-6 flex flex-col flex-1">
                 <h3 className="text-xl font-serif font-bold text-foreground mb-3">
-                  Consultez en ligne, immédiatement
+                  Achetez et lisez en ligne, immédiatement
                 </h3>
                 <div className="space-y-2.5 mb-6 flex-1">
                   {[

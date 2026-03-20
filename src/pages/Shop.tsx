@@ -190,7 +190,7 @@ const ShopContent = () => {
                       <div className="absolute top-3 left-3">
                         <Badge variant="secondary" className="bg-white/90 backdrop-blur-sm text-foreground text-xs font-bold shadow-sm">
                           {viewMode === "online" ? (
-                            <><Monitor className="w-3 h-3 mr-1" /> En ligne</>
+                            <><Monitor className="w-3 h-3 mr-1" /> Version numérique</>
                           ) : (
                             <><Package className="w-3 h-3 mr-1" /> Papier</>
                           )}

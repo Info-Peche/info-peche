@@ -141,12 +141,21 @@ const SideCart = () => {
                 </span>
               </div>
               <Button 
-                className="w-full py-6 text-lg rounded-xl bg-primary hover:bg-primary/90 text-white shadow-lg"
+                className="w-full py-6 text-lg rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg"
                 disabled={items.length === 0}
                 onClick={handleCheckout}
               >
                 Passer la commande
               </Button>
+              {items.length > 0 && (
+                <Button 
+                  variant="outline"
+                  className="w-full py-5 rounded-xl text-sm font-semibold border-border hover:bg-secondary"
+                  onClick={() => setIsOpen(false)}
+                >
+                  ← Continuer mes achats
+                </Button>
+              )}
             </div>
           </motion.div>
         </>

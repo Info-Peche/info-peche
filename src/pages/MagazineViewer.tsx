@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
@@ -29,6 +29,7 @@ import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import { PRODUCTS } from "@/lib/products";
 import SideCart from "@/components/SideCart";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // Configure PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
@@ -52,18 +53,32 @@ const MagazineViewerContent = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [scale, setScale] = useState(1.0);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [containerWidth, setContainerWidth] = useState<number | null>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+  const viewerContainerRef = useRef<HTMLDivElement | null>(null);
+  const isMobile = useIsMobile();
 
-  // Measure container width for responsive PDF sizing
+  // Measure real viewer container width for responsive PDF sizing
   useEffect(() => {
     const updateWidth = () => {
-      // Leave space for nav arrows (48px each side) + padding
-      const available = Math.min(window.innerWidth - 32, 800);
-      setContainerWidth(available);
+      const baseWidth = viewerContainerRef.current?.clientWidth ?? window.innerWidth;
+      setContainerWidth(baseWidth);
     };
+
     updateWidth();
+
+    const resizeObserver =
+      typeof ResizeObserver !== "undefined" ? new ResizeObserver(updateWidth) : null;
+
+    if (resizeObserver && viewerContainerRef.current) {
+      resizeObserver.observe(viewerContainerRef.current);
+    }
+
     window.addEventListener("resize", updateWidth);
-    return () => window.removeEventListener("resize", updateWidth);
+
+    return () => {
+      window.removeEventListener("resize", updateWidth);
+      resizeObserver?.disconnect();
+    };
   }, []);
 
   // Preview mode: fetch preview URL without auth
@@ -279,10 +294,14 @@ const MagazineViewerContent = () => {
 
   const displayPages = isPreview ? Math.min(previewPages, numPages || previewPages) : numPages;
   const isOnLastPreviewPage = isPreview && currentPage >= displayPages && numPages > 0;
+  const mobilePageWidth =
+    isMobile && containerWidth > 0
+      ? Math.max(220, Math.min(Math.floor(containerWidth - 24), 520))
+      : undefined;
 
   // PDF Viewer
   return (
-    <div className="min-h-screen bg-foreground/95 flex flex-col select-none" style={{ userSelect: "none" }}>
+    <div className="h-[100dvh] bg-foreground/95 flex flex-col select-none overflow-hidden" style={{ userSelect: "none" }}>
       {/* Toolbar */}
       <header className="bg-foreground border-b border-white/10 px-4 py-3 flex items-center justify-between z-50">
         <Link
@@ -324,25 +343,29 @@ const MagazineViewerContent = () => {
         </div>
 
         <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-white/70 hover:text-white hover:bg-white/10"
-            onClick={() => setScale((s) => Math.max(0.5, s - 0.15))}
-          >
-            <ZoomOut className="w-4 h-4" />
-          </Button>
-          <span className="text-white/60 text-xs w-10 text-center">
-            {Math.round(scale * 100)}%
-          </span>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-white/70 hover:text-white hover:bg-white/10"
-            onClick={() => setScale((s) => Math.min(2.5, s + 0.15))}
-          >
-            <ZoomIn className="w-4 h-4" />
-          </Button>
+          {!isMobile && (
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-white/70 hover:text-white hover:bg-white/10"
+                onClick={() => setScale((s) => Math.max(0.5, s - 0.15))}
+              >
+                <ZoomOut className="w-4 h-4" />
+              </Button>
+              <span className="text-white/60 text-xs w-10 text-center">
+                {Math.round(scale * 100)}%
+              </span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-white/70 hover:text-white hover:bg-white/10"
+                onClick={() => setScale((s) => Math.min(2.5, s + 0.15))}
+              >
+                <ZoomIn className="w-4 h-4" />
+              </Button>
+            </>
+          )}
           <Button
             variant="ghost"
             size="icon"
@@ -363,23 +386,27 @@ const MagazineViewerContent = () => {
       )}
 
       {/* PDF Content */}
-      <div className="flex-1 overflow-auto flex items-start justify-center py-8 relative">
-        {/* Left page arrow */}
-        <button
-          onClick={() => goToPage(currentPage - 1)}
-          disabled={currentPage <= 1}
-          className="absolute left-2 md:left-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white/70 hover:bg-white/20 hover:text-white transition-all disabled:opacity-20 disabled:hover:bg-white/10"
-        >
-          <ChevronLeft className="w-6 h-6" />
-        </button>
-        {/* Right page arrow */}
-        <button
-          onClick={() => goToPage(currentPage + 1)}
-          disabled={currentPage >= displayPages}
-          className="absolute right-2 md:right-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white/70 hover:bg-white/20 hover:text-white transition-all disabled:opacity-20 disabled:hover:bg-white/10"
-        >
-          <ChevronRight className="w-6 h-6" />
-        </button>
+      <div ref={viewerContainerRef} className="flex-1 overflow-auto flex items-start justify-center py-3 md:py-8 px-2 md:px-0 relative">
+        {!isMobile && (
+          <>
+            {/* Left page arrow */}
+            <button
+              onClick={() => goToPage(currentPage - 1)}
+              disabled={currentPage <= 1}
+              className="absolute left-2 md:left-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white/70 hover:bg-white/20 hover:text-white transition-all disabled:opacity-20 disabled:hover:bg-white/10"
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+            {/* Right page arrow */}
+            <button
+              onClick={() => goToPage(currentPage + 1)}
+              disabled={currentPage >= displayPages}
+              className="absolute right-2 md:right-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white/70 hover:bg-white/20 hover:text-white transition-all disabled:opacity-20 disabled:hover:bg-white/10"
+            >
+              <ChevronRight className="w-6 h-6" />
+            </button>
+          </>
+        )}
 
         <Document
           file={pdfUrl}
@@ -407,8 +434,8 @@ const MagazineViewerContent = () => {
             >
               <Page
                 pageNumber={currentPage}
-                width={containerWidth && containerWidth < 768 ? containerWidth : undefined}
-                scale={containerWidth && containerWidth < 768 ? undefined : scale}
+                width={mobilePageWidth}
+                scale={isMobile ? undefined : scale}
                 className="shadow-2xl rounded-lg overflow-hidden"
                 renderTextLayer={false}
                 renderAnnotationLayer={false}

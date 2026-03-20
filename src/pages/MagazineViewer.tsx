@@ -407,7 +407,8 @@ const MagazineViewerContent = () => {
             >
               <Page
                 pageNumber={currentPage}
-                scale={scale}
+                width={containerWidth && containerWidth < 768 ? containerWidth : undefined}
+                scale={containerWidth && containerWidth < 768 ? undefined : scale}
                 className="shadow-2xl rounded-lg overflow-hidden"
                 renderTextLayer={false}
                 renderAnnotationLayer={false}

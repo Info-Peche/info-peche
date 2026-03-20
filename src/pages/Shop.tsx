@@ -104,7 +104,7 @@ const ShopContent = () => {
               }`}
             >
               <BookOpen className="w-4 h-4" />
-              Consultez en ligne
+              Achat en ligne — dès 3€
             </button>
             <button
               onClick={() => setViewMode("physical")}
@@ -190,7 +190,7 @@ const ShopContent = () => {
                       <div className="absolute top-3 left-3">
                         <Badge variant="secondary" className="bg-white/90 backdrop-blur-sm text-foreground text-xs font-bold shadow-sm">
                           {viewMode === "online" ? (
-                            <><Monitor className="w-3 h-3 mr-1" /> En ligne</>
+                            <><Monitor className="w-3 h-3 mr-1" /> Version numérique</>
                           ) : (
                             <><Package className="w-3 h-3 mr-1" /> Papier</>
                           )}
@@ -217,8 +217,8 @@ const ShopContent = () => {
                             className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-full"
                             onClick={() => handleAddDigital(issue)}
                           >
-                            <BookOpen className="h-4 w-4 mr-2" />
-                            Consulter le magazine
+                            <ShoppingBag className="h-4 w-4 mr-2" />
+                            Acheter en ligne — {digitalPrice.toFixed(2)}€
                           </Button>
                         ) : (
                           <Button

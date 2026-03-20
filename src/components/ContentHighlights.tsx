@@ -44,7 +44,7 @@ const BackIssuesSection = () => {
 
               <div className="p-6 flex flex-col flex-1">
                 <h3 className="text-xl font-serif font-bold text-foreground mb-3">
-                  Consultez en ligne, immédiatement
+                  Achetez et lisez en ligne, immédiatement
                 </h3>
                 <div className="space-y-2.5 mb-6 flex-1">
                   {[

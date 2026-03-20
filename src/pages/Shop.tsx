@@ -217,8 +217,8 @@ const ShopContent = () => {
                             className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-full"
                             onClick={() => handleAddDigital(issue)}
                           >
-                            <BookOpen className="h-4 w-4 mr-2" />
-                            Consulter le magazine
+                            <ShoppingBag className="h-4 w-4 mr-2" />
+                            Acheter en ligne — {digitalPrice.toFixed(2)}€
                           </Button>
                         ) : (
                           <Button

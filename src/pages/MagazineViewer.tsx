@@ -52,6 +52,19 @@ const MagazineViewerContent = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [scale, setScale] = useState(1.0);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [containerWidth, setContainerWidth] = useState<number | null>(null);
+
+  // Measure container width for responsive PDF sizing
+  useEffect(() => {
+    const updateWidth = () => {
+      // Leave space for nav arrows (48px each side) + padding
+      const available = Math.min(window.innerWidth - 32, 800);
+      setContainerWidth(available);
+    };
+    updateWidth();
+    window.addEventListener("resize", updateWidth);
+    return () => window.removeEventListener("resize", updateWidth);
+  }, []);
 
   // Preview mode: fetch preview URL without auth
   const loadPreview = useCallback(async () => {

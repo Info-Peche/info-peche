@@ -104,7 +104,7 @@ const ShopContent = () => {
               }`}
             >
               <BookOpen className="w-4 h-4" />
-              Consultez en ligne
+              Achat en ligne — dès 3€
             </button>
             <button
               onClick={() => setViewMode("physical")}

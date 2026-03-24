@@ -7,6 +7,13 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// Subscription types that grant full magazine access (2 ans)
+const FULL_ACCESS_TYPES = [
+  "2ans", "abo-2-ans", "Abonnement 2 ans",
+  "price_1T11hVKbRd4yKDMHHCpMLRc3",
+  "prod_Tyzgq3QeYl52IS",
+];
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -24,18 +31,44 @@ serve(async (req) => {
       throw new Error("Email and issue_id are required");
     }
 
-    // Check digital access
+    const lowerEmail = email.toLowerCase();
+    let hasAccess = false;
+
+    // 1) Check digital_access table (single issue purchases, passes)
     const now = new Date().toISOString();
-    const { data: access, error: accessError } = await supabaseAdmin
+    const { data: access } = await supabaseAdmin
       .from("digital_access")
       .select("*")
-      .eq("email", email)
+      .eq("email", lowerEmail)
       .gt("expires_at", now)
       .or(`issue_id.eq.${issue_id},access_type.eq.pass_15_days`)
       .limit(1);
 
-    if (accessError) throw accessError;
-    if (!access || access.length === 0) {
+    if (access && access.length > 0) {
+      hasAccess = true;
+    }
+
+    // 2) Check clients table for active 2-year subscribers
+    if (!hasAccess) {
+      const { data: client } = await supabaseAdmin
+        .from("clients")
+        .select("subscription_type, subscription_end_date, is_active_subscriber")
+        .eq("email", lowerEmail)
+        .maybeSingle();
+
+      if (
+        client &&
+        client.is_active_subscriber &&
+        client.subscription_type &&
+        FULL_ACCESS_TYPES.includes(client.subscription_type) &&
+        client.subscription_end_date &&
+        new Date(client.subscription_end_date) > new Date()
+      ) {
+        hasAccess = true;
+      }
+    }
+
+    if (!hasAccess) {
       return new Response(JSON.stringify({ error: "no_access" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 403,

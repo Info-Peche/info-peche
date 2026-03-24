@@ -172,7 +172,7 @@ const MonCompte = () => {
                 </div>
               </div>
 
-              {mode !== "forgot" && (
+              {mode !== "forgot" && mode !== "first-login" && (
                 <div>
                   <Label htmlFor="password">Mot de passe</Label>
                   <div className="relative">

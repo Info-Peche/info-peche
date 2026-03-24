@@ -12,7 +12,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SideCart from "@/components/SideCart";
 
-type Mode = "login" | "signup" | "forgot";
+type Mode = "login" | "signup" | "forgot" | "first-login";
 
 const MonCompte = () => {
   const { user, signIn, signUp, signOut, resetPassword, subscriptionTier, subscriptionEnd, hasAccessToBlog, hasAccessToMagazines, loading } = useAuth();

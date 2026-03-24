@@ -91,9 +91,10 @@ const computeEndDate = (client: Client): string | null => {
   if (!client.subscription_type) return null;
   const months = SUBSCRIPTION_DURATIONS[client.subscription_type];
   if (!months) return null;
-  const start = client.subscription_start_date
-    ? new Date(client.subscription_start_date)
-    : new Date(client.created_at);
+  const startStr = client.subscription_start_date || client.created_at;
+  if (!startStr) return null;
+  const start = new Date(startStr);
+  if (isNaN(start.getTime())) return null;
   const end = new Date(start);
   end.setMonth(end.getMonth() + months);
   return end.toISOString();

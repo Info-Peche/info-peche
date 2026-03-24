@@ -346,6 +346,27 @@ const AdminCRM = () => {
         toast.error("Erreur lors de la création");
       }
     } else {
+      // Auto-create auth account so the client can use "Première connexion"
+      if (newClient.subscription_type) {
+        try {
+          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+          const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+          // We call the edge function just to ensure the auth account exists
+          // by triggering a "first-login" check — but we don't need the email sent now
+          // Instead, create the account via a dedicated lightweight call
+          await fetch(`${supabaseUrl}/functions/v1/send-reset-password`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "apikey": supabaseKey,
+              "Authorization": `Bearer ${supabaseKey}`,
+            },
+            body: JSON.stringify({ email: newClient.email, isFirstLogin: true, skipEmail: true }),
+          });
+        } catch (authErr) {
+          console.error("Auth account creation (non-blocking):", authErr);
+        }
+      }
       toast.success(`Client créé${subscriberNumber ? ` — ${subscriberNumber}` : ""}`);
       setNewClient(null);
       fetchClients();

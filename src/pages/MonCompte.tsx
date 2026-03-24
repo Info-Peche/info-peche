@@ -27,10 +27,18 @@ const MonCompte = () => {
     setSubmitting(true);
 
     try {
-      if (mode === "forgot") {
-        const { error } = await resetPassword(email);
+      if (mode === "forgot" || mode === "first-login") {
+        // Use branded edge function for both reset and first login
+        const { data, error } = await supabase.functions.invoke("send-reset-password", {
+          body: { email, isFirstLogin: mode === "first-login" },
+        });
         if (error) throw error;
-        toast.success("Un email de réinitialisation vous a été envoyé.");
+        if (data?.error) throw new Error(data.error);
+        toast.success(
+          mode === "first-login"
+            ? "Un email d'activation vous a été envoyé ! Vérifiez votre boîte de réception."
+            : "Un email de réinitialisation vous a été envoyé."
+        );
         setMode("login");
       } else if (mode === "login") {
         const { error } = await signIn(email, password);
@@ -39,7 +47,6 @@ const MonCompte = () => {
       } else {
         const { error } = await signUp(email, password);
         if (error) throw error;
-        // Send branded welcome email via edge function
         try {
           await supabase.functions.invoke("send-signup-email", {
             body: { email },

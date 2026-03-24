@@ -35,7 +35,7 @@ serve(async (req) => {
         .eq("email", normalizedEmail)
         .maybeSingle();
 
-      if (!client) {
+      if (!client && !skipEmail) {
         return new Response(
           JSON.stringify({ error: "Aucun abonnement trouvé pour cette adresse email. Vérifiez l'adresse ou contactez-nous." }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 404 }
@@ -48,7 +48,7 @@ serve(async (req) => {
         (u) => u.email?.toLowerCase() === normalizedEmail
       );
 
-      if (existingUser && existingUser.last_sign_in_at) {
+      if (existingUser && existingUser.last_sign_in_at && !skipEmail) {
         // User has already signed in = password already set
         return new Response(
           JSON.stringify({ error: "Votre mot de passe a déjà été créé. Utilisez \"Se connecter\" ou \"Mot de passe oublié\" si vous l'avez perdu." }),
@@ -66,9 +66,18 @@ serve(async (req) => {
         });
         if (createErr) {
           console.error("[SEND-RESET] Create user error:", createErr.message);
-          throw new Error("Erreur lors de la création du compte.");
+          if (!skipEmail) throw new Error("Erreur lors de la création du compte.");
+        } else {
+          console.log("[SEND-RESET] Created auth user for", normalizedEmail);
         }
-        console.log("[SEND-RESET] Created auth user for", normalizedEmail);
+      }
+
+      // If skipEmail, return early — account ensured
+      if (skipEmail) {
+        console.log("[SEND-RESET] skipEmail=true, auth account ensured for", normalizedEmail);
+        return new Response(JSON.stringify({ success: true, skipped: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
     } else {
       // Regular forgot password: check if user exists in auth

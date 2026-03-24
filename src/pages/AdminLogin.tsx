@@ -58,10 +58,21 @@ const AdminLogin = () => {
     }
     setResetLoading(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      const res = await fetch(`${supabaseUrl}/functions/v1/send-reset-password`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": supabaseKey,
+          "Authorization": `Bearer ${supabaseKey}`,
+        },
+        body: JSON.stringify({ email }),
       });
-      if (error) throw error;
+      const resData = await res.json();
+      if (!res.ok || resData?.error) {
+        throw new Error(resData?.error || "Une erreur est survenue.");
+      }
       setResetSent(true);
     } catch (err: any) {
       toast({

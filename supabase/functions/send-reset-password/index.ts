@@ -91,9 +91,6 @@ serve(async (req) => {
       await supabaseAdmin.auth.admin.generateLink({
         type: "recovery",
         email: normalizedEmail,
-        options: {
-          redirectTo: `${siteUrl}/reset-password`,
-        },
       });
 
     if (linkError) {
@@ -101,20 +98,14 @@ serve(async (req) => {
       throw new Error("Impossible de générer le lien de réinitialisation.");
     }
 
-    // Build the actual recovery URL - replace Supabase domain with production domain
-    let actionLink = linkData?.properties?.action_link;
-    if (!actionLink) throw new Error("Aucun lien généré.");
+    // Use hashed_token to build a direct link to info-peche.fr
+    // This bypasses Supabase's /auth/v1/verify redirect (which uses Site URL)
+    const tokenHash = linkData?.properties?.hashed_token;
+    if (!tokenHash) throw new Error("Aucun token généré.");
 
-    // Force redirect to info-peche.fr (override Supabase default Site URL)
-    try {
-      const url = new URL(actionLink);
-      url.searchParams.set("redirect_to", `${siteUrl}/reset-password`);
-      actionLink = url.toString();
-    } catch (e) {
-      console.error("[SEND-RESET] Could not rewrite redirect_to:", e);
-    }
+    const actionLink = `${siteUrl}/reset-password?token_hash=${encodeURIComponent(tokenHash)}&type=recovery`;
 
-    console.log("[SEND-RESET] Generated recovery link for", normalizedEmail);
+    console.log("[SEND-RESET] Generated direct recovery link for", normalizedEmail);
 
     // Determine email content based on context
     const isFirst = isFirstLogin === true;

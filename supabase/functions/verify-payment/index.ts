@@ -364,7 +364,7 @@ serve(async (req) => {
                   <p style="color: #555; line-height: 1.6; margin: 0 0 15px; font-family: 'Inter', Arial, sans-serif; font-size: 14px;">
                     Votre numéro d'abonné : <strong>${subscriberNumber || "—"}</strong><br>
                     Votre compte est rattaché à votre adresse email <strong>${customerEmail}</strong>.<br>
-                    Lors de votre première connexion, cliquez sur <em>« Mot de passe oublié »</em> pour créer votre mot de passe et finaliser vos accès.
+                    Pour activer votre espace, rendez-vous sur votre compte et cliquez sur <em>« 🎣 Première connexion abonné ? »</em> pour créer votre mot de passe.
                   </p>
                   <a href="https://www.info-peche.fr/mon-compte" style="display: inline-block; background: #d41227; color: #fff; padding: 14px 30px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 16px; font-family: 'Inter', Arial, sans-serif;">
                     Accéder à mon compte

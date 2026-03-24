@@ -151,13 +151,15 @@ const MonCompte = () => {
 
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-2xl border border-border p-8 shadow-sm">
             <h1 className="text-2xl font-serif font-bold mb-1 text-foreground">
-              {mode === "login" ? "Se connecter" : mode === "signup" ? "Créer un compte" : "Mot de passe oublié"}
+              {mode === "login" ? "Se connecter" : mode === "signup" ? "Créer un compte" : mode === "first-login" ? "Première connexion" : "Mot de passe oublié"}
             </h1>
             <p className="text-sm text-muted-foreground mb-6">
               {mode === "login"
                 ? "Accédez à votre espace abonné"
                 : mode === "signup"
                 ? "Créez votre compte pour vous abonner"
+                : mode === "first-login"
+                ? "Entrez l'email associé à votre abonnement pour créer votre mot de passe"
                 : "Entrez votre email pour réinitialiser"}
             </p>
 

@@ -48,6 +48,7 @@ const MagazineViewerContent = () => {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [previewPages, setPreviewPages] = useState(4);
   const [issueInfo, setIssueInfo] = useState<{ title: string; issue_number: string; price_cents: number } | null>(null);
+  const [subscriberFullAccess, setSubscriberFullAccess] = useState(false);
 
   const [numPages, setNumPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
@@ -141,15 +142,45 @@ const MagazineViewerContent = () => {
     }
   }, [email, issueId]);
 
-  useEffect(() => {
-    if (isPreview && issueId) {
+  // Auto-load full access for logged-in subscribers with magazine access
+  const loadSubscriberAccess = useCallback(async () => {
+    if (!issueId || !user?.email) return;
+    setVerifying(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("get-magazine-url", {
+        body: { email: user.email, issue_id: issueId },
+      });
+      if (error) throw error;
+      if (data?.url) {
+        setPdfUrl(data.url);
+        setVerified(true);
+        setSubscriberFullAccess(true);
+      } else {
+        // Fallback to preview if no access found
+        loadPreview();
+      }
+    } catch {
+      // Fallback to preview
       loadPreview();
-    } else if (email && issueId && !verified) {
+    } finally {
+      setVerifying(false);
+    }
+  }, [issueId, user?.email, loadPreview]);
+
+  useEffect(() => {
+    if (!issueId) return;
+    // If user is logged in and has magazine access, load full version
+    if (user && hasAccessToMagazines) {
+      loadSubscriberAccess();
+    } else if (isPreview) {
+      loadPreview();
+    } else if (email && !verified) {
       verifyAccess();
     }
-  }, [issueId, isPreview]);
+  }, [issueId, isPreview, user, hasAccessToMagazines]);
 
-  const maxPages = isPreview ? previewPages : numPages;
+  const effectivePreview = isPreview && !subscriberFullAccess;
+  const maxPages = effectivePreview ? previewPages : numPages;
 
   const onDocumentLoadSuccess = ({ numPages: total }: { numPages: number }) => {
     setNumPages(total);

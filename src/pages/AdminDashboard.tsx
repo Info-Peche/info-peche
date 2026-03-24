@@ -717,17 +717,10 @@ const AdminDashboard = () => {
                 <>
                   <tr key={order.id} className="border-b transition-colors hover:bg-muted/50">
                     <td className="p-2 align-middle">
-                      {selectable ? (
-                        <Checkbox
-                          checked={selectedOrders.has(order.id)}
-                          onCheckedChange={() => toggleSelectOrder(order.id)}
-                        />
-                      ) : (
-                        <Checkbox
-                          checked={order.is_processed}
-                          onCheckedChange={() => unarchiveOrder(order.id)}
-                        />
-                      )}
+                      <Checkbox
+                        checked={selectedOrders.has(order.id)}
+                        onCheckedChange={() => toggleSelectOrder(order.id)}
+                      />
                     </td>
                     {visibleCols.map(c => (
                       <td

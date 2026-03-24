@@ -192,14 +192,17 @@ const MonCompte = () => {
                 ) : (
                   <Mail className="w-4 h-4 mr-2" />
                 )}
-                {mode === "login" ? "Se connecter" : mode === "signup" ? "Créer mon compte" : "Envoyer le lien"}
+                {mode === "login" ? "Se connecter" : mode === "signup" ? "Créer mon compte" : mode === "first-login" ? "Recevoir le lien d'activation" : "Envoyer le lien"}
               </Button>
             </form>
 
             <div className="mt-6 text-center space-y-2">
               {mode === "login" && (
                 <>
-                  <button onClick={() => setMode("forgot")} className="text-sm text-primary hover:underline block mx-auto">
+                  <button onClick={() => setMode("first-login")} className="text-sm text-primary hover:underline block mx-auto font-medium">
+                    🎣 Première connexion abonné ?
+                  </button>
+                  <button onClick={() => setMode("forgot")} className="text-sm text-muted-foreground hover:underline block mx-auto">
                     Mot de passe oublié ?
                   </button>
                   <p className="text-sm text-muted-foreground">
@@ -218,7 +221,7 @@ const MonCompte = () => {
                   </button>
                 </p>
               )}
-              {mode === "forgot" && (
+              {(mode === "forgot" || mode === "first-login") && (
                 <button onClick={() => setMode("login")} className="text-sm text-primary hover:underline">
                   Retour à la connexion
                 </button>

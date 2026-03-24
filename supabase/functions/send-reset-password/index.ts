@@ -85,6 +85,14 @@ serve(async (req) => {
       }
     }
 
+    // If skipEmail is true, just ensure the auth account exists, don't send email
+    if (skipEmail) {
+      console.log("[SEND-RESET] skipEmail=true, auth account ensured for", normalizedEmail);
+      return new Response(JSON.stringify({ success: true, skipped: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Generate recovery link
     const siteUrl = "https://www.info-peche.fr";
     const { data: linkData, error: linkError } =

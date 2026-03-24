@@ -8,10 +8,17 @@ const corsHeaders = {
 };
 
 // Map subscription_type from clients table to Stripe product IDs
+// Supports both human-readable keys and Stripe price IDs
 const SUBSCRIPTION_TYPE_TO_PRODUCT: Record<string, string> = {
   "2ans": "prod_Tyzgq3QeYl52IS",
+  "abo-2-ans": "prod_Tyzgq3QeYl52IS",
+  "price_1T11hVKbRd4yKDMHHCpMLRc3": "prod_Tyzgq3QeYl52IS",
   "1an": "prod_Tyzho0muIqVKsX",
+  "abo-1-an": "prod_Tyzho0muIqVKsX",
+  "price_1T11hkKbRd4yKDMH6WlS54AH": "prod_Tyzho0muIqVKsX",
   "6mois": "prod_Tyzh45p7SqdgGh",
+  "abo-6-mois": "prod_Tyzh45p7SqdgGh",
+  "price_1T11i1KbRd4yKDMHppfC8rE9": "prod_Tyzh45p7SqdgGh",
 };
 
 serve(async (req) => {

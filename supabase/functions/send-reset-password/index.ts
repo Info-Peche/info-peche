@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { email, isFirstLogin } = await req.json();
+    const { email, isFirstLogin, skipEmail } = await req.json();
     if (!email) throw new Error("email is required");
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";

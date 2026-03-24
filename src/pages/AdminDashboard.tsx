@@ -980,6 +980,39 @@ const AdminDashboard = () => {
               </TabsContent>
 
               <TabsContent value="archived">
+                {(() => {
+                  const selectedArchivedIds = [...selectedOrders].filter(id => archivedOrders.some(o => o.id === id));
+                  return selectedArchivedIds.length > 0 ? (
+                    <div className="flex items-center gap-3 mb-4 p-3 bg-muted/50 rounded-lg border border-border">
+                      <span className="text-sm font-medium">{selectedArchivedIds.length} commande{selectedArchivedIds.length > 1 ? "s" : ""} sélectionnée{selectedArchivedIds.length > 1 ? "s" : ""}</span>
+                      <Button size="sm" variant="outline" onClick={async () => {
+                        const ok = await updateArchiveStatus(selectedArchivedIds, false);
+                        if (!ok) return;
+                        setSelectedOrders(prev => {
+                          const next = new Set(prev);
+                          selectedArchivedIds.forEach(id => next.delete(id));
+                          return next;
+                        });
+                        toast.success(`${selectedArchivedIds.length} commande${selectedArchivedIds.length > 1 ? "s" : ""} remise${selectedArchivedIds.length > 1 ? "s" : ""} en "à traiter"`);
+                      }}>
+                        <Package className="w-4 h-4 mr-2" /> Remettre en "à traiter"
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => {
+                        const selected = archivedOrders.filter(o => selectedArchivedIds.includes(o.id));
+                        doExport(selected, "selection-archivees");
+                      }}>
+                        <Download className="w-4 h-4 mr-2" /> Exporter la sélection
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => setSelectedOrders(prev => {
+                        const next = new Set(prev);
+                        selectedArchivedIds.forEach(id => next.delete(id));
+                        return next;
+                      })}>
+                        Désélectionner
+                      </Button>
+                    </div>
+                  ) : null;
+                })()}
                 {loading ? (
                   <div className="text-center py-20">
                     <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto" />

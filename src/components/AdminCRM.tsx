@@ -23,6 +23,7 @@ type Client = {
   first_name: string | null;
   last_name: string | null;
   phone: string | null;
+  phone2: string | null;
   address_line1: string | null;
   address_line2: string | null;
   city: string | null;
@@ -44,6 +45,9 @@ const SUBSCRIPTION_LABELS: Record<string, string> = {
   "price_1T11hVKbRd4yKDMHHCpMLRc3": "Abo 2 ans",
   "price_1T11hkKbRd4yKDMH6WlS54AH": "Abo 1 an",
   "price_1T11i1KbRd4yKDMHppfC8rE9": "Abo 6 mois",
+  "abo-2-ans": "Abo 2 ans",
+  "abo-1-an": "Abo 1 an",
+  "abo-6-mois": "Abo 6 mois",
 };
 
 const SUBSCRIPTION_OPTIONS = [
@@ -63,6 +67,7 @@ const emptyClient = (): Partial<Client> => ({
   first_name: "",
   last_name: "",
   phone: "",
+  phone2: "",
   address_line1: "",
   address_line2: "",
   city: "",
@@ -120,6 +125,7 @@ const AdminCRM = () => {
         first_name: editClient.first_name,
         last_name: editClient.last_name,
         phone: editClient.phone,
+        phone2: editClient.phone2,
         address_line1: editClient.address_line1,
         address_line2: editClient.address_line2,
         city: editClient.city,
@@ -147,7 +153,6 @@ const AdminCRM = () => {
     }
     setSaving(true);
 
-    // Get next subscriber number if subscription selected
     let subscriberNumber: string | null = null;
     if (newClient.subscription_type) {
       const { data: subNum } = await supabase.rpc("nextval_subscriber_number" as any);
@@ -159,6 +164,7 @@ const AdminCRM = () => {
       first_name: newClient.first_name || null,
       last_name: newClient.last_name || null,
       phone: newClient.phone || null,
+      phone2: newClient.phone2 || null,
       address_line1: newClient.address_line1 || null,
       address_line2: newClient.address_line2 || null,
       city: newClient.city || null,
@@ -202,8 +208,10 @@ const AdminCRM = () => {
       "Email": c.email,
       "Prénom": c.first_name || "",
       "Nom": c.last_name || "",
-      "Téléphone": c.phone || "",
+      "GSM": c.phone || "",
+      "Tél. fixe": c.phone2 || "",
       "Adresse": c.address_line1 || "",
+      "Adresse 2": c.address_line2 || "",
       "CP": c.postal_code || "",
       "Ville": c.city || "",
       "Pays": c.country || "",
@@ -247,9 +255,15 @@ const AdminCRM = () => {
             className={!!editClient && client === editClient ? "bg-muted" : ""}
           />
         </div>
-        <div>
-          <Label>Téléphone</Label>
-          <Input value={client.phone || ""} onChange={(e) => onChange({ ...client, phone: e.target.value })} />
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label>GSM</Label>
+            <Input value={client.phone || ""} onChange={(e) => onChange({ ...client, phone: e.target.value })} />
+          </div>
+          <div>
+            <Label>Tél. fixe</Label>
+            <Input value={client.phone2 || ""} onChange={(e) => onChange({ ...client, phone2: e.target.value })} />
+          </div>
         </div>
         <div>
           <Label>Adresse 1</Label>
@@ -340,7 +354,8 @@ const AdminCRM = () => {
                 <TableHead>N° abonné</TableHead>
                 <TableHead>Client</TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead>Tél</TableHead>
+                <TableHead>GSM</TableHead>
+                <TableHead>Tél. fixe</TableHead>
                 <TableHead>Ville</TableHead>
                 <TableHead>Formule</TableHead>
                 <TableHead>Statut</TableHead>
@@ -361,6 +376,7 @@ const AdminCRM = () => {
                   </TableCell>
                   <TableCell className="text-sm">{c.email}</TableCell>
                   <TableCell className="text-sm">{c.phone || "—"}</TableCell>
+                  <TableCell className="text-sm">{c.phone2 || "—"}</TableCell>
                   <TableCell className="text-sm">{c.city || "—"}</TableCell>
                   <TableCell><Badge variant="outline">{subLabel(c.subscription_type)}</Badge></TableCell>
                   <TableCell>
@@ -392,12 +408,10 @@ const AdminCRM = () => {
         </div>
       )}
 
-      {/* Edit dialog */}
       <Dialog open={!!editClient} onOpenChange={(open) => !open && setEditClient(null)}>
         {editClient && renderClientForm(editClient, (c) => setEditClient(c as Client), handleSave, "Modifier le client")}
       </Dialog>
 
-      {/* Create dialog */}
       <Dialog open={!!newClient} onOpenChange={(open) => !open && setNewClient(null)}>
         {newClient && renderClientForm(newClient, (c) => setNewClient(c), handleCreateClient, "Nouveau client")}
       </Dialog>

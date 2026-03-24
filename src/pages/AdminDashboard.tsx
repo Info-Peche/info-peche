@@ -679,12 +679,10 @@ const AdminDashboard = () => {
           <thead>
             <tr className="border-b">
               <th className="h-12 px-2 text-left align-middle font-medium text-muted-foreground" style={{ width: 40 }}>
-                {selectable ? (
-                  <Checkbox
-                    checked={orderList.length > 0 && orderList.every(o => selectedOrders.has(o.id))}
-                    onCheckedChange={() => toggleSelectAll(orderList)}
-                  />
-                ) : null}
+                <Checkbox
+                  checked={orderList.length > 0 && orderList.every(o => selectedOrders.has(o.id))}
+                  onCheckedChange={() => toggleSelectAll(orderList)}
+                />
               </th>
               {visibleCols.map(c => (
                 <th

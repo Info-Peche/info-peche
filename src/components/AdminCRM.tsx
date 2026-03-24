@@ -163,15 +163,26 @@ const AdminCRM = () => {
 
   const fetchClients = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("clients")
-      .select("*")
-      .order("created_at", { ascending: false });
-    if (error) {
-      toast.error("Erreur lors du chargement des clients");
-    } else {
-      setClients((data as any[]) || []);
+    const allClients: any[] = [];
+    let from = 0;
+    const batchSize = 1000;
+    let hasMore = true;
+    while (hasMore) {
+      const { data, error } = await supabase
+        .from("clients")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .range(from, from + batchSize - 1);
+      if (error) {
+        toast.error("Erreur lors du chargement des clients");
+        hasMore = false;
+      } else {
+        allClients.push(...(data || []));
+        hasMore = (data?.length || 0) === batchSize;
+        from += batchSize;
+      }
     }
+    setClients(allClients);
     setLoading(false);
   };
 

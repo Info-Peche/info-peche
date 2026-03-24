@@ -80,8 +80,17 @@ serve(async (req) => {
     }
 
     // Build the actual recovery URL with the token
-    const actionLink = linkData?.properties?.action_link;
+    let actionLink = linkData?.properties?.action_link;
     if (!actionLink) throw new Error("Aucun lien généré.");
+
+    // Force redirect to info-peche.fr (override Supabase default Site URL)
+    try {
+      const url = new URL(actionLink);
+      url.searchParams.set("redirect_to", `${siteUrl}/reset-password`);
+      actionLink = url.toString();
+    } catch (e) {
+      console.error("[SEND-RESET] Could not rewrite redirect_to:", e);
+    }
 
     console.log("[SEND-RESET] Generated recovery link for", email);
 

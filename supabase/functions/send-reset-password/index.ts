@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { email, isFirstLogin } = await req.json();
+    const { email, isFirstLogin, skipEmail } = await req.json();
     if (!email) throw new Error("email is required");
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
@@ -35,7 +35,7 @@ serve(async (req) => {
         .eq("email", normalizedEmail)
         .maybeSingle();
 
-      if (!client) {
+      if (!client && !skipEmail) {
         return new Response(
           JSON.stringify({ error: "Aucun abonnement trouvé pour cette adresse email. Vérifiez l'adresse ou contactez-nous." }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 404 }
@@ -48,7 +48,7 @@ serve(async (req) => {
         (u) => u.email?.toLowerCase() === normalizedEmail
       );
 
-      if (existingUser && existingUser.last_sign_in_at) {
+      if (existingUser && existingUser.last_sign_in_at && !skipEmail) {
         // User has already signed in = password already set
         return new Response(
           JSON.stringify({ error: "Votre mot de passe a déjà été créé. Utilisez \"Se connecter\" ou \"Mot de passe oublié\" si vous l'avez perdu." }),
@@ -66,9 +66,18 @@ serve(async (req) => {
         });
         if (createErr) {
           console.error("[SEND-RESET] Create user error:", createErr.message);
-          throw new Error("Erreur lors de la création du compte.");
+          if (!skipEmail) throw new Error("Erreur lors de la création du compte.");
+        } else {
+          console.log("[SEND-RESET] Created auth user for", normalizedEmail);
         }
-        console.log("[SEND-RESET] Created auth user for", normalizedEmail);
+      }
+
+      // If skipEmail, return early — account ensured
+      if (skipEmail) {
+        console.log("[SEND-RESET] skipEmail=true, auth account ensured for", normalizedEmail);
+        return new Response(JSON.stringify({ success: true, skipped: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
     } else {
       // Regular forgot password: check if user exists in auth
@@ -85,15 +94,20 @@ serve(async (req) => {
       }
     }
 
+    // If skipEmail is true, just ensure the auth account exists, don't send email
+    if (skipEmail) {
+      console.log("[SEND-RESET] skipEmail=true, auth account ensured for", normalizedEmail);
+      return new Response(JSON.stringify({ success: true, skipped: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Generate recovery link
     const siteUrl = "https://www.info-peche.fr";
     const { data: linkData, error: linkError } =
       await supabaseAdmin.auth.admin.generateLink({
         type: "recovery",
         email: normalizedEmail,
-        options: {
-          redirectTo: `${siteUrl}/reset-password`,
-        },
       });
 
     if (linkError) {
@@ -101,20 +115,14 @@ serve(async (req) => {
       throw new Error("Impossible de générer le lien de réinitialisation.");
     }
 
-    // Build the actual recovery URL - replace Supabase domain with production domain
-    let actionLink = linkData?.properties?.action_link;
-    if (!actionLink) throw new Error("Aucun lien généré.");
+    // Use hashed_token to build a direct link to info-peche.fr
+    // This bypasses Supabase's /auth/v1/verify redirect (which uses Site URL)
+    const tokenHash = linkData?.properties?.hashed_token;
+    if (!tokenHash) throw new Error("Aucun token généré.");
 
-    // Force redirect to info-peche.fr (override Supabase default Site URL)
-    try {
-      const url = new URL(actionLink);
-      url.searchParams.set("redirect_to", `${siteUrl}/reset-password`);
-      actionLink = url.toString();
-    } catch (e) {
-      console.error("[SEND-RESET] Could not rewrite redirect_to:", e);
-    }
+    const actionLink = `${siteUrl}/reset-password?token_hash=${encodeURIComponent(tokenHash)}&type=recovery`;
 
-    console.log("[SEND-RESET] Generated recovery link for", normalizedEmail);
+    console.log("[SEND-RESET] Generated direct recovery link for", normalizedEmail);
 
     // Determine email content based on context
     const isFirst = isFirstLogin === true;

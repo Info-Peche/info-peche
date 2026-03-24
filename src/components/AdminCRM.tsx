@@ -267,6 +267,28 @@ const AdminCRM = () => {
   const handleSave = async () => {
     if (!editClient) return;
     setSaving(true);
+
+    // Check if subscription was just added (no subscriber_number yet but subscription_type set)
+    let subscriberNumber = editClient.subscriber_number;
+    const needsSubscriberNumber = editClient.subscription_type && !editClient.subscriber_number;
+
+    if (needsSubscriberNumber) {
+      const { data: subNum } = await supabase.rpc("nextval_subscriber_number" as any);
+      subscriberNumber = `ABONNE_${subNum || 1}`;
+    }
+
+    // Auto-compute end date if subscription_type changed and no manual end date
+    let endDate = editClient.subscription_end_date;
+    if (editClient.subscription_type && !endDate) {
+      const months = SUBSCRIPTION_DURATIONS[editClient.subscription_type];
+      if (months) {
+        const start = editClient.subscription_start_date ? new Date(editClient.subscription_start_date) : new Date();
+        const end = new Date(start);
+        end.setMonth(end.getMonth() + months);
+        endDate = end.toISOString();
+      }
+    }
+
     const { error } = await supabase
       .from("clients")
       .update({
@@ -280,16 +302,38 @@ const AdminCRM = () => {
         postal_code: editClient.postal_code,
         country: editClient.country,
         subscription_type: editClient.subscription_type || null,
-        subscription_end_date: editClient.subscription_end_date || null,
-        is_active_subscriber: editClient.is_active_subscriber,
+        subscription_start_date: editClient.subscription_type && !editClient.subscription_start_date ? new Date().toISOString() : editClient.subscription_start_date,
+        subscription_end_date: endDate,
+        is_active_subscriber: !!editClient.subscription_type,
+        subscriber_number: subscriberNumber || editClient.subscriber_number,
         notes: editClient.notes,
       } as any)
       .eq("id", editClient.id);
+
+    // Create auth account if subscription was just added
+    if (!error && needsSubscriberNumber && editClient.email) {
+      try {
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+        await fetch(`${supabaseUrl}/functions/v1/send-reset-password`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": supabaseKey,
+            "Authorization": `Bearer ${supabaseKey}`,
+          },
+          body: JSON.stringify({ email: editClient.email, isFirstLogin: true, skipEmail: true }),
+        });
+      } catch (authErr) {
+        console.error("Auth account creation (non-blocking):", authErr);
+      }
+    }
+
     setSaving(false);
     if (error) {
       toast.error("Erreur lors de la sauvegarde");
     } else {
-      toast.success("Client mis à jour");
+      toast.success(`Client mis à jour${needsSubscriberNumber ? ` — ${subscriberNumber}` : ""}`);
       setEditClient(null);
       fetchClients();
     }
@@ -346,6 +390,27 @@ const AdminCRM = () => {
         toast.error("Erreur lors de la création");
       }
     } else {
+      // Auto-create auth account so the client can use "Première connexion"
+      if (newClient.subscription_type) {
+        try {
+          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+          const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+          // We call the edge function just to ensure the auth account exists
+          // by triggering a "first-login" check — but we don't need the email sent now
+          // Instead, create the account via a dedicated lightweight call
+          await fetch(`${supabaseUrl}/functions/v1/send-reset-password`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "apikey": supabaseKey,
+              "Authorization": `Bearer ${supabaseKey}`,
+            },
+            body: JSON.stringify({ email: newClient.email, isFirstLogin: true, skipEmail: true }),
+          });
+        } catch (authErr) {
+          console.error("Auth account creation (non-blocking):", authErr);
+        }
+      }
       toast.success(`Client créé${subscriberNumber ? ` — ${subscriberNumber}` : ""}`);
       setNewClient(null);
       fetchClients();

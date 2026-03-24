@@ -187,7 +187,7 @@ const MagazineViewerContent = () => {
   };
 
   const goToPage = (page: number) => {
-    const limit = isPreview ? Math.min(previewPages, numPages) : numPages;
+    const limit = effectivePreview ? Math.min(previewPages, numPages) : numPages;
     if (page >= 1 && page <= limit) setCurrentPage(page);
   };
 
@@ -236,7 +236,7 @@ const MagazineViewerContent = () => {
     };
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
-  }, [currentPage, numPages, previewPages, isPreview]);
+  }, [currentPage, numPages, previewPages, effectivePreview]);
 
   if (!issueId) {
     return (
@@ -254,7 +254,7 @@ const MagazineViewerContent = () => {
   }
 
   // Loading state for preview
-  if (isPreview && verifying) {
+  if (effectivePreview && verifying) {
     return (
       <div className="min-h-screen bg-foreground flex items-center justify-center">
         <div className="text-center text-white">
@@ -266,7 +266,7 @@ const MagazineViewerContent = () => {
   }
 
   // Access gate (only for non-preview mode)
-  if (!isPreview && !verified) {
+  if (!effectivePreview && !verified) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-foreground via-foreground/95 to-primary/20 flex items-center justify-center px-4">
         <motion.div
@@ -323,8 +323,8 @@ const MagazineViewerContent = () => {
     );
   }
 
-  const displayPages = isPreview ? Math.min(previewPages, numPages || previewPages) : numPages;
-  const isOnLastPreviewPage = isPreview && currentPage >= displayPages && numPages > 0;
+  const displayPages = effectivePreview ? Math.min(previewPages, numPages || previewPages) : numPages;
+  const isOnLastPreviewPage = effectivePreview && currentPage >= displayPages && numPages > 0;
   const mobilePageWidth =
     isMobile && containerWidth > 0
       ? Math.max(220, Math.min(Math.floor(containerWidth - 24), 520))
@@ -343,7 +343,7 @@ const MagazineViewerContent = () => {
         </Link>
 
         <div className="flex items-center gap-2 text-white">
-          {isPreview && (
+          {effectivePreview && (
             <span className="text-xs bg-accent/20 text-accent px-2 py-1 rounded-full mr-2 flex items-center gap-1">
               <Eye className="w-3 h-3" /> Aperçu
             </span>
@@ -409,7 +409,7 @@ const MagazineViewerContent = () => {
       </header>
 
       {/* Preview banner */}
-      {isPreview && (
+      {effectivePreview && (
         <div className="bg-amber-500/90 text-white text-center py-2.5 px-4 text-sm font-semibold flex items-center justify-center gap-2 flex-wrap">
           <Eye className="w-4 h-4" />
           <span>Aperçu gratuit — {previewPages} premières pages sur {numPages > 0 ? numPages : '…'}</span>
@@ -613,7 +613,7 @@ const MagazineViewerContent = () => {
       )}
 
       {/* Preview bottom CTA bar */}
-      {isPreview && !isOnLastPreviewPage && (
+      {effectivePreview && !isOnLastPreviewPage && (
         <div className="bg-foreground border-t border-white/10 px-4 py-3 flex items-center justify-center gap-4 flex-wrap">
           <Button
             size="sm"

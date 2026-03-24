@@ -29,20 +29,16 @@ const MonCompte = () => {
     try {
       if (mode === "forgot" || mode === "first-login") {
         // Use branded edge function for both reset and first login
-        const { data, error } = await supabase.functions.invoke("send-reset-password", {
+        const response = await supabase.functions.invoke("send-reset-password", {
           body: { email, isFirstLogin: mode === "first-login" },
         });
-        // The edge function returns errors in the response body even on non-2xx
-        if (data?.error) throw new Error(data.error);
-        if (error) {
-          // Try to parse the error body for a user-friendly message
-          try {
-            const parsed = JSON.parse(error.message || "{}");
-            if (parsed.error) throw new Error(parsed.error);
-          } catch (parseErr) {
-            if (parseErr instanceof SyntaxError) throw error;
-            throw parseErr;
-          }
+        // Edge function returns { error: "message" } on failure
+        const responseData = response.data;
+        if (responseData?.error) {
+          throw new Error(responseData.error);
+        }
+        if (response.error) {
+          throw new Error(response.error.message || "Une erreur est survenue.");
         }
         toast.success(
           mode === "first-login"

@@ -32,8 +32,18 @@ const MonCompte = () => {
         const { data, error } = await supabase.functions.invoke("send-reset-password", {
           body: { email, isFirstLogin: mode === "first-login" },
         });
-        if (error) throw error;
+        // The edge function returns errors in the response body even on non-2xx
         if (data?.error) throw new Error(data.error);
+        if (error) {
+          // Try to parse the error body for a user-friendly message
+          try {
+            const parsed = JSON.parse(error.message || "{}");
+            if (parsed.error) throw new Error(parsed.error);
+          } catch (parseErr) {
+            if (parseErr instanceof SyntaxError) throw error;
+            throw parseErr;
+          }
+        }
         toast.success(
           mode === "first-login"
             ? "Un email d'activation vous a été envoyé ! Vérifiez votre boîte de réception."

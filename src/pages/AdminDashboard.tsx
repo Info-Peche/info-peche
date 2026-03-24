@@ -976,7 +976,7 @@ const AdminDashboard = () => {
                   <div className="text-center py-20 text-muted-foreground">
                     Aucune commande à traiter.
                   </div>
-                ) : renderOrderTable(activeOrders, true)}
+                ) : renderOrderTable(activeOrders)}
               </TabsContent>
 
               <TabsContent value="archived">
@@ -988,7 +988,7 @@ const AdminDashboard = () => {
                   <div className="text-center py-20 text-muted-foreground">
                     Aucune commande archivée.
                   </div>
-                ) : renderOrderTable(archivedOrders, false)}
+                ) : renderOrderTable(archivedOrders)}
               </TabsContent>
             </Tabs>
           </TabsContent>

@@ -665,7 +665,7 @@ const AdminDashboard = () => {
     setDragOverCol(null);
   };
 
-  const renderOrderTable = (orderList: Order[], _selectable: boolean = false) => (
+  const renderOrderTable = (orderList: Order[]) => (
     <div className="bg-card rounded-xl border border-border overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-max min-w-full text-sm" style={{ tableLayout: "fixed" }}>

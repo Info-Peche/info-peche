@@ -250,9 +250,54 @@ serve(async (req) => {
             .eq("email", order.email.toLowerCase())
             .is("subscriber_number", null); // Only set if not already set
           logStep("Client subscriber_number set", { subscriberNumber });
+
+          // Also set subscriber_number on the order record
+          await supabaseAdmin
+            .from("orders")
+            .update({ subscriber_number: subscriberNumber } as any)
+            .eq("stripe_checkout_session_id", session_id);
+          logStep("Order subscriber_number set", { subscriberNumber });
         }
 
         logStep("CRM client upserted", { email: order.email });
+
+        // Auto-create Supabase auth account for subscription customers
+        if (isSubscription) {
+          try {
+            // Check if auth account already exists
+            const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
+            const alreadyExists = existingUsers?.users?.some(
+              (u: any) => u.email?.toLowerCase() === order.email.toLowerCase()
+            );
+
+            if (!alreadyExists) {
+              // Create auth account with random password — user will use "forgot password" to set their own
+              const randomPassword = crypto.randomUUID() + "Aa1!";
+              const { data: newUser, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
+                email: order.email.toLowerCase(),
+                password: randomPassword,
+                email_confirm: true,
+                user_metadata: {
+                  first_name: order.first_name,
+                  last_name: order.last_name,
+                  subscriber_number: subscriberNumber,
+                },
+              });
+
+              if (createUserError) {
+                logStep("Auth account creation error", { error: createUserError.message });
+              } else {
+                logStep("Auth account created for subscriber", { userId: newUser?.user?.id, email: order.email });
+              }
+            } else {
+              logStep("Auth account already exists", { email: order.email });
+            }
+          } catch (authErr) {
+            logStep("Auth account creation error (non-blocking)", {
+              error: authErr instanceof Error ? authErr.message : String(authErr),
+            });
+          }
+        }
       } catch (crmErr) {
         logStep("CRM upsert error (non-blocking)", { error: crmErr instanceof Error ? crmErr.message : String(crmErr) });
       }

@@ -118,6 +118,7 @@ export type Database = {
           last_name: string | null
           notes: string | null
           phone: string | null
+          phone2: string | null
           postal_code: string | null
           subscriber_number: string | null
           subscription_end_date: string | null
@@ -140,6 +141,7 @@ export type Database = {
           last_name?: string | null
           notes?: string | null
           phone?: string | null
+          phone2?: string | null
           postal_code?: string | null
           subscriber_number?: string | null
           subscription_end_date?: string | null
@@ -162,6 +164,7 @@ export type Database = {
           last_name?: string | null
           notes?: string | null
           phone?: string | null
+          phone2?: string | null
           postal_code?: string | null
           subscriber_number?: string | null
           subscription_end_date?: string | null

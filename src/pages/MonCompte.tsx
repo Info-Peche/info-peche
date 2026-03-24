@@ -12,7 +12,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SideCart from "@/components/SideCart";
 
-type Mode = "login" | "signup" | "forgot";
+type Mode = "login" | "signup" | "forgot" | "first-login";
 
 const MonCompte = () => {
   const { user, signIn, signUp, signOut, resetPassword, subscriptionTier, subscriptionEnd, hasAccessToBlog, hasAccessToMagazines, loading } = useAuth();
@@ -27,10 +27,18 @@ const MonCompte = () => {
     setSubmitting(true);
 
     try {
-      if (mode === "forgot") {
-        const { error } = await resetPassword(email);
+      if (mode === "forgot" || mode === "first-login") {
+        // Use branded edge function for both reset and first login
+        const { data, error } = await supabase.functions.invoke("send-reset-password", {
+          body: { email, isFirstLogin: mode === "first-login" },
+        });
         if (error) throw error;
-        toast.success("Un email de réinitialisation vous a été envoyé.");
+        if (data?.error) throw new Error(data.error);
+        toast.success(
+          mode === "first-login"
+            ? "Un email d'activation vous a été envoyé ! Vérifiez votre boîte de réception."
+            : "Un email de réinitialisation vous a été envoyé."
+        );
         setMode("login");
       } else if (mode === "login") {
         const { error } = await signIn(email, password);
@@ -39,7 +47,6 @@ const MonCompte = () => {
       } else {
         const { error } = await signUp(email, password);
         if (error) throw error;
-        // Send branded welcome email via edge function
         try {
           await supabase.functions.invoke("send-signup-email", {
             body: { email },
@@ -144,13 +151,15 @@ const MonCompte = () => {
 
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-2xl border border-border p-8 shadow-sm">
             <h1 className="text-2xl font-serif font-bold mb-1 text-foreground">
-              {mode === "login" ? "Se connecter" : mode === "signup" ? "Créer un compte" : "Mot de passe oublié"}
+              {mode === "login" ? "Se connecter" : mode === "signup" ? "Créer un compte" : mode === "first-login" ? "Première connexion" : "Mot de passe oublié"}
             </h1>
             <p className="text-sm text-muted-foreground mb-6">
               {mode === "login"
                 ? "Accédez à votre espace abonné"
                 : mode === "signup"
                 ? "Créez votre compte pour vous abonner"
+                : mode === "first-login"
+                ? "Entrez l'email associé à votre abonnement pour créer votre mot de passe"
                 : "Entrez votre email pour réinitialiser"}
             </p>
 
@@ -163,7 +172,7 @@ const MonCompte = () => {
                 </div>
               </div>
 
-              {mode !== "forgot" && (
+              {mode !== "forgot" && mode !== "first-login" && (
                 <div>
                   <Label htmlFor="password">Mot de passe</Label>
                   <div className="relative">
@@ -183,14 +192,17 @@ const MonCompte = () => {
                 ) : (
                   <Mail className="w-4 h-4 mr-2" />
                 )}
-                {mode === "login" ? "Se connecter" : mode === "signup" ? "Créer mon compte" : "Envoyer le lien"}
+                {mode === "login" ? "Se connecter" : mode === "signup" ? "Créer mon compte" : mode === "first-login" ? "Recevoir le lien d'activation" : "Envoyer le lien"}
               </Button>
             </form>
 
             <div className="mt-6 text-center space-y-2">
               {mode === "login" && (
                 <>
-                  <button onClick={() => setMode("forgot")} className="text-sm text-primary hover:underline block mx-auto">
+                  <button onClick={() => setMode("first-login")} className="text-sm text-primary hover:underline block mx-auto font-medium">
+                    🎣 Première connexion abonné ?
+                  </button>
+                  <button onClick={() => setMode("forgot")} className="text-sm text-muted-foreground hover:underline block mx-auto">
                     Mot de passe oublié ?
                   </button>
                   <p className="text-sm text-muted-foreground">
@@ -209,7 +221,7 @@ const MonCompte = () => {
                   </button>
                 </p>
               )}
-              {mode === "forgot" && (
+              {(mode === "forgot" || mode === "first-login") && (
                 <button onClick={() => setMode("login")} className="text-sm text-primary hover:underline">
                   Retour à la connexion
                 </button>

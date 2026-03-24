@@ -28,17 +28,21 @@ const MonCompte = () => {
 
     try {
       if (mode === "forgot" || mode === "first-login") {
-        // Use branded edge function for both reset and first login
-        const response = await supabase.functions.invoke("send-reset-password", {
-          body: { email, isFirstLogin: mode === "first-login" },
+        // Call edge function directly via fetch to properly handle non-2xx JSON responses
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+        const res = await fetch(`${supabaseUrl}/functions/v1/send-reset-password`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": supabaseKey,
+            "Authorization": `Bearer ${supabaseKey}`,
+          },
+          body: JSON.stringify({ email, isFirstLogin: mode === "first-login" }),
         });
-        // Edge function returns { error: "message" } on failure
-        const responseData = response.data;
-        if (responseData?.error) {
-          throw new Error(responseData.error);
-        }
-        if (response.error) {
-          throw new Error(response.error.message || "Une erreur est survenue.");
+        const resData = await res.json();
+        if (!res.ok || resData?.error) {
+          throw new Error(resData?.error || "Une erreur est survenue.");
         }
         toast.success(
           mode === "first-login"

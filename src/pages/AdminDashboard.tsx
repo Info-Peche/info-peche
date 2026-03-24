@@ -431,12 +431,24 @@ const AdminDashboard = () => {
     const id = String(item?.id || "");
     const priceId = String(item?.price_id || "");
 
+    const issueNum = item?.issue_number || name.match(/Info\s+Pêche\s+(\d+)/i)?.[1] || name.match(/N°?\s*(\d+)/)?.[1] || "";
+
     const product = Object.values(PRODUCTS).find(
       (p) => p.id === id || p.price_id === priceId,
     );
+    // For subscriptions, return product name directly
+    if (product && product.mode === "subscription") return product.name;
+    // For single purchases, append issue number if available
+    if (product && issueNum) {
+      if (id.startsWith("digital-") || name.toLowerCase().includes("numérique") || product.id === "lecture-numero") {
+        return `Lecture en ligne N°${issueNum}`;
+      }
+      if (id.startsWith("physical-") || name.toLowerCase().includes("papier") || product.id === "ancien-numero" || product.id === "numero-courant") {
+        return `Ancien numéro N°${issueNum} (papier)`;
+      }
+      return `${product.name} N°${issueNum}`;
+    }
     if (product) return product.name;
-
-    const issueNum = item?.issue_number || name.match(/N°?\s*(\d+)/)?.[1] || "";
 
     if (
       id.startsWith("blog-") ||
@@ -452,11 +464,11 @@ const AdminDashboard = () => {
       name.toLowerCase().includes("numérique") ||
       name.toLowerCase().includes("digital")
     ) {
-      return issueNum ? `Ancien numéro N°${issueNum} (numérique)` : "Article digital";
+      return issueNum ? `Lecture en ligne N°${issueNum}` : "Article digital";
     }
 
     if (priceId === "price_1T123wKbRd4yKDMH1bI9GQqh" && issueNum) {
-      return `Ancien numéro N°${issueNum} (numérique)`;
+      return `Lecture en ligne N°${issueNum}`;
     }
 
     if (id.startsWith("physical-") || name.toLowerCase().includes("papier")) {

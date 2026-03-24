@@ -452,17 +452,21 @@ const AdminDashboard = () => {
       name.toLowerCase().includes("numérique") ||
       name.toLowerCase().includes("digital")
     ) {
-      return issueNum ? `N°${issueNum} (digital)` : "Article digital";
+      return issueNum ? `Ancien numéro N°${issueNum} (numérique)` : "Article digital";
     }
 
     if (priceId === "price_1T123wKbRd4yKDMH1bI9GQqh" && issueNum) {
-      return `N°${issueNum} (digital)`;
+      return `Ancien numéro N°${issueNum} (numérique)`;
     }
 
-    if (issueNum) return `N°${issueNum} (papier)`;
+    if (id.startsWith("physical-") || name.toLowerCase().includes("papier")) {
+      return issueNum ? `Ancien numéro N°${issueNum} (papier)` : name || "Ancien numéro (papier)";
+    }
+
+    if (issueNum) return `Ancien numéro N°${issueNum} (papier)`;
 
     const num = name.match(/(\d+)/)?.[1];
-    if (num) return `N°${num} (papier)`;
+    if (num) return `Ancien numéro N°${num} (papier)`;
 
     return name || "—";
   };
@@ -661,7 +665,7 @@ const AdminDashboard = () => {
     setDragOverCol(null);
   };
 
-  const renderOrderTable = (orderList: Order[], selectable: boolean = false) => (
+  const renderOrderTable = (orderList: Order[]) => (
     <div className="bg-card rounded-xl border border-border overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-max min-w-full text-sm" style={{ tableLayout: "fixed" }}>
@@ -675,12 +679,10 @@ const AdminDashboard = () => {
           <thead>
             <tr className="border-b">
               <th className="h-12 px-2 text-left align-middle font-medium text-muted-foreground" style={{ width: 40 }}>
-                {selectable ? (
-                  <Checkbox
-                    checked={orderList.length > 0 && orderList.every(o => selectedOrders.has(o.id))}
-                    onCheckedChange={() => toggleSelectAll(orderList)}
-                  />
-                ) : null}
+                <Checkbox
+                  checked={orderList.length > 0 && orderList.every(o => selectedOrders.has(o.id))}
+                  onCheckedChange={() => toggleSelectAll(orderList)}
+                />
               </th>
               {visibleCols.map(c => (
                 <th
@@ -715,17 +717,10 @@ const AdminDashboard = () => {
                 <>
                   <tr key={order.id} className="border-b transition-colors hover:bg-muted/50">
                     <td className="p-2 align-middle">
-                      {selectable ? (
-                        <Checkbox
-                          checked={selectedOrders.has(order.id)}
-                          onCheckedChange={() => toggleSelectOrder(order.id)}
-                        />
-                      ) : (
-                        <Checkbox
-                          checked={order.is_processed}
-                          onCheckedChange={() => unarchiveOrder(order.id)}
-                        />
-                      )}
+                      <Checkbox
+                        checked={selectedOrders.has(order.id)}
+                        onCheckedChange={() => toggleSelectOrder(order.id)}
+                      />
                     </td>
                     {visibleCols.map(c => (
                       <td
@@ -981,10 +976,43 @@ const AdminDashboard = () => {
                   <div className="text-center py-20 text-muted-foreground">
                     Aucune commande à traiter.
                   </div>
-                ) : renderOrderTable(activeOrders, true)}
+                ) : renderOrderTable(activeOrders)}
               </TabsContent>
 
               <TabsContent value="archived">
+                {(() => {
+                  const selectedArchivedIds = [...selectedOrders].filter(id => archivedOrders.some(o => o.id === id));
+                  return selectedArchivedIds.length > 0 ? (
+                    <div className="flex items-center gap-3 mb-4 p-3 bg-muted/50 rounded-lg border border-border">
+                      <span className="text-sm font-medium">{selectedArchivedIds.length} commande{selectedArchivedIds.length > 1 ? "s" : ""} sélectionnée{selectedArchivedIds.length > 1 ? "s" : ""}</span>
+                      <Button size="sm" variant="outline" onClick={async () => {
+                        const ok = await updateArchiveStatus(selectedArchivedIds, false);
+                        if (!ok) return;
+                        setSelectedOrders(prev => {
+                          const next = new Set(prev);
+                          selectedArchivedIds.forEach(id => next.delete(id));
+                          return next;
+                        });
+                        toast.success(`${selectedArchivedIds.length} commande${selectedArchivedIds.length > 1 ? "s" : ""} remise${selectedArchivedIds.length > 1 ? "s" : ""} en "à traiter"`);
+                      }}>
+                        <Package className="w-4 h-4 mr-2" /> Remettre en "à traiter"
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => {
+                        const selected = archivedOrders.filter(o => selectedArchivedIds.includes(o.id));
+                        doExport(selected, "selection-archivees");
+                      }}>
+                        <Download className="w-4 h-4 mr-2" /> Exporter la sélection
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => setSelectedOrders(prev => {
+                        const next = new Set(prev);
+                        selectedArchivedIds.forEach(id => next.delete(id));
+                        return next;
+                      })}>
+                        Désélectionner
+                      </Button>
+                    </div>
+                  ) : null;
+                })()}
                 {loading ? (
                   <div className="text-center py-20">
                     <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto" />
@@ -993,7 +1021,7 @@ const AdminDashboard = () => {
                   <div className="text-center py-20 text-muted-foreground">
                     Aucune commande archivée.
                   </div>
-                ) : renderOrderTable(archivedOrders, false)}
+                ) : renderOrderTable(archivedOrders)}
               </TabsContent>
             </Tabs>
           </TabsContent>

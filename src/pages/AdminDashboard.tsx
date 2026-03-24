@@ -452,17 +452,21 @@ const AdminDashboard = () => {
       name.toLowerCase().includes("numérique") ||
       name.toLowerCase().includes("digital")
     ) {
-      return issueNum ? `N°${issueNum} (digital)` : "Article digital";
+      return issueNum ? `Ancien numéro N°${issueNum} (numérique)` : "Article digital";
     }
 
     if (priceId === "price_1T123wKbRd4yKDMH1bI9GQqh" && issueNum) {
-      return `N°${issueNum} (digital)`;
+      return `Ancien numéro N°${issueNum} (numérique)`;
     }
 
-    if (issueNum) return `N°${issueNum} (papier)`;
+    if (id.startsWith("physical-") || name.toLowerCase().includes("papier")) {
+      return issueNum ? `Ancien numéro N°${issueNum} (papier)` : name || "Ancien numéro (papier)";
+    }
+
+    if (issueNum) return `Ancien numéro N°${issueNum} (papier)`;
 
     const num = name.match(/(\d+)/)?.[1];
-    if (num) return `N°${num} (papier)`;
+    if (num) return `Ancien numéro N°${num} (papier)`;
 
     return name || "—";
   };

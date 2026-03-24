@@ -25,33 +25,42 @@ serve(async (req) => {
       auth: { persistSession: false },
     });
 
-    // For first login: check if user exists in auth, if not create them
+    const normalizedEmail = email.toLowerCase().trim();
+
     if (isFirstLogin) {
       // Check if email exists in clients table
       const { data: client } = await supabaseAdmin
         .from("clients")
         .select("id, first_name")
-        .eq("email", email.toLowerCase())
+        .eq("email", normalizedEmail)
         .maybeSingle();
 
       if (!client) {
         return new Response(
-          JSON.stringify({ error: "Aucun abonnement trouvé pour cette adresse email." }),
+          JSON.stringify({ error: "Aucun abonnement trouvé pour cette adresse email. Vérifiez l'adresse ou contactez-nous." }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 404 }
         );
       }
 
       // Check if user already exists in auth
       const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
-      const userExists = existingUsers?.users?.some(
-        (u) => u.email?.toLowerCase() === email.toLowerCase()
+      const existingUser = existingUsers?.users?.find(
+        (u) => u.email?.toLowerCase() === normalizedEmail
       );
 
-      if (!userExists) {
+      if (existingUser && existingUser.last_sign_in_at) {
+        // User has already signed in = password already set
+        return new Response(
+          JSON.stringify({ error: "Votre mot de passe a déjà été créé. Utilisez \"Se connecter\" ou \"Mot de passe oublié\" si vous l'avez perdu." }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+        );
+      }
+
+      if (!existingUser) {
         // Create auth account with a random password (user will set their own via recovery link)
         const randomPwd = crypto.randomUUID() + crypto.randomUUID();
         const { error: createErr } = await supabaseAdmin.auth.admin.createUser({
-          email: email.toLowerCase(),
+          email: normalizedEmail,
           password: randomPwd,
           email_confirm: true,
         });
@@ -59,7 +68,20 @@ serve(async (req) => {
           console.error("[SEND-RESET] Create user error:", createErr.message);
           throw new Error("Erreur lors de la création du compte.");
         }
-        console.log("[SEND-RESET] Created auth user for", email);
+        console.log("[SEND-RESET] Created auth user for", normalizedEmail);
+      }
+    } else {
+      // Regular forgot password: check if user exists in auth
+      const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
+      const userExists = existingUsers?.users?.some(
+        (u) => u.email?.toLowerCase() === normalizedEmail
+      );
+
+      if (!userExists) {
+        return new Response(
+          JSON.stringify({ error: "Aucun compte n'existe pour cette adresse email." }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 404 }
+        );
       }
     }
 
@@ -68,7 +90,7 @@ serve(async (req) => {
     const { data: linkData, error: linkError } =
       await supabaseAdmin.auth.admin.generateLink({
         type: "recovery",
-        email: email.toLowerCase(),
+        email: normalizedEmail,
         options: {
           redirectTo: `${siteUrl}/reset-password`,
         },
@@ -79,7 +101,7 @@ serve(async (req) => {
       throw new Error("Impossible de générer le lien de réinitialisation.");
     }
 
-    // Build the actual recovery URL with the token
+    // Build the actual recovery URL - replace Supabase domain with production domain
     let actionLink = linkData?.properties?.action_link;
     if (!actionLink) throw new Error("Aucun lien généré.");
 
@@ -92,7 +114,7 @@ serve(async (req) => {
       console.error("[SEND-RESET] Could not rewrite redirect_to:", e);
     }
 
-    console.log("[SEND-RESET] Generated recovery link for", email);
+    console.log("[SEND-RESET] Generated recovery link for", normalizedEmail);
 
     // Determine email content based on context
     const isFirst = isFirstLogin === true;
@@ -116,7 +138,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         from: "Info Pêche <jeanfrancois.darnet@info-peche.fr>",
-        to: [email],
+        to: [normalizedEmail],
         subject,
         html: `
           <div style="font-family: 'Playfair Display', Georgia, serif; max-width: 600px; margin: 0 auto; background: #ffffff;">

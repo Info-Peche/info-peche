@@ -29,11 +29,17 @@ const MonCompte = () => {
     try {
       if (mode === "forgot" || mode === "first-login") {
         // Use branded edge function for both reset and first login
-        const { data, error } = await supabase.functions.invoke("send-reset-password", {
+        const response = await supabase.functions.invoke("send-reset-password", {
           body: { email, isFirstLogin: mode === "first-login" },
         });
-        if (error) throw error;
-        if (data?.error) throw new Error(data.error);
+        // Edge function returns { error: "message" } on failure
+        const responseData = response.data;
+        if (responseData?.error) {
+          throw new Error(responseData.error);
+        }
+        if (response.error) {
+          throw new Error(response.error.message || "Une erreur est survenue.");
+        }
         toast.success(
           mode === "first-login"
             ? "Un email d'activation vous a été envoyé ! Vérifiez votre boîte de réception."

@@ -250,6 +250,13 @@ serve(async (req) => {
             .eq("email", order.email.toLowerCase())
             .is("subscriber_number", null); // Only set if not already set
           logStep("Client subscriber_number set", { subscriberNumber });
+
+          // Also set subscriber_number on the order record
+          await supabaseAdmin
+            .from("orders")
+            .update({ subscriber_number: subscriberNumber } as any)
+            .eq("stripe_checkout_session_id", session_id);
+          logStep("Order subscriber_number set", { subscriberNumber });
         }
 
         logStep("CRM client upserted", { email: order.email });

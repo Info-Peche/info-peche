@@ -86,12 +86,27 @@ serve(async (req) => {
       throw new Error("Issue not found or no PDF available");
     }
 
-    // Generate a signed URL (valid 1 hour)
-    const { data: signedData, error: signError } = await supabaseAdmin.storage
-      .from("magazine-pdfs")
-      .createSignedUrl(issue.pdf_url, 3600);
+    // Try multiple path variations to find the PDF (same logic as get-preview-url)
+    const pdfPath = issue.pdf_url;
+    const pathsToTry = [
+      pdfPath,
+      `${pdfPath}.pdf`,
+      `Magazine/${pdfPath}`,
+      `Magazine/${pdfPath}.pdf`,
+    ];
 
-    if (signError || !signedData?.signedUrl) {
+    let signedData = null;
+    for (const path of pathsToTry) {
+      const { data, error } = await supabaseAdmin.storage
+        .from("magazine-pdfs")
+        .createSignedUrl(path, 3600);
+      if (!error && data?.signedUrl) {
+        signedData = data;
+        break;
+      }
+    }
+
+    if (!signedData?.signedUrl) {
       throw new Error("Could not generate signed URL");
     }
 

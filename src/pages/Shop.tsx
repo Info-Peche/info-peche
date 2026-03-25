@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
 import SideCart from "@/components/SideCart";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,6 +24,7 @@ const extractYear = (title: string): string => {
 
 const ShopContent = () => {
   const { addItem } = useCart();
+  const { hasAccessToMagazines } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialMode = searchParams.get("mode") === "physical" ? "physical" : "online";
@@ -212,14 +214,25 @@ const ShopContent = () => {
                       
                       <div className="mt-auto">
                         {viewMode === "online" ? (
-                          <Button
-                            size="sm"
-                            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-full"
-                            onClick={() => handleAddDigital(issue)}
-                          >
-                            <ShoppingBag className="h-4 w-4 mr-2" />
-                            Acheter en ligne — {digitalPrice.toFixed(2)}€
-                          </Button>
+                          hasAccessToMagazines ? (
+                            <Button
+                              size="sm"
+                              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-full"
+                              onClick={() => navigate(`/lire?issue=${issue.id}&mode=preview`)}
+                            >
+                              <Eye className="h-4 w-4 mr-2" />
+                              Consulter en ligne
+                            </Button>
+                          ) : (
+                            <Button
+                              size="sm"
+                              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-full"
+                              onClick={() => handleAddDigital(issue)}
+                            >
+                              <ShoppingBag className="h-4 w-4 mr-2" />
+                              Acheter en ligne — {digitalPrice.toFixed(2)}€
+                            </Button>
+                          )
                         ) : (
                           <Button
                             size="sm"

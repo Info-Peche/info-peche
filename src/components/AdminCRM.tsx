@@ -18,7 +18,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   Popover, PopoverContent, PopoverTrigger,
 } from "@/components/ui/popover";
-import { Search, Loader2, Download, Edit, Trash2, Users, Plus, ArrowUp, ArrowDown, ArrowUpDown, SlidersHorizontal, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Loader2, Download, Edit, Trash2, Users, Plus, ArrowUp, ArrowDown, ArrowUpDown, SlidersHorizontal, ChevronLeft, ChevronRight, BookOpen, X } from "lucide-react";
 import { toast } from "sonner";
 
 type Client = {
@@ -43,6 +43,15 @@ type Client = {
   subscriber_number: string | null;
   created_at: string;
   updated_at: string;
+};
+
+type DigitalAccessEntry = {
+  id: string;
+  issue_id: string | null;
+  access_type: string;
+  expires_at: string;
+  issue_number?: string;
+  issue_title?: string;
 };
 
 const SUBSCRIPTION_LABELS: Record<string, string> = {
@@ -148,6 +157,137 @@ const extractSubNum = (s: string | null): number => {
   return m ? parseInt(m[1], 10) : 0;
 };
 
+// ===== Digital Access Manager Component =====
+const DigitalAccessManager = ({ email }: { email: string }) => {
+  const [accessEntries, setAccessEntries] = useState<DigitalAccessEntry[]>([]);
+  const [allIssues, setAllIssues] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [addingIssueId, setAddingIssueId] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const fetchAccess = async () => {
+    setLoading(true);
+    // Fetch digital_access for this email using edge function (service role needed)
+    const { data, error } = await supabase.functions.invoke("get-my-digital-access", {
+      body: { admin_email: email },
+    });
+    if (!error && data?.issues) {
+      // Map access entries with issue info
+      const entries: DigitalAccessEntry[] = (data.access_entries || []).map((a: any) => {
+        const issue = (data.issues || []).find((i: any) => i.id === a.issue_id);
+        return {
+          ...a,
+          issue_number: issue?.issue_number,
+          issue_title: issue?.title,
+        };
+      });
+      setAccessEntries(entries);
+    }
+    setLoading(false);
+  };
+
+  const fetchAllIssues = async () => {
+    const { data } = await supabase
+      .from("digital_issues")
+      .select("id, title, issue_number")
+      .order("issue_number", { ascending: false });
+    setAllIssues(data || []);
+  };
+
+  useEffect(() => {
+    fetchAccess();
+    fetchAllIssues();
+  }, [email]);
+
+  const handleAddAccess = async () => {
+    if (!addingIssueId) return;
+    setSaving(true);
+    const { error } = await supabase.functions.invoke("admin-manage-digital-access", {
+      body: { action: "add", email: email.toLowerCase(), issue_id: addingIssueId },
+    });
+    setSaving(false);
+    if (error) {
+      toast.error("Erreur lors de l'ajout de l'accès");
+    } else {
+      toast.success("Accès numérique ajouté");
+      setAddingIssueId("");
+      fetchAccess();
+    }
+  };
+
+  const handleRemoveAccess = async (accessId: string) => {
+    if (!confirm("Retirer cet accès numérique ?")) return;
+    const { error } = await supabase.functions.invoke("admin-manage-digital-access", {
+      body: { action: "remove", access_id: accessId },
+    });
+    if (error) {
+      toast.error("Erreur lors de la suppression");
+    } else {
+      toast.success("Accès retiré");
+      fetchAccess();
+    }
+  };
+
+  // Filter out issues already granted
+  const grantedIssueIds = accessEntries.map((a) => a.issue_id).filter(Boolean);
+  const availableIssues = allIssues.filter((i) => !grantedIssueIds.includes(i.id));
+
+  return (
+    <div className="border-t border-border pt-4 mt-4">
+      <div className="flex items-center gap-2 mb-3">
+        <BookOpen className="w-4 h-4 text-primary" />
+        <Label className="font-bold text-sm">Magazines numériques achetés</Label>
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-3"><Loader2 className="w-4 h-4 animate-spin" /></div>
+      ) : (
+        <>
+          {accessEntries.length > 0 ? (
+            <div className="space-y-1.5 mb-3">
+              {accessEntries.map((entry) => (
+                <div key={entry.id} className="flex items-center justify-between bg-muted rounded-lg px-3 py-2 text-sm">
+                  <span>
+                    <span className="font-medium">N°{entry.issue_number || "?"}</span>
+                    {entry.issue_title && <span className="text-muted-foreground ml-1.5">— {entry.issue_title}</span>}
+                    <span className="text-xs text-muted-foreground ml-2">
+                      (exp. {new Date(entry.expires_at).toLocaleDateString("fr-FR")})
+                    </span>
+                  </span>
+                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleRemoveAccess(entry.id)}>
+                    <X className="w-3.5 h-3.5 text-destructive" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground mb-3">Aucun magazine numérique acheté.</p>
+          )}
+
+          <div className="flex items-center gap-2">
+            <Select value={addingIssueId} onValueChange={setAddingIssueId}>
+              <SelectTrigger className="flex-1 h-8 text-sm">
+                <SelectValue placeholder="Ajouter un numéro..." />
+              </SelectTrigger>
+              <SelectContent>
+                {availableIssues.map((issue) => (
+                  <SelectItem key={issue.id} value={issue.id}>
+                    N°{issue.issue_number} — {issue.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button size="sm" disabled={!addingIssueId || saving} onClick={handleAddAccess} className="h-8">
+              {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3 mr-1" />}
+              Ajouter
+            </Button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
 const AdminCRM = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
@@ -192,7 +332,6 @@ const AdminCRM = () => {
   const filtered = useMemo(() => {
     let result = clients;
 
-    // Search filter
     if (search) {
       const q = search.toLowerCase();
       result = result.filter((c) =>
@@ -205,7 +344,6 @@ const AdminCRM = () => {
       );
     }
 
-    // Subscription filter
     if (subscriptionFilter !== "all") {
       if (subscriptionFilter === "none") {
         result = result.filter((c) => !c.subscription_type);
@@ -214,7 +352,6 @@ const AdminCRM = () => {
       }
     }
 
-    // Sorting
     result = [...result].sort((a, b) => {
       let cmp = 0;
       switch (sortKey) {
@@ -240,7 +377,6 @@ const AdminCRM = () => {
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const paginated = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
-  // Reset page when filters change
   useEffect(() => { setCurrentPage(1); }, [search, subscriptionFilter, pageSize]);
 
   const toggleSort = (key: SortKey) => {
@@ -268,7 +404,6 @@ const AdminCRM = () => {
     if (!editClient) return;
     setSaving(true);
 
-    // Check if subscription was just added (no subscriber_number yet but subscription_type set)
     let subscriberNumber = editClient.subscriber_number;
     const needsSubscriberNumber = editClient.subscription_type && !editClient.subscriber_number;
 
@@ -277,7 +412,6 @@ const AdminCRM = () => {
       subscriberNumber = `ABONNE_${subNum || 1}`;
     }
 
-    // Auto-compute end date if subscription_type changed and no manual end date
     let endDate = editClient.subscription_end_date;
     if (editClient.subscription_type && !endDate) {
       const months = SUBSCRIPTION_DURATIONS[editClient.subscription_type];
@@ -310,7 +444,6 @@ const AdminCRM = () => {
       } as any)
       .eq("id", editClient.id);
 
-    // Create auth account if subscription was just added
     if (!error && needsSubscriberNumber && editClient.email) {
       try {
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -352,7 +485,6 @@ const AdminCRM = () => {
       subscriberNumber = `ABONNE_${subNum || 1}`;
     }
 
-    // Compute end date
     let endDate: string | null = null;
     if (newClient.subscription_type) {
       const months = SUBSCRIPTION_DURATIONS[newClient.subscription_type];
@@ -390,14 +522,10 @@ const AdminCRM = () => {
         toast.error("Erreur lors de la création");
       }
     } else {
-      // Auto-create auth account so the client can use "Première connexion"
       if (newClient.subscription_type) {
         try {
           const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
           const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-          // We call the edge function just to ensure the auth account exists
-          // by triggering a "first-login" check — but we don't need the email sent now
-          // Instead, create the account via a dedicated lightweight call
           await fetch(`${supabaseUrl}/functions/v1/send-reset-password`, {
             method: "POST",
             headers: {
@@ -462,6 +590,7 @@ const AdminCRM = () => {
 
   const renderClientForm = (client: Partial<Client>, onChange: (c: Partial<Client>) => void, onSave: () => void, title: string) => {
     const end = computeEndDate(client as Client);
+    const isEditing = !!editClient && client === editClient;
     return (
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -483,8 +612,8 @@ const AdminCRM = () => {
             <Input
               value={client.email || ""}
               onChange={(e) => onChange({ ...client, email: e.target.value })}
-              disabled={!!editClient && client === editClient}
-              className={!!editClient && client === editClient ? "bg-muted" : ""}
+              disabled={isEditing}
+              className={isEditing ? "bg-muted" : ""}
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -572,6 +701,12 @@ const AdminCRM = () => {
             <Label>Notes</Label>
             <Textarea value={client.notes || ""} onChange={(e) => onChange({ ...client, notes: e.target.value })} rows={3} />
           </div>
+
+          {/* Digital access management - only for existing clients */}
+          {isEditing && client.email && (
+            <DigitalAccessManager email={client.email} />
+          )}
+
           <Button onClick={onSave} disabled={saving} className="w-full">
             {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
             Enregistrer
@@ -612,7 +747,6 @@ const AdminCRM = () => {
       </div>
 
       <div className="flex items-center gap-3 flex-wrap">
-        {/* Column visibility */}
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="outline" size="sm">
@@ -635,7 +769,6 @@ const AdminCRM = () => {
           </PopoverContent>
         </Popover>
 
-        {/* Page size */}
         <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
           <SelectTrigger className="w-[130px]">
             <SelectValue />

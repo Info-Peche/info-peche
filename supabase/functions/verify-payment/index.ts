@@ -24,9 +24,7 @@ const SUBSCRIPTION_LABELS: Record<string, string> = {
 // Enrich line item name with issue number if applicable
 const enrichItemName = (productName: string, items: any[]): string => {
   const lower = productName.toLowerCase();
-  // Skip subscriptions — they contain "numéros" but shouldn't get issue numbers
   if (lower.includes("abonnement")) return productName;
-  // Check if this is an "ancien numéro" or single issue purchase
   if (lower.includes("ancien num") || lower.includes("numéro")) {
     for (const item of items) {
       const issueNum = item.issue_number || item.name?.match(/N°?\s*(\d+)/)?.[1] || "";
@@ -56,6 +54,66 @@ serve(async (req) => {
       apiVersion: "2025-08-27.basil",
     });
 
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false } }
+    );
+
+    // ===== IDEMPOTENCY CHECK =====
+    // If order already confirmed, return cached result without sending emails again
+    const { data: existingOrders } = await supabaseAdmin
+      .from("orders")
+      .select("*")
+      .eq("stripe_checkout_session_id", session_id)
+      .eq("payment_status", "paid")
+      .limit(1);
+
+    if (existingOrders && existingOrders.length > 0) {
+      const existingOrder = existingOrders[0];
+      logStep("Order already confirmed, returning cached result", { orderId: existingOrder.id, orderNumber: existingOrder.order_number });
+
+      // Get line items from Stripe for display
+      const session = await stripe.checkout.sessions.retrieve(session_id, {
+        expand: ["line_items", "line_items.data.price.product"],
+      });
+
+      const customerName = `${existingOrder.first_name || ""} ${existingOrder.last_name || ""}`.trim();
+      const totalFormatted = session.amount_total ? `${(session.amount_total / 100).toFixed(2)}€` : "N/A";
+
+      // Extract digital issue IDs for the response
+      const digitalIssueIds: string[] = [];
+      if (existingOrder.items && Array.isArray(existingOrder.items)) {
+        for (const item of existingOrder.items as any[]) {
+          const itemId = item.id || "";
+          if (typeof itemId === "string" && itemId.startsWith("digital-")) {
+            digitalIssueIds.push(itemId.replace("digital-", ""));
+          }
+        }
+      }
+
+      return new Response(JSON.stringify({
+        success: true,
+        status: "paid",
+        already_confirmed: true,
+        customer_name: customerName,
+        customer_email: existingOrder.email,
+        total: totalFormatted,
+        order_type: existingOrder.order_type,
+        order_number: existingOrder.order_number,
+        digital_issue_ids: digitalIssueIds,
+        line_items: session.line_items?.data.map((li: any) => ({
+          name: li.price?.product?.name || li.description,
+          quantity: li.quantity,
+          amount: (li.amount_total / 100).toFixed(2),
+        })),
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+    // ===== END IDEMPOTENCY CHECK =====
+
     const session = await stripe.checkout.sessions.retrieve(session_id, {
       expand: ["line_items", "line_items.data.price.product"],
     });
@@ -71,12 +129,6 @@ serve(async (req) => {
         status: 200,
       });
     }
-
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      { auth: { persistSession: false } }
-    );
 
     // Get next order number
     const { data: orderNumData } = await supabaseAdmin.rpc("nextval_order_number" as any);
@@ -212,13 +264,54 @@ serve(async (req) => {
       }
     }
 
+    // ===== CREATE DIGITAL ACCESS for digital magazine purchases =====
+    const digitalIssueIds: string[] = [];
+    if (order?.items && Array.isArray(order.items)) {
+      const customerEmail = (session.customer_details?.email || order.email || "").toLowerCase();
+      for (const item of order.items as any[]) {
+        const itemId = item.id || "";
+        if (typeof itemId === "string" && itemId.startsWith("digital-")) {
+          const issueId = itemId.replace("digital-", "");
+          digitalIssueIds.push(issueId);
+
+          // Check if access already exists (idempotency)
+          const { data: existingAccess } = await supabaseAdmin
+            .from("digital_access")
+            .select("id")
+            .eq("email", customerEmail)
+            .eq("issue_id", issueId)
+            .limit(1);
+
+          if (existingAccess && existingAccess.length > 0) {
+            logStep("Digital access already exists", { issueId, email: customerEmail });
+            continue;
+          }
+
+          const expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+          const { error: daError } = await supabaseAdmin.from("digital_access").insert({
+            email: customerEmail,
+            access_type: "single_issue",
+            issue_id: issueId,
+            expires_at: expiresAt,
+            stripe_checkout_session_id: session_id,
+          });
+
+          if (daError) {
+            logStep("Digital access insert error", { issueId, error: daError.message });
+          } else {
+            logStep("Digital access granted", { issueId, email: customerEmail, expiresAt });
+          }
+        }
+      }
+    }
+    // ===== END DIGITAL ACCESS =====
+
     // Upsert client into CRM + assign subscriber number if subscription
     let subscriberNumber: string | null = null;
     if (order) {
       try {
         const isSubscription = session.mode === "subscription";
 
-        // If subscription, get next subscriber number
         if (isSubscription) {
           const { data: subNumData } = await supabaseAdmin.rpc("nextval_subscriber_number" as any);
           subscriberNumber = `ABONNE_${subNumData || 1}`;
@@ -242,16 +335,14 @@ serve(async (req) => {
           _order_total: session.amount_total || 0,
         });
 
-        // Update subscriber_number on client if subscription
         if (isSubscription && subscriberNumber) {
           await supabaseAdmin
             .from("clients")
             .update({ subscriber_number: subscriberNumber } as any)
             .eq("email", order.email.toLowerCase())
-            .is("subscriber_number", null); // Only set if not already set
+            .is("subscriber_number", null);
           logStep("Client subscriber_number set", { subscriberNumber });
 
-          // Also set subscriber_number on the order record
           await supabaseAdmin
             .from("orders")
             .update({ subscriber_number: subscriberNumber } as any)
@@ -264,14 +355,12 @@ serve(async (req) => {
         // Auto-create Supabase auth account for subscription customers
         if (isSubscription) {
           try {
-            // Check if auth account already exists
             const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
             const alreadyExists = existingUsers?.users?.some(
               (u: any) => u.email?.toLowerCase() === order.email.toLowerCase()
             );
 
             if (!alreadyExists) {
-              // Create auth account with random password — user will use "forgot password" to set their own
               const randomPassword = crypto.randomUUID() + "Aa1!";
               const { data: newUser, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
                 email: order.email.toLowerCase(),
@@ -316,6 +405,11 @@ serve(async (req) => {
 
     const totalFormatted = session.amount_total ? `${(session.amount_total / 100).toFixed(2)}€` : "N/A";
 
+    // Determine if this is a digital-only order (no shipping needed)
+    const isDigitalOnly = order?.items && Array.isArray(order.items) && (order.items as any[]).every(
+      (item: any) => typeof item.id === "string" && item.id.startsWith("digital-")
+    );
+
     // Send emails via Resend
     const resendKey = Deno.env.get("RESEND_API_KEY");
     if (resendKey && customerEmail) {
@@ -347,7 +441,7 @@ serve(async (req) => {
                   <hr style="border: none; border-top: 1px solid #e8d98a; margin: 15px 0;">
                   <p style="font-size: 18px; font-weight: bold; color: #d41227; margin: 0;">Total : ${totalFormatted}</p>
                 </div>
-                ${order ? `
+                ${!isDigitalOnly && order ? `
                 <div style="margin-top: 20px;">
                   <h3 style="color: #1a1a1a; font-family: 'Playfair Display', Georgia, serif;">Adresse de livraison :</h3>
                   <p style="color: #555; line-height: 1.6; font-family: 'Inter', Arial, sans-serif; font-size: 14px;">
@@ -356,6 +450,17 @@ serve(async (req) => {
                     ${order.postal_code} ${order.city}<br>
                     ${order.country}
                   </p>
+                </div>
+                ` : ""}
+                ${isDigitalOnly && digitalIssueIds.length > 0 ? `
+                <div style="background: #e8f5e9; padding: 20px; border-radius: 8px; margin: 25px 0; text-align: center; border: 1px solid #a5d6a7;">
+                  <h3 style="color: #2e7d32; margin: 0 0 10px; font-family: 'Playfair Display', Georgia, serif;">📖 Votre magazine est prêt !</h3>
+                  <p style="color: #555; line-height: 1.6; margin: 0 0 15px; font-family: 'Inter', Arial, sans-serif; font-size: 14px;">
+                    Connectez-vous à votre compte pour lire votre magazine en ligne immédiatement.
+                  </p>
+                  <a href="https://www.info-peche.fr/mon-compte" style="display: inline-block; background: #d41227; color: #fff; padding: 14px 30px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 16px; font-family: 'Inter', Arial, sans-serif;">
+                    Lire mon magazine
+                  </a>
                 </div>
                 ` : ""}
                 ${isSubscription ? `
@@ -371,10 +476,12 @@ serve(async (req) => {
                   </a>
                 </div>
                 ` : ""}
+                ${!isDigitalOnly ? `
                 <p style="color: #555; line-height: 1.6; margin-top: 20px; font-family: 'Inter', Arial, sans-serif; font-size: 14px;">
                   Votre magazine sera expédié dans les plus brefs délais. 
                   Pour toute question, n'hésitez pas à nous contacter.
                 </p>
+                ` : ""}
               </div>
               <div style="background: #d41227; text-align: center; padding: 15px; color: #ffffff; font-size: 12px; font-family: 'Inter', Arial, sans-serif;">
                 Info Pêche Magazine — La passion de la pêche au coup
@@ -408,13 +515,13 @@ serve(async (req) => {
                   <tr><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Client</td><td style="padding: 8px; border-bottom: 1px solid #eee;">${customerName}</td></tr>
                   <tr><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Email</td><td style="padding: 8px; border-bottom: 1px solid #eee;">${customerEmail}</td></tr>
                   <tr><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Téléphone</td><td style="padding: 8px; border-bottom: 1px solid #eee;">${order?.phone || "Non renseigné"}</td></tr>
-                  <tr><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Type</td><td style="padding: 8px; border-bottom: 1px solid #eee;">${isSubscription ? "Abonnement" : "Achat unique"}</td></tr>
+                  <tr><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Type</td><td style="padding: 8px; border-bottom: 1px solid #eee;">${isSubscription ? "Abonnement" : isDigitalOnly ? "Achat numérique" : "Achat unique"}</td></tr>
                   ${subscriberNumber ? `<tr><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">N° abonné</td><td style="padding: 8px; border-bottom: 1px solid #eee;">${subscriberNumber}</td></tr>` : ""}
                   <tr><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Total</td><td style="padding: 8px; border-bottom: 1px solid #eee; font-size: 18px; color: #d41227; font-weight: bold;">${totalFormatted}</td></tr>
                 </table>
                 <h3>Articles :</h3>
                 <pre style="background: #fef9e7; padding: 15px; border-radius: 5px; white-space: pre-wrap; border-left: 4px solid #f5c800;">${lineItemsSummary}</pre>
-                ${order ? `
+                ${!isDigitalOnly && order ? `
                 <h3>Adresse de livraison :</h3>
                 <p>
                   ${order.address_line1}<br>
@@ -448,6 +555,7 @@ serve(async (req) => {
       total: totalFormatted,
       order_type: order?.order_type || session.mode,
       order_number: orderNumber,
+      digital_issue_ids: digitalIssueIds,
       line_items: session.line_items?.data.map((li: any) => ({
         name: li.price?.product?.name || li.description,
         quantity: li.quantity,

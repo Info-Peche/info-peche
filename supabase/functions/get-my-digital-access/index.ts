@@ -19,26 +19,58 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
-    // Get user from auth token
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
-    );
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("Not authenticated");
+    let targetEmail: string | null = null;
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
-    if (authError || !user?.email) throw new Error("Not authenticated");
+    // Check if this is an admin query (via body) or a user query (via auth token)
+    let body: any = {};
+    try {
+      body = await req.json();
+    } catch {}
 
-    const lowerEmail = user.email.toLowerCase();
+    if (body.admin_email) {
+      // Admin mode: verify admin role first
+      const supabaseClient = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+      );
+      const authHeader = req.headers.get("Authorization");
+      if (!authHeader) throw new Error("Not authenticated");
+
+      const token = authHeader.replace("Bearer ", "");
+      const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
+      if (authError || !user) throw new Error("Not authenticated");
+
+      // Check admin role
+      const { data: hasRole } = await supabaseAdmin.rpc("has_role", {
+        _user_id: user.id,
+        _role: "admin",
+      });
+      if (!hasRole) throw new Error("Not authorized");
+
+      targetEmail = body.admin_email.toLowerCase();
+    } else {
+      // User mode: get email from auth token
+      const supabaseClient = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+      );
+      const authHeader = req.headers.get("Authorization");
+      if (!authHeader) throw new Error("Not authenticated");
+
+      const token = authHeader.replace("Bearer ", "");
+      const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
+      if (authError || !user?.email) throw new Error("Not authenticated");
+
+      targetEmail = user.email.toLowerCase();
+    }
+
     const now = new Date().toISOString();
 
     // Get all active digital access entries for this email
     const { data: accessEntries, error } = await supabaseAdmin
       .from("digital_access")
-      .select("issue_id, access_type, expires_at")
-      .eq("email", lowerEmail)
+      .select("id, issue_id, access_type, expires_at")
+      .eq("email", targetEmail)
       .gt("expires_at", now)
       .not("issue_id", "is", null);
 
@@ -57,7 +89,11 @@ serve(async (req) => {
       issues = issueData || [];
     }
 
-    return new Response(JSON.stringify({ issues, issue_ids: issueIds }), {
+    return new Response(JSON.stringify({
+      issues,
+      issue_ids: issueIds,
+      access_entries: accessEntries || [],
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });

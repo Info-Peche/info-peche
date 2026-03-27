@@ -33,7 +33,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { LogOut, Search, Package, Loader2, Download, Newspaper, RefreshCw, CalendarClock, SlidersHorizontal, FileText, GripVertical, BarChart3, PackageOpen, Trash2, ChevronDown, ChevronRight, MessageSquare, Users, Contact, Eye, Archive } from "lucide-react";
+import { LogOut, Search, Package, Loader2, Download, Newspaper, RefreshCw, CalendarClock, SlidersHorizontal, FileText, GripVertical, BarChart3, PackageOpen, Trash2, ChevronDown, ChevronRight, MessageSquare, Users, Contact, Eye, Archive, Mail, CheckCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import AdminEditionManager from "@/components/AdminEditionManager";
@@ -80,26 +80,27 @@ type Order = {
   order_number: number | null;
 };
 
-type ColumnKey = "date" | "client" | "email" | "tel" | "paiement_type" | "formule" | "total" | "paiement_status" | "fin_abo" | "renouvellement" | "client_depuis" | "ville" | "pays" | "commentaire" | "factu_nom" | "factu_adresse" | "factu_ville";
+type ColumnKey = "order_number" | "date" | "client" | "email" | "tel" | "paiement_type" | "formule" | "total" | "paiement_status" | "fin_abo" | "renouvellement" | "client_depuis" | "ville" | "pays" | "commentaire" | "factu_nom" | "factu_adresse" | "factu_ville";
 
 const ALL_COLUMNS: { key: ColumnKey; label: string; defaultVisible: boolean; minWidth: number; defaultWidth: number }[] = [
-  { key: "date", label: "Date", defaultVisible: true, minWidth: 80, defaultWidth: 100 },
-  { key: "client", label: "Client", defaultVisible: true, minWidth: 100, defaultWidth: 150 },
-  { key: "email", label: "Email", defaultVisible: true, minWidth: 120, defaultWidth: 180 },
-  { key: "tel", label: "Tél", defaultVisible: true, minWidth: 80, defaultWidth: 110 },
-  { key: "paiement_type", label: "Type de paiement", defaultVisible: true, minWidth: 80, defaultWidth: 120 },
-  { key: "formule", label: "Formule", defaultVisible: true, minWidth: 80, defaultWidth: 120 },
-  { key: "total", label: "Paiement net", defaultVisible: true, minWidth: 90, defaultWidth: 110 },
-  { key: "paiement_status", label: "Paiement", defaultVisible: true, minWidth: 80, defaultWidth: 100 },
-  { key: "fin_abo", label: "Fin abo", defaultVisible: true, minWidth: 80, defaultWidth: 100 },
-  { key: "renouvellement", label: "Renouvellement", defaultVisible: true, minWidth: 100, defaultWidth: 140 },
-  { key: "client_depuis", label: "Client depuis", defaultVisible: true, minWidth: 90, defaultWidth: 110 },
-  { key: "ville", label: "Ville", defaultVisible: true, minWidth: 80, defaultWidth: 120 },
-  { key: "pays", label: "Pays", defaultVisible: false, minWidth: 50, defaultWidth: 70 },
-  { key: "factu_nom", label: "Factu. Nom", defaultVisible: false, minWidth: 100, defaultWidth: 140 },
-  { key: "factu_adresse", label: "Factu. Adresse", defaultVisible: false, minWidth: 120, defaultWidth: 160 },
-  { key: "factu_ville", label: "Factu. Ville", defaultVisible: false, minWidth: 80, defaultWidth: 120 },
-  { key: "commentaire", label: "Commentaire", defaultVisible: true, minWidth: 100, defaultWidth: 160 },
+  { key: "date", label: "Date", defaultVisible: true, minWidth: 80, defaultWidth: 90 },
+  { key: "order_number", label: "N°", defaultVisible: true, minWidth: 50, defaultWidth: 60 },
+  { key: "client", label: "Client", defaultVisible: true, minWidth: 90, defaultWidth: 120 },
+  { key: "email", label: "Email", defaultVisible: true, minWidth: 100, defaultWidth: 150 },
+  { key: "tel", label: "Tél", defaultVisible: false, minWidth: 80, defaultWidth: 100 },
+  { key: "paiement_type", label: "Paiement", defaultVisible: true, minWidth: 60, defaultWidth: 70 },
+  { key: "formule", label: "Formule", defaultVisible: true, minWidth: 80, defaultWidth: 130 },
+  { key: "total", label: "Net", defaultVisible: true, minWidth: 60, defaultWidth: 70 },
+  { key: "paiement_status", label: "Statut", defaultVisible: true, minWidth: 60, defaultWidth: 70 },
+  { key: "fin_abo", label: "Fin abo", defaultVisible: false, minWidth: 80, defaultWidth: 90 },
+  { key: "renouvellement", label: "Renouvl.", defaultVisible: false, minWidth: 80, defaultWidth: 100 },
+  { key: "client_depuis", label: "Depuis", defaultVisible: false, minWidth: 70, defaultWidth: 80 },
+  { key: "ville", label: "Ville", defaultVisible: true, minWidth: 70, defaultWidth: 100 },
+  { key: "pays", label: "Pays", defaultVisible: false, minWidth: 50, defaultWidth: 60 },
+  { key: "factu_nom", label: "Factu. Nom", defaultVisible: false, minWidth: 100, defaultWidth: 120 },
+  { key: "factu_adresse", label: "Factu. Adr.", defaultVisible: false, minWidth: 100, defaultWidth: 130 },
+  { key: "factu_ville", label: "Factu. Ville", defaultVisible: false, minWidth: 80, defaultWidth: 100 },
+  { key: "commentaire", label: "Commentaire", defaultVisible: false, minWidth: 80, defaultWidth: 120 },
 ];
 
 const AdminDashboard = () => {
@@ -510,6 +511,7 @@ const AdminDashboard = () => {
   };
 
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
+  const [detailOrder, setDetailOrder] = useState<Order | null>(null);
   const [invoiceOrder, setInvoiceOrder] = useState<Order | null>(null);
   const invoiceAmounts = invoiceOrder ? getOrderAmounts(invoiceOrder) : null;
   const invoiceProductItems = invoiceOrder ? getOrderProductItems(invoiceOrder) : [];
@@ -585,8 +587,10 @@ const AdminDashboard = () => {
 
   const renderCellContent = (col: ColumnKey, order: Order) => {
     switch (col) {
+      case "order_number":
+        return <span className="font-mono text-xs">{order.order_number ? `#${order.order_number}` : "—"}</span>;
       case "date":
-        return <span className="whitespace-nowrap">{new Date(order.created_at).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" })}</span>;
+        return <span className="whitespace-nowrap">{new Date(order.created_at).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "2-digit" })}</span>;
       case "client":
         return <span className="font-medium">{order.first_name} {order.last_name}</span>;
       case "email":
@@ -677,25 +681,34 @@ const AdminDashboard = () => {
     setDragOverCol(null);
   };
 
+  const markAsProcessed = async (orderId: string) => {
+    const ok = await updateArchiveStatus([orderId], true);
+    if (!ok) return;
+    setDetailOrder(null);
+    toast.success("Commande marquée comme traitée et archivée");
+  };
+
   const renderOrderTable = (orderList: Order[]) => (
     <div className="bg-card rounded-xl border border-border overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-max min-w-full text-sm" style={{ tableLayout: "fixed" }}>
           <colgroup>
-            <col style={{ width: 40 }} />
+            <col style={{ width: 32 }} />
+            <col style={{ width: 32 }} />
             {visibleCols.map(c => (
               <col key={c.key} style={{ width: columnWidths[c.key] }} />
             ))}
-            <col style={{ width: 40 }} />
+            <col style={{ width: 32 }} />
           </colgroup>
           <thead>
             <tr className="border-b">
-              <th className="h-12 px-2 text-left align-middle font-medium text-muted-foreground" style={{ width: 40 }}>
+              <th className="h-10 px-1 text-center align-middle" style={{ width: 32 }}>
                 <Checkbox
                   checked={orderList.length > 0 && orderList.every(o => selectedOrders.has(o.id))}
                   onCheckedChange={() => toggleSelectAll(orderList)}
                 />
               </th>
+              <th className="h-10 px-1 text-center align-middle text-muted-foreground" style={{ width: 32 }}></th>
               {visibleCols.map(c => (
                 <th
                   key={c.key}
@@ -704,7 +717,7 @@ const AdminDashboard = () => {
                   onDragOver={(e) => handleDragOver(e, c.key)}
                   onDragEnd={handleDragEnd}
                   onDrop={() => handleDrop(c.key)}
-                  className={`h-12 px-3 text-left align-middle font-medium text-muted-foreground relative select-none cursor-grab active:cursor-grabbing transition-colors ${dragOverCol === c.key ? "bg-primary/10" : ""}`}
+                  className={`h-10 px-2 text-left align-middle font-medium text-muted-foreground text-xs relative select-none cursor-grab active:cursor-grabbing transition-colors ${dragOverCol === c.key ? "bg-primary/10" : ""}`}
                   style={{ width: columnWidths[c.key] }}
                 >
                   <span className="truncate block pr-2 flex items-center gap-1">
@@ -717,7 +730,7 @@ const AdminDashboard = () => {
                   />
                 </th>
               ))}
-              <th className="h-12 px-2 text-center align-middle font-medium text-muted-foreground" style={{ width: 70 }}></th>
+              <th className="h-10 px-1 text-center align-middle" style={{ width: 32 }}></th>
             </tr>
           </thead>
           <tbody>
@@ -728,30 +741,31 @@ const AdminDashboard = () => {
               return (
                 <>
                   <tr key={order.id} className="border-b transition-colors hover:bg-muted/50">
-                    <td className="p-2 align-middle">
+                    <td className="px-1 py-1.5 align-middle text-center">
                       <Checkbox
                         checked={selectedOrders.has(order.id)}
                         onCheckedChange={() => toggleSelectOrder(order.id)}
                       />
                     </td>
+                    <td className="px-1 py-1.5 align-middle text-center">
+                      <button
+                        onClick={() => setDetailOrder(order)}
+                        className="p-1 rounded hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
+                        title="Voir le détail"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                      </button>
+                    </td>
                     {visibleCols.map(c => (
                       <td
                         key={c.key}
-                        className="px-3 py-2 align-middle text-xs overflow-hidden"
+                        className="px-2 py-1.5 align-middle text-xs overflow-hidden"
                         style={{ maxWidth: columnWidths[c.key] }}
                       >
                         {renderCellContent(c.key, order)}
                       </td>
                     ))}
-                    <td className="p-1 align-middle text-center">
-                      <div className="flex items-center gap-0.5 justify-center">
-                        <button
-                          onClick={() => setInvoiceOrder(order)}
-                          className="p-1 rounded hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
-                          title="Voir la facture"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                        </button>
+                    <td className="px-1 py-1.5 align-middle text-center">
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <button className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" title="Supprimer">
@@ -776,12 +790,11 @@ const AdminDashboard = () => {
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>
-                      </div>
                     </td>
                   </tr>
                   {isMultiple && isExpanded && (
                     <tr key={`${order.id}-detail`} className="bg-muted/30 border-b">
-                      <td colSpan={visibleCols.length + 2} className="px-6 py-3">
+                      <td colSpan={visibleCols.length + 3} className="px-6 py-3">
                         <div className="text-xs space-y-1.5">
                           <p className="font-medium text-muted-foreground mb-2">Détail des articles :</p>
                           {productItems.map((item: any, idx: number) => (
@@ -1081,6 +1094,94 @@ const AdminDashboard = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Order Detail Dialog */}
+      <Dialog open={!!detailOrder} onOpenChange={(open) => !open && setDetailOrder(null)}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              Commande {detailOrder?.order_number ? `#${detailOrder.order_number}` : ""} — {detailOrder?.first_name} {detailOrder?.last_name}
+            </DialogTitle>
+          </DialogHeader>
+          {detailOrder && (() => {
+            const productItems = getOrderProductItems(detailOrder);
+            const { netAmountCents, shippingCents, totalAmountCents } = getOrderAmounts(detailOrder);
+            return (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div><span className="text-muted-foreground">Date :</span> <span className="font-medium">{new Date(detailOrder.created_at).toLocaleDateString("fr-FR")}</span></div>
+                  <div><span className="text-muted-foreground">Statut :</span> <Badge variant={statusColor(detailOrder.payment_status) as any} className="ml-1 text-xs">{detailOrder.payment_status}</Badge></div>
+                  <div><span className="text-muted-foreground">Email :</span> <span className="font-medium">{detailOrder.email}</span></div>
+                  <div><span className="text-muted-foreground">Tél :</span> <span className="font-medium">{detailOrder.phone || "—"}</span></div>
+                  <div className="col-span-2"><span className="text-muted-foreground">Adresse :</span> <span className="font-medium">{detailOrder.address_line1}, {detailOrder.postal_code} {detailOrder.city}</span></div>
+                  {detailOrder.subscriber_number && (
+                    <div className="col-span-2"><span className="text-muted-foreground">N° abonné :</span> <span className="font-medium">{detailOrder.subscriber_number}</span></div>
+                  )}
+                </div>
+
+                <div className="border-t border-border pt-3">
+                  <h4 className="font-bold text-sm mb-2">Articles</h4>
+                  <div className="space-y-1.5">
+                    {productItems.map((item: any, idx: number) => (
+                      <div key={idx} className="flex justify-between text-sm">
+                        <span>{getItemLabel(item)} {(item.quantity || 1) > 1 && `×${item.quantity}`}</span>
+                        <span className="font-medium">{getLineTotalCents(item) > 0 ? `${(getLineTotalCents(item) / 100).toFixed(2)}€` : "—"}</span>
+                      </div>
+                    ))}
+                    {shippingCents > 0 && (
+                      <div className="flex justify-between text-sm text-muted-foreground">
+                        <span>Frais de livraison</span>
+                        <span>{(shippingCents / 100).toFixed(2)}€</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-sm font-bold border-t border-border pt-2">
+                      <span>Total</span>
+                      <span className="text-primary">{(totalAmountCents / 100).toFixed(2)}€</span>
+                    </div>
+                  </div>
+                </div>
+
+                {detailOrder.comment && (
+                  <div className="border-t border-border pt-3">
+                    <h4 className="font-bold text-sm mb-1">Commentaire</h4>
+                    <p className="text-sm text-muted-foreground">{detailOrder.comment}</p>
+                  </div>
+                )}
+
+                <div className="flex flex-col sm:flex-row gap-2 pt-3 border-t border-border">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => {
+                      const subject = encodeURIComponent("Suite à votre commande sur Info Pêche");
+                      window.location.href = `mailto:${detailOrder.email}?from=jeanfrancois.darnet@info-peche.fr&subject=${subject}`;
+                    }}
+                  >
+                    <Mail className="w-4 h-4 mr-2" /> Envoyer un email
+                  </Button>
+                  {!detailOrder.is_processed && (
+                    <Button
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => markAsProcessed(detailOrder.id)}
+                    >
+                      <CheckCircle className="w-4 h-4 mr-2" /> Marqué comme traité
+                    </Button>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => { setInvoiceOrder(detailOrder); setDetailOrder(null); }}
+                  >
+                    <FileText className="w-4 h-4 mr-2" /> Facture
+                  </Button>
+                </div>
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
 
       {/* Invoice Dialog */}
       <Dialog open={!!invoiceOrder} onOpenChange={(open) => !open && setInvoiceOrder(null)}>

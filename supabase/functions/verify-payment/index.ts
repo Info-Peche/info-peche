@@ -396,10 +396,31 @@ serve(async (req) => {
     const customerName = `${order?.first_name || ""} ${order?.last_name || ""}`.trim();
     const orderNumDisplay = `#${orderNumber}`;
 
-    // Build line items summary with enriched names
-    const lineItemsSummary = session.line_items?.data.map((li: any) => {
+    // Build line items summary with enriched names using cart items for issue numbers
+    const lineItemsSummary = session.line_items?.data.map((li: any, idx: number) => {
       let productName = li.price?.product?.name || li.description || "Produit";
-      productName = enrichItemName(productName, cartItems);
+      // Try to match with cart items to get issue number
+      if (cartItems.length > 0) {
+        const cartItem = cartItems[idx] || cartItems.find((ci: any) => {
+          const ciId = ci.id || "";
+          return ciId.startsWith("physical-") || ciId.startsWith("digital-");
+        });
+        if (cartItem) {
+          const issueNum = cartItem.issue_number || cartItem.name?.match(/(\d+)/)?.[1] || "";
+          const cartId = cartItem.id || "";
+          if (issueNum) {
+            if (cartId.startsWith("digital-")) {
+              productName = `Lecture en ligne N°${issueNum}`;
+            } else if (cartId.startsWith("physical-")) {
+              productName = `Ancien numéro N°${issueNum} (papier)`;
+            } else if (!productName.includes(issueNum)) {
+              productName = `${productName} (N°${issueNum})`;
+            }
+          }
+        }
+      } else {
+        productName = enrichItemName(productName, cartItems);
+      }
       return `• ${productName} × ${li.quantity} — ${(li.amount_total / 100).toFixed(2)}€`;
     }).join("\n") || "Détails non disponibles";
 

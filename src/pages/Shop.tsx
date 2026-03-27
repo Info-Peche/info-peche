@@ -229,14 +229,14 @@ const ShopContent = () => {
                       
                       <div className="mt-auto">
                         {viewMode === "online" ? (
-                          hasAccessToMagazines ? (
+                          hasAccessToMagazines || purchasedIds.includes(issue.id) ? (
                             <Button
                               size="sm"
                               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-full"
-                              onClick={() => navigate(`/lire?issue=${issue.id}&mode=preview`)}
+                              onClick={() => navigate(`/lire?issue=${issue.id}`)}
                             >
                               <Eye className="h-4 w-4 mr-2" />
-                              Consulter en ligne
+                              {hasAccessToMagazines ? "Consulter en ligne" : "Lire en ligne"}
                             </Button>
                           ) : (
                             <Button

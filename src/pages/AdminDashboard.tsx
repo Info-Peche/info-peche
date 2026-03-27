@@ -33,7 +33,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { LogOut, Search, Package, Loader2, Download, Newspaper, RefreshCw, CalendarClock, SlidersHorizontal, FileText, GripVertical, BarChart3, PackageOpen, Trash2, ChevronDown, ChevronRight, MessageSquare, Users, Contact, Eye, Archive } from "lucide-react";
+import { LogOut, Search, Package, Loader2, Download, Newspaper, RefreshCw, CalendarClock, SlidersHorizontal, FileText, GripVertical, BarChart3, PackageOpen, Trash2, ChevronDown, ChevronRight, MessageSquare, Users, Contact, Eye, Archive, Mail, CheckCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import AdminEditionManager from "@/components/AdminEditionManager";
@@ -80,26 +80,27 @@ type Order = {
   order_number: number | null;
 };
 
-type ColumnKey = "date" | "client" | "email" | "tel" | "paiement_type" | "formule" | "total" | "paiement_status" | "fin_abo" | "renouvellement" | "client_depuis" | "ville" | "pays" | "commentaire" | "factu_nom" | "factu_adresse" | "factu_ville";
+type ColumnKey = "order_number" | "date" | "client" | "email" | "tel" | "paiement_type" | "formule" | "total" | "paiement_status" | "fin_abo" | "renouvellement" | "client_depuis" | "ville" | "pays" | "commentaire" | "factu_nom" | "factu_adresse" | "factu_ville";
 
 const ALL_COLUMNS: { key: ColumnKey; label: string; defaultVisible: boolean; minWidth: number; defaultWidth: number }[] = [
-  { key: "date", label: "Date", defaultVisible: true, minWidth: 80, defaultWidth: 100 },
-  { key: "client", label: "Client", defaultVisible: true, minWidth: 100, defaultWidth: 150 },
-  { key: "email", label: "Email", defaultVisible: true, minWidth: 120, defaultWidth: 180 },
-  { key: "tel", label: "Tél", defaultVisible: true, minWidth: 80, defaultWidth: 110 },
-  { key: "paiement_type", label: "Type de paiement", defaultVisible: true, minWidth: 80, defaultWidth: 120 },
-  { key: "formule", label: "Formule", defaultVisible: true, minWidth: 80, defaultWidth: 120 },
-  { key: "total", label: "Paiement net", defaultVisible: true, minWidth: 90, defaultWidth: 110 },
-  { key: "paiement_status", label: "Paiement", defaultVisible: true, minWidth: 80, defaultWidth: 100 },
-  { key: "fin_abo", label: "Fin abo", defaultVisible: true, minWidth: 80, defaultWidth: 100 },
-  { key: "renouvellement", label: "Renouvellement", defaultVisible: true, minWidth: 100, defaultWidth: 140 },
-  { key: "client_depuis", label: "Client depuis", defaultVisible: true, minWidth: 90, defaultWidth: 110 },
-  { key: "ville", label: "Ville", defaultVisible: true, minWidth: 80, defaultWidth: 120 },
-  { key: "pays", label: "Pays", defaultVisible: false, minWidth: 50, defaultWidth: 70 },
-  { key: "factu_nom", label: "Factu. Nom", defaultVisible: false, minWidth: 100, defaultWidth: 140 },
-  { key: "factu_adresse", label: "Factu. Adresse", defaultVisible: false, minWidth: 120, defaultWidth: 160 },
-  { key: "factu_ville", label: "Factu. Ville", defaultVisible: false, minWidth: 80, defaultWidth: 120 },
-  { key: "commentaire", label: "Commentaire", defaultVisible: true, minWidth: 100, defaultWidth: 160 },
+  { key: "date", label: "Date", defaultVisible: true, minWidth: 80, defaultWidth: 90 },
+  { key: "order_number", label: "N°", defaultVisible: true, minWidth: 50, defaultWidth: 60 },
+  { key: "client", label: "Client", defaultVisible: true, minWidth: 90, defaultWidth: 120 },
+  { key: "email", label: "Email", defaultVisible: true, minWidth: 100, defaultWidth: 150 },
+  { key: "tel", label: "Tél", defaultVisible: false, minWidth: 80, defaultWidth: 100 },
+  { key: "paiement_type", label: "Paiement", defaultVisible: true, minWidth: 60, defaultWidth: 70 },
+  { key: "formule", label: "Formule", defaultVisible: true, minWidth: 80, defaultWidth: 130 },
+  { key: "total", label: "Net", defaultVisible: true, minWidth: 60, defaultWidth: 70 },
+  { key: "paiement_status", label: "Statut", defaultVisible: true, minWidth: 60, defaultWidth: 70 },
+  { key: "fin_abo", label: "Fin abo", defaultVisible: false, minWidth: 80, defaultWidth: 90 },
+  { key: "renouvellement", label: "Renouvl.", defaultVisible: false, minWidth: 80, defaultWidth: 100 },
+  { key: "client_depuis", label: "Depuis", defaultVisible: false, minWidth: 70, defaultWidth: 80 },
+  { key: "ville", label: "Ville", defaultVisible: true, minWidth: 70, defaultWidth: 100 },
+  { key: "pays", label: "Pays", defaultVisible: false, minWidth: 50, defaultWidth: 60 },
+  { key: "factu_nom", label: "Factu. Nom", defaultVisible: false, minWidth: 100, defaultWidth: 120 },
+  { key: "factu_adresse", label: "Factu. Adr.", defaultVisible: false, minWidth: 100, defaultWidth: 130 },
+  { key: "factu_ville", label: "Factu. Ville", defaultVisible: false, minWidth: 80, defaultWidth: 100 },
+  { key: "commentaire", label: "Commentaire", defaultVisible: false, minWidth: 80, defaultWidth: 120 },
 ];
 
 const AdminDashboard = () => {

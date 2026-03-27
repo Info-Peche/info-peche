@@ -917,7 +917,7 @@ const AdminDashboard = () => {
                     <SlidersHorizontal className="w-4 h-4 mr-2" /> Colonnes
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuContent align="end" className="w-56 max-h-80 overflow-y-auto">
                   <DropdownMenuLabel>Colonnes visibles</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   {ALL_COLUMNS.map(col => (
@@ -1097,7 +1097,7 @@ const AdminDashboard = () => {
 
       {/* Order Detail Dialog */}
       <Dialog open={!!detailOrder} onOpenChange={(open) => !open && setDetailOrder(null)}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-xl w-[95vw] max-h-[90vh] overflow-y-auto overflow-x-hidden">
           <DialogHeader>
             <DialogTitle>
               Commande {detailOrder?.order_number ? `#${detailOrder.order_number}` : ""} — {detailOrder?.first_name} {detailOrder?.last_name}
@@ -1111,9 +1111,10 @@ const AdminDashboard = () => {
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div><span className="text-muted-foreground">Date :</span> <span className="font-medium">{new Date(detailOrder.created_at).toLocaleDateString("fr-FR")}</span></div>
                   <div><span className="text-muted-foreground">Statut :</span> <Badge variant={statusColor(detailOrder.payment_status) as any} className="ml-1 text-xs">{detailOrder.payment_status}</Badge></div>
-                  <div><span className="text-muted-foreground">Email :</span> <span className="font-medium">{detailOrder.email}</span></div>
+                  <div className="col-span-2 break-all"><span className="text-muted-foreground">Email :</span> <span className="font-medium">{detailOrder.email}</span></div>
                   <div><span className="text-muted-foreground">Tél :</span> <span className="font-medium">{detailOrder.phone || "—"}</span></div>
-                  <div className="col-span-2"><span className="text-muted-foreground">Adresse :</span> <span className="font-medium">{detailOrder.address_line1}, {detailOrder.postal_code} {detailOrder.city}</span></div>
+                  <div><span className="text-muted-foreground">Pays :</span> <span className="font-medium">{detailOrder.country || "FR"}</span></div>
+                  <div className="col-span-2"><span className="text-muted-foreground">Adresse :</span> <span className="font-medium break-words">{detailOrder.address_line1}{detailOrder.address_line2 ? `, ${detailOrder.address_line2}` : ""}, {detailOrder.postal_code} {detailOrder.city}</span></div>
                   {detailOrder.subscriber_number && (
                     <div className="col-span-2"><span className="text-muted-foreground">N° abonné :</span> <span className="font-medium">{detailOrder.subscriber_number}</span></div>
                   )}
@@ -1155,7 +1156,8 @@ const AdminDashboard = () => {
                     className="flex-1"
                     onClick={() => {
                       const subject = encodeURIComponent("Suite à votre commande sur Info Pêche");
-                      window.location.href = `mailto:${detailOrder.email}?from=jeanfrancois.darnet@info-peche.fr&subject=${subject}`;
+                      const body = encodeURIComponent(`Bonjour ${detailOrder.first_name},\n\n`);
+                      window.open(`mailto:${detailOrder.email}?subject=${subject}&body=${body}`, "_blank");
                     }}
                   >
                     <Mail className="w-4 h-4 mr-2" /> Envoyer un email

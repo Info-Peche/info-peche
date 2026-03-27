@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { LogIn, UserPlus, Mail, Lock, Loader2, ArrowLeft, LogOut, Crown, BookOpen, Eye } from "lucide-react";
+import { LogIn, UserPlus, Mail, Lock, Loader2, ArrowLeft, LogOut, Crown, BookOpen, Eye, BookOpenCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -130,6 +130,9 @@ const MonCompte = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Purchased magazines section */}
+              <PurchasedMagazines />
 
               {subscriptionTier === "none" && (
                 <Button onClick={() => navigate("/#subscribe")} className="w-full mb-4 bg-primary text-white rounded-xl py-5 font-bold">

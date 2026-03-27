@@ -169,8 +169,12 @@ const MagazineViewerContent = () => {
 
   useEffect(() => {
     if (!issueId) return;
-    // If user is logged in and has magazine access, load full version
+    // If user is logged in and has magazine access (subscriber), load full version
     if (user && hasAccessToMagazines) {
+      loadSubscriberAccess();
+    } else if (user && !isPreview) {
+      // Logged-in user without subscription — check individual purchase access
+      setEmail(user.email || "");
       loadSubscriberAccess();
     } else if (isPreview) {
       loadPreview();

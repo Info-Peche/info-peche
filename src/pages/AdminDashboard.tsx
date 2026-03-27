@@ -1095,6 +1095,94 @@ const AdminDashboard = () => {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Order Detail Dialog */}
+      <Dialog open={!!detailOrder} onOpenChange={(open) => !open && setDetailOrder(null)}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              Commande {detailOrder?.order_number ? `#${detailOrder.order_number}` : ""} — {detailOrder?.first_name} {detailOrder?.last_name}
+            </DialogTitle>
+          </DialogHeader>
+          {detailOrder && (() => {
+            const productItems = getOrderProductItems(detailOrder);
+            const { netAmountCents, shippingCents, totalAmountCents } = getOrderAmounts(detailOrder);
+            return (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div><span className="text-muted-foreground">Date :</span> <span className="font-medium">{new Date(detailOrder.created_at).toLocaleDateString("fr-FR")}</span></div>
+                  <div><span className="text-muted-foreground">Statut :</span> <Badge variant={statusColor(detailOrder.payment_status) as any} className="ml-1 text-xs">{detailOrder.payment_status}</Badge></div>
+                  <div><span className="text-muted-foreground">Email :</span> <span className="font-medium">{detailOrder.email}</span></div>
+                  <div><span className="text-muted-foreground">Tél :</span> <span className="font-medium">{detailOrder.phone || "—"}</span></div>
+                  <div className="col-span-2"><span className="text-muted-foreground">Adresse :</span> <span className="font-medium">{detailOrder.address_line1}, {detailOrder.postal_code} {detailOrder.city}</span></div>
+                  {detailOrder.subscriber_number && (
+                    <div className="col-span-2"><span className="text-muted-foreground">N° abonné :</span> <span className="font-medium">{detailOrder.subscriber_number}</span></div>
+                  )}
+                </div>
+
+                <div className="border-t border-border pt-3">
+                  <h4 className="font-bold text-sm mb-2">Articles</h4>
+                  <div className="space-y-1.5">
+                    {productItems.map((item: any, idx: number) => (
+                      <div key={idx} className="flex justify-between text-sm">
+                        <span>{getItemLabel(item)} {(item.quantity || 1) > 1 && `×${item.quantity}`}</span>
+                        <span className="font-medium">{getLineTotalCents(item) > 0 ? `${(getLineTotalCents(item) / 100).toFixed(2)}€` : "—"}</span>
+                      </div>
+                    ))}
+                    {shippingCents > 0 && (
+                      <div className="flex justify-between text-sm text-muted-foreground">
+                        <span>Frais de livraison</span>
+                        <span>{(shippingCents / 100).toFixed(2)}€</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-sm font-bold border-t border-border pt-2">
+                      <span>Total</span>
+                      <span className="text-primary">{(totalAmountCents / 100).toFixed(2)}€</span>
+                    </div>
+                  </div>
+                </div>
+
+                {detailOrder.comment && (
+                  <div className="border-t border-border pt-3">
+                    <h4 className="font-bold text-sm mb-1">Commentaire</h4>
+                    <p className="text-sm text-muted-foreground">{detailOrder.comment}</p>
+                  </div>
+                )}
+
+                <div className="flex flex-col sm:flex-row gap-2 pt-3 border-t border-border">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => {
+                      const subject = encodeURIComponent("Suite à votre commande sur Info Pêche");
+                      window.location.href = `mailto:${detailOrder.email}?from=jeanfrancois.darnet@info-peche.fr&subject=${subject}`;
+                    }}
+                  >
+                    <Mail className="w-4 h-4 mr-2" /> Envoyer un email
+                  </Button>
+                  {!detailOrder.is_processed && (
+                    <Button
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => markAsProcessed(detailOrder.id)}
+                    >
+                      <CheckCircle className="w-4 h-4 mr-2" /> Marqué comme traité
+                    </Button>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => { setInvoiceOrder(detailOrder); setDetailOrder(null); }}
+                  >
+                    <FileText className="w-4 h-4 mr-2" /> Facture
+                  </Button>
+                </div>
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
+
       {/* Invoice Dialog */}
       <Dialog open={!!invoiceOrder} onOpenChange={(open) => !open && setInvoiceOrder(null)}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">

@@ -3,6 +3,7 @@ import { CheckCircle, Loader2, AlertCircle, BookOpen, User, Eye } from "lucide-r
 import { Button } from "@/components/ui/button";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useCart } from "@/context/CartContext";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
@@ -25,6 +26,7 @@ const OrderConfirmation = () => {
   const [loading, setLoading] = useState(true);
   const [order, setOrder] = useState<OrderDetails | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { clearCart } = useCart();
 
   useEffect(() => {
     if (!sessionId) {
@@ -39,6 +41,10 @@ const OrderConfirmation = () => {
         });
         if (fnError) throw fnError;
         setOrder(data);
+        // Clear cart on successful payment
+        if (data?.success) {
+          clearCart();
+        }
       } catch (err: any) {
         setError(err.message || "Impossible de vérifier le paiement.");
       } finally {

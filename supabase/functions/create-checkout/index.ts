@@ -98,6 +98,8 @@ serve(async (req) => {
       shipping_cents: String(shippingAmount),
     };
 
+    const paymentDescription = `Commande de ${customer_info.first_name} ${customer_info.last_name} - ${customer_info.email}`;
+
     const sessionParams: any = {
       customer: customerId,
       customer_email: customerId ? undefined : customer_info.email,
@@ -120,6 +122,13 @@ serve(async (req) => {
         },
       },
     };
+
+    // Add description based on mode
+    if (mode === "payment") {
+      sessionParams.payment_intent_data = { description: paymentDescription };
+    } else {
+      sessionParams.subscription_data = { description: paymentDescription };
+    }
 
     const session = await stripe.checkout.sessions.create(sessionParams);
     logStep("Checkout session created", { sessionId: session.id, url: session.url });

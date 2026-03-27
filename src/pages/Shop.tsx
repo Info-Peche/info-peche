@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";

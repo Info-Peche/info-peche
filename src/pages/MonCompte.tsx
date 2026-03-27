@@ -14,6 +14,59 @@ import SideCart from "@/components/SideCart";
 
 type Mode = "login" | "signup" | "forgot" | "first-login";
 
+const PurchasedMagazines = () => {
+  const { session } = useAuth();
+  const navigate = useNavigate();
+  const [magazines, setMagazines] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!session) return;
+    const fetchMagazines = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke("get-my-digital-access", {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+        if (!error && data?.issues) setMagazines(data.issues);
+      } catch {}
+      setLoading(false);
+    };
+    fetchMagazines();
+  }, [session]);
+
+  if (loading) return <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>;
+  if (magazines.length === 0) return null;
+
+  return (
+    <div className="mb-6">
+      <div className="flex items-center gap-2 mb-3">
+        <BookOpenCheck className="w-5 h-5 text-primary" />
+        <h3 className="font-bold text-foreground">Mes magazines achetés</h3>
+      </div>
+      <div className="space-y-2">
+        {magazines.map((mag) => (
+          <div key={mag.id} className="flex items-center gap-3 bg-muted rounded-xl p-3">
+            {mag.cover_image && (
+              <img src={mag.cover_image} alt={mag.title} className="h-16 w-auto rounded shadow-sm" />
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground truncate">N°{mag.issue_number}</p>
+              <p className="text-xs text-muted-foreground truncate">{mag.title}</p>
+            </div>
+            <Button
+              size="sm"
+              className="rounded-full bg-primary text-primary-foreground shrink-0"
+              onClick={() => navigate(`/lire?issue=${mag.id}`)}
+            >
+              <Eye className="w-3.5 h-3.5 mr-1" /> Lire
+            </Button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const MonCompte = () => {
   const { user, signIn, signUp, signOut, resetPassword, subscriptionTier, subscriptionEnd, hasAccessToBlog, hasAccessToMagazines, loading } = useAuth();
   const navigate = useNavigate();

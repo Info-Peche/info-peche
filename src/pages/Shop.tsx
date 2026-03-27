@@ -24,12 +24,13 @@ const extractYear = (title: string): string => {
 
 const ShopContent = () => {
   const { addItem } = useCart();
-  const { hasAccessToMagazines } = useAuth();
+  const { hasAccessToMagazines, user, session } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialMode = searchParams.get("mode") === "physical" ? "physical" : "online";
   const [viewMode, setViewMode] = useState<ViewMode>(initialMode);
   const [selectedYear, setSelectedYear] = useState<string>("all");
+  const [purchasedIds, setPurchasedIds] = useState<string[]>([]);
 
   const { data: issues, isLoading } = useQuery({
     queryKey: ["archived-issues"],

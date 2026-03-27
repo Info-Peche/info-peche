@@ -32,6 +32,20 @@ const ShopContent = () => {
   const [selectedYear, setSelectedYear] = useState<string>("all");
   const [purchasedIds, setPurchasedIds] = useState<string[]>([]);
 
+  // Fetch purchased issue IDs for logged-in users
+  useEffect(() => {
+    if (!session) { setPurchasedIds([]); return; }
+    const fetchPurchased = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke("get-my-digital-access", {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+        if (!error && data?.issue_ids) setPurchasedIds(data.issue_ids);
+      } catch {}
+    };
+    fetchPurchased();
+  }, [session]);
+
   const { data: issues, isLoading } = useQuery({
     queryKey: ["archived-issues"],
     queryFn: async () => {

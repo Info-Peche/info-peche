@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ShoppingBag, Monitor, Package, AlertCircle, BookOpen, Truck, Eye, Calendar } from "lucide-react";
+import { ShoppingBag, Monitor, Package, AlertCircle, BookOpen, Truck, Eye, Calendar, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,8 +14,9 @@ import SideCart from "@/components/SideCart";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
+import PricingCards from "@/components/PricingCards";
 
-type ViewMode = "online" | "physical";
+type ViewMode = "online" | "physical" | "subscriptions";
 
 const extractYear = (title: string): string => {
   const match = title.match(/(\d{4})/);
@@ -27,7 +28,7 @@ const ShopContent = () => {
   const { hasAccessToMagazines, user, session } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const initialMode = searchParams.get("mode") === "physical" ? "physical" : "online";
+  const initialMode = searchParams.get("mode") === "physical" ? "physical" : searchParams.get("mode") === "subscriptions" ? "subscriptions" : "online";
   const [viewMode, setViewMode] = useState<ViewMode>(initialMode);
   const [selectedYear, setSelectedYear] = useState<string>("all");
   const [purchasedIds, setPurchasedIds] = useState<string[]>([]);
@@ -46,13 +47,13 @@ const ShopContent = () => {
     fetchPurchased();
   }, [session]);
 
+  // Fetch ALL issues (not just archived) so current issue appears too
   const { data: issues, isLoading } = useQuery({
-    queryKey: ["archived-issues"],
+    queryKey: ["all-shop-issues"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("digital_issues")
         .select("*")
-        .eq("is_archived", true)
         .order("issue_number", { ascending: false });
       if (error) throw error;
       return data;
@@ -74,6 +75,12 @@ const ShopContent = () => {
     if (selectedYear !== "all") {
       filtered = filtered.filter((issue) => extractYear(issue.title) === selectedYear);
     }
+    // Sort: current issue first, then by issue_number descending
+    filtered = [...filtered].sort((a, b) => {
+      if (a.is_current && !b.is_current) return -1;
+      if (!a.is_current && b.is_current) return 1;
+      return (parseInt(b.issue_number) || 0) - (parseInt(a.issue_number) || 0);
+    });
     return filtered;
   }, [issues, viewMode, selectedYear]);
 
@@ -88,7 +95,6 @@ const ShopContent = () => {
   };
 
   const handleAddDigital = (issue: any) => {
-    // Navigate to preview viewer instead of adding to cart directly
     navigate(`/lire?issue=${issue.id}&mode=preview`);
   };
 
@@ -101,17 +107,17 @@ const ShopContent = () => {
           className="text-center mb-12"
         >
           <span className="inline-block py-1.5 px-4 rounded-full bg-primary/10 text-primary font-bold text-xs tracking-widest uppercase mb-5">
-            Archives
+            Boutique
           </span>
           <h1 className="text-4xl md:text-5xl font-serif font-bold text-foreground mb-4">
-            Retrouvez tous les anciens numéros
+            Retrouvez tous les numéros
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-10">
             Chaque magazine est une mine d'informations pour progresser. Choisissez votre format préféré.
           </p>
 
           {/* Split toggle */}
-          <div className="inline-flex bg-secondary rounded-full p-1.5 gap-1">
+          <div className="inline-flex bg-secondary rounded-full p-1.5 gap-1 flex-wrap justify-center">
             <button
               onClick={() => setViewMode("online")}
               className={`flex items-center gap-2 px-6 py-3 rounded-full text-sm font-bold transition-all duration-300 ${
@@ -121,7 +127,7 @@ const ShopContent = () => {
               }`}
             >
               <BookOpen className="w-4 h-4" />
-              Achat en ligne — dès 3€
+              Achat en ligne
             </button>
             <button
               onClick={() => setViewMode("physical")}
@@ -134,10 +140,21 @@ const ShopContent = () => {
               <Truck className="w-4 h-4" />
               Anciens numéros papier
             </button>
+            <button
+              onClick={() => setViewMode("subscriptions")}
+              className={`flex items-center gap-2 px-6 py-3 rounded-full text-sm font-bold transition-all duration-300 ${
+                viewMode === "subscriptions"
+                  ? "bg-primary text-primary-foreground shadow-lg"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <CreditCard className="w-4 h-4" />
+              Abonnements
+            </button>
            </div>
 
-          {/* Year filter */}
-          {availableYears.length > 1 && (
+          {/* Year filter - only for online and physical */}
+          {viewMode !== "subscriptions" && availableYears.length > 1 && (
             <div className="flex items-center justify-center gap-2 mt-6 flex-wrap">
               <Calendar className="w-4 h-4 text-muted-foreground" />
               <button
@@ -167,7 +184,10 @@ const ShopContent = () => {
           )}
         </motion.div>
 
-        {isLoading ? (
+        {/* Subscriptions tab content */}
+        {viewMode === "subscriptions" ? (
+          <PricingCards />
+        ) : isLoading ? (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {Array.from({ length: 6 }).map((_, i) => (
               <Skeleton key={i} className="h-[420px] rounded-2xl" />
@@ -204,7 +224,7 @@ const ShopContent = () => {
                         alt={issue.title}
                         className="w-auto h-72 object-contain drop-shadow-lg group-hover:scale-105 transition-transform duration-500 rounded-sm"
                       />
-                      <div className="absolute top-3 left-3">
+                      <div className="absolute top-3 left-3 flex flex-col gap-1">
                         <Badge variant="secondary" className="bg-white/90 backdrop-blur-sm text-foreground text-xs font-bold shadow-sm">
                           {viewMode === "online" ? (
                             <><Monitor className="w-3 h-3 mr-1" /> Version numérique</>
@@ -212,6 +232,11 @@ const ShopContent = () => {
                             <><Package className="w-3 h-3 mr-1" /> Papier</>
                           )}
                         </Badge>
+                        {issue.is_current && (
+                          <Badge className="bg-primary text-primary-foreground text-xs font-bold shadow-sm">
+                            Numéro en cours
+                          </Badge>
+                        )}
                       </div>
                       {viewMode === "physical" && hasPhysical && issue.physical_stock! <= 15 && (
                         <div className="absolute top-3 right-3">

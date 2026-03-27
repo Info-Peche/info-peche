@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -24,12 +24,27 @@ const extractYear = (title: string): string => {
 
 const ShopContent = () => {
   const { addItem } = useCart();
-  const { hasAccessToMagazines } = useAuth();
+  const { hasAccessToMagazines, user, session } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialMode = searchParams.get("mode") === "physical" ? "physical" : "online";
   const [viewMode, setViewMode] = useState<ViewMode>(initialMode);
   const [selectedYear, setSelectedYear] = useState<string>("all");
+  const [purchasedIds, setPurchasedIds] = useState<string[]>([]);
+
+  // Fetch purchased issue IDs for logged-in users
+  useEffect(() => {
+    if (!session) { setPurchasedIds([]); return; }
+    const fetchPurchased = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke("get-my-digital-access", {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+        if (!error && data?.issue_ids) setPurchasedIds(data.issue_ids);
+      } catch {}
+    };
+    fetchPurchased();
+  }, [session]);
 
   const { data: issues, isLoading } = useQuery({
     queryKey: ["archived-issues"],
@@ -214,14 +229,14 @@ const ShopContent = () => {
                       
                       <div className="mt-auto">
                         {viewMode === "online" ? (
-                          hasAccessToMagazines ? (
+                          hasAccessToMagazines || purchasedIds.includes(issue.id) ? (
                             <Button
                               size="sm"
                               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-full"
-                              onClick={() => navigate(`/lire?issue=${issue.id}&mode=preview`)}
+                              onClick={() => navigate(`/lire?issue=${issue.id}`)}
                             >
                               <Eye className="h-4 w-4 mr-2" />
-                              Consulter en ligne
+                              {hasAccessToMagazines ? "Consulter en ligne" : "Lire en ligne"}
                             </Button>
                           ) : (
                             <Button

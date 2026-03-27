@@ -511,6 +511,7 @@ const AdminDashboard = () => {
   };
 
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
+  const [detailOrder, setDetailOrder] = useState<Order | null>(null);
   const [invoiceOrder, setInvoiceOrder] = useState<Order | null>(null);
   const invoiceAmounts = invoiceOrder ? getOrderAmounts(invoiceOrder) : null;
   const invoiceProductItems = invoiceOrder ? getOrderProductItems(invoiceOrder) : [];
@@ -586,8 +587,10 @@ const AdminDashboard = () => {
 
   const renderCellContent = (col: ColumnKey, order: Order) => {
     switch (col) {
+      case "order_number":
+        return <span className="font-mono text-xs">{order.order_number ? `#${order.order_number}` : "—"}</span>;
       case "date":
-        return <span className="whitespace-nowrap">{new Date(order.created_at).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" })}</span>;
+        return <span className="whitespace-nowrap">{new Date(order.created_at).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "2-digit" })}</span>;
       case "client":
         return <span className="font-medium">{order.first_name} {order.last_name}</span>;
       case "email":

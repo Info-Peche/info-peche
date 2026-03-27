@@ -49,24 +49,8 @@ serve(async (req) => {
       locale: "fr",
     });
 
-    // Save digital access record (pending)
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      { auth: { persistSession: false } }
-    );
-
-    const expiresAt = access_type === "pass_15_days"
-      ? new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString()
-      : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(); // 1 year for single issue
-
-    await supabaseAdmin.from("digital_access").insert({
-      email,
-      access_type: access_type || "single_issue",
-      issue_id: issue_id || null,
-      expires_at: expiresAt,
-      stripe_checkout_session_id: session.id,
-    });
+    // Digital access record will be created by verify-digital-payment
+    // AFTER payment is confirmed — not here at checkout creation
 
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

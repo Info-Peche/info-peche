@@ -681,25 +681,34 @@ const AdminDashboard = () => {
     setDragOverCol(null);
   };
 
+  const markAsProcessed = async (orderId: string) => {
+    const ok = await updateArchiveStatus([orderId], true);
+    if (!ok) return;
+    setDetailOrder(null);
+    toast.success("Commande marquée comme traitée et archivée");
+  };
+
   const renderOrderTable = (orderList: Order[]) => (
     <div className="bg-card rounded-xl border border-border overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-max min-w-full text-sm" style={{ tableLayout: "fixed" }}>
           <colgroup>
-            <col style={{ width: 40 }} />
+            <col style={{ width: 32 }} />
+            <col style={{ width: 32 }} />
             {visibleCols.map(c => (
               <col key={c.key} style={{ width: columnWidths[c.key] }} />
             ))}
-            <col style={{ width: 40 }} />
+            <col style={{ width: 32 }} />
           </colgroup>
           <thead>
             <tr className="border-b">
-              <th className="h-12 px-2 text-left align-middle font-medium text-muted-foreground" style={{ width: 40 }}>
+              <th className="h-10 px-1 text-center align-middle" style={{ width: 32 }}>
                 <Checkbox
                   checked={orderList.length > 0 && orderList.every(o => selectedOrders.has(o.id))}
                   onCheckedChange={() => toggleSelectAll(orderList)}
                 />
               </th>
+              <th className="h-10 px-1 text-center align-middle text-muted-foreground" style={{ width: 32 }}></th>
               {visibleCols.map(c => (
                 <th
                   key={c.key}
@@ -708,7 +717,7 @@ const AdminDashboard = () => {
                   onDragOver={(e) => handleDragOver(e, c.key)}
                   onDragEnd={handleDragEnd}
                   onDrop={() => handleDrop(c.key)}
-                  className={`h-12 px-3 text-left align-middle font-medium text-muted-foreground relative select-none cursor-grab active:cursor-grabbing transition-colors ${dragOverCol === c.key ? "bg-primary/10" : ""}`}
+                  className={`h-10 px-2 text-left align-middle font-medium text-muted-foreground text-xs relative select-none cursor-grab active:cursor-grabbing transition-colors ${dragOverCol === c.key ? "bg-primary/10" : ""}`}
                   style={{ width: columnWidths[c.key] }}
                 >
                   <span className="truncate block pr-2 flex items-center gap-1">
@@ -721,7 +730,7 @@ const AdminDashboard = () => {
                   />
                 </th>
               ))}
-              <th className="h-12 px-2 text-center align-middle font-medium text-muted-foreground" style={{ width: 70 }}></th>
+              <th className="h-10 px-1 text-center align-middle" style={{ width: 32 }}></th>
             </tr>
           </thead>
           <tbody>
@@ -732,30 +741,31 @@ const AdminDashboard = () => {
               return (
                 <>
                   <tr key={order.id} className="border-b transition-colors hover:bg-muted/50">
-                    <td className="p-2 align-middle">
+                    <td className="px-1 py-1.5 align-middle text-center">
                       <Checkbox
                         checked={selectedOrders.has(order.id)}
                         onCheckedChange={() => toggleSelectOrder(order.id)}
                       />
                     </td>
+                    <td className="px-1 py-1.5 align-middle text-center">
+                      <button
+                        onClick={() => setDetailOrder(order)}
+                        className="p-1 rounded hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
+                        title="Voir le détail"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                      </button>
+                    </td>
                     {visibleCols.map(c => (
                       <td
                         key={c.key}
-                        className="px-3 py-2 align-middle text-xs overflow-hidden"
+                        className="px-2 py-1.5 align-middle text-xs overflow-hidden"
                         style={{ maxWidth: columnWidths[c.key] }}
                       >
                         {renderCellContent(c.key, order)}
                       </td>
                     ))}
-                    <td className="p-1 align-middle text-center">
-                      <div className="flex items-center gap-0.5 justify-center">
-                        <button
-                          onClick={() => setInvoiceOrder(order)}
-                          className="p-1 rounded hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
-                          title="Voir la facture"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                        </button>
+                    <td className="px-1 py-1.5 align-middle text-center">
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <button className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" title="Supprimer">
@@ -780,12 +790,11 @@ const AdminDashboard = () => {
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>
-                      </div>
                     </td>
                   </tr>
                   {isMultiple && isExpanded && (
                     <tr key={`${order.id}-detail`} className="bg-muted/30 border-b">
-                      <td colSpan={visibleCols.length + 2} className="px-6 py-3">
+                      <td colSpan={visibleCols.length + 3} className="px-6 py-3">
                         <div className="text-xs space-y-1.5">
                           <p className="font-medium text-muted-foreground mb-2">Détail des articles :</p>
                           {productItems.map((item: any, idx: number) => (

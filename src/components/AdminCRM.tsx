@@ -794,39 +794,39 @@ const AdminCRM = () => {
         <div className="text-center py-20 text-muted-foreground">Aucun client trouvé.</div>
       ) : (
         <>
-          <div className="overflow-x-auto border rounded-lg">
-            <Table>
+          <div className="border rounded-lg overflow-hidden">
+            <Table className="table-fixed w-full">
               <TableHeader>
                 <TableRow>
                   {isColVisible("subscriber_number") && (
-                    <TableHead className="cursor-pointer select-none" onClick={() => toggleSort("subscriber_number")}>
-                      <span className="flex items-center">N° abonné <SortIcon col="subscriber_number" /></span>
+                    <TableHead className="cursor-pointer select-none w-[90px]" onClick={() => toggleSort("subscriber_number")}>
+                      <span className="flex items-center text-xs">N° abo <SortIcon col="subscriber_number" /></span>
                     </TableHead>
                   )}
                   {isColVisible("client") && (
-                    <TableHead className="cursor-pointer select-none" onClick={() => toggleSort("last_name")}>
-                      <span className="flex items-center">Client <SortIcon col="last_name" /></span>
+                    <TableHead className="cursor-pointer select-none w-[120px]" onClick={() => toggleSort("last_name")}>
+                      <span className="flex items-center text-xs">Client <SortIcon col="last_name" /></span>
                     </TableHead>
                   )}
-                  {isColVisible("email") && <TableHead>Email</TableHead>}
-                  {isColVisible("phone") && <TableHead>GSM</TableHead>}
-                  {isColVisible("phone2") && <TableHead>Tél. fixe</TableHead>}
-                  {isColVisible("city") && <TableHead>Ville</TableHead>}
-                  {isColVisible("subscription") && <TableHead>Formule</TableHead>}
-                  {isColVisible("end_date") && <TableHead>Fin abo</TableHead>}
-                  {isColVisible("status") && <TableHead>Statut</TableHead>}
+                  {isColVisible("email") && <TableHead className="w-[180px] text-xs">Email</TableHead>}
+                  {isColVisible("phone") && <TableHead className="w-[110px] text-xs">GSM</TableHead>}
+                  {isColVisible("phone2") && <TableHead className="w-[110px] text-xs">Tél. fixe</TableHead>}
+                  {isColVisible("city") && <TableHead className="w-[90px] text-xs">Ville</TableHead>}
+                  {isColVisible("subscription") && <TableHead className="w-[85px] text-xs">Formule</TableHead>}
+                  {isColVisible("end_date") && <TableHead className="w-[80px] text-xs">Fin abo</TableHead>}
+                  {isColVisible("status") && <TableHead className="w-[65px] text-xs">Statut</TableHead>}
                   {isColVisible("total_orders") && (
-                    <TableHead className="cursor-pointer select-none" onClick={() => toggleSort("total_orders")}>
-                      <span className="flex items-center">Commandes <SortIcon col="total_orders" /></span>
+                    <TableHead className="cursor-pointer select-none w-[55px]" onClick={() => toggleSort("total_orders")}>
+                      <span className="flex items-center text-xs">Cmd <SortIcon col="total_orders" /></span>
                     </TableHead>
                   )}
-                  {isColVisible("total_spent") && <TableHead>Total</TableHead>}
+                  {isColVisible("total_spent") && <TableHead className="w-[70px] text-xs">Total</TableHead>}
                   {isColVisible("created_at") && (
-                    <TableHead className="cursor-pointer select-none" onClick={() => toggleSort("created_at")}>
-                      <span className="flex items-center">Depuis <SortIcon col="created_at" /></span>
+                    <TableHead className="cursor-pointer select-none w-[80px]" onClick={() => toggleSort("created_at")}>
+                      <span className="flex items-center text-xs">Depuis <SortIcon col="created_at" /></span>
                     </TableHead>
                   )}
-                  <TableHead>Actions</TableHead>
+                  <TableHead className="w-[70px]"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -835,54 +835,56 @@ const AdminCRM = () => {
                   return (
                     <TableRow key={c.id}>
                       {isColVisible("subscriber_number") && (
-                        <TableCell className="font-mono text-xs text-primary font-medium">
+                        <TableCell className="font-mono text-xs text-primary font-medium truncate px-2 py-1.5">
                           {c.subscriber_number || "—"}
                         </TableCell>
                       )}
                       {isColVisible("client") && (
-                        <TableCell className="font-medium whitespace-nowrap">
+                        <TableCell className="font-medium text-xs truncate px-2 py-1.5">
                           {c.first_name || c.last_name ? `${c.first_name || ""} ${c.last_name || ""}`.trim() : "—"}
                         </TableCell>
                       )}
-                      {isColVisible("email") && <TableCell className="text-sm">{c.email}</TableCell>}
-                      {isColVisible("phone") && <TableCell className="text-sm">{c.phone || "—"}</TableCell>}
-                      {isColVisible("phone2") && <TableCell className="text-sm">{c.phone2 || "—"}</TableCell>}
-                      {isColVisible("city") && <TableCell className="text-sm">{c.city || "—"}</TableCell>}
+                      {isColVisible("email") && (
+                        <TableCell className="text-xs truncate px-2 py-1.5" title={c.email}>{c.email}</TableCell>
+                      )}
+                      {isColVisible("phone") && <TableCell className="text-xs truncate px-2 py-1.5">{c.phone || "—"}</TableCell>}
+                      {isColVisible("phone2") && <TableCell className="text-xs truncate px-2 py-1.5">{c.phone2 || "—"}</TableCell>}
+                      {isColVisible("city") && <TableCell className="text-xs truncate px-2 py-1.5">{c.city || "—"}</TableCell>}
                       {isColVisible("subscription") && (
-                        <TableCell><Badge variant="outline">{subLabel(c.subscription_type)}</Badge></TableCell>
+                        <TableCell className="px-2 py-1.5"><Badge variant="outline" className="text-[10px] px-1.5 py-0">{subLabel(c.subscription_type)}</Badge></TableCell>
                       )}
                       {isColVisible("end_date") && (
-                        <TableCell className="text-sm text-muted-foreground">
+                        <TableCell className="text-xs text-muted-foreground px-2 py-1.5">
                           {end ? new Date(end).toLocaleDateString("fr-FR") : "—"}
                         </TableCell>
                       )}
                       {isColVisible("status") && (
-                        <TableCell>
+                        <TableCell className="px-2 py-1.5">
                           {c.is_active_subscriber ? (
-                            <Badge className="bg-green-100 text-green-800">Actif</Badge>
+                            <Badge className="bg-green-100 text-green-800 text-[10px] px-1.5 py-0">Actif</Badge>
                           ) : (
-                            <Badge variant="secondary">Inactif</Badge>
+                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Inactif</Badge>
                           )}
                         </TableCell>
                       )}
                       {isColVisible("total_orders") && (
-                        <TableCell className="text-center">{c.total_orders}</TableCell>
+                        <TableCell className="text-xs text-center px-2 py-1.5">{c.total_orders}</TableCell>
                       )}
                       {isColVisible("total_spent") && (
-                        <TableCell className="font-medium">{(c.total_spent / 100).toFixed(2)}€</TableCell>
+                        <TableCell className="text-xs font-medium px-2 py-1.5">{(c.total_spent / 100).toFixed(2)}€</TableCell>
                       )}
                       {isColVisible("created_at") && (
-                        <TableCell className="text-sm text-muted-foreground">
+                        <TableCell className="text-xs text-muted-foreground px-2 py-1.5">
                           {new Date(c.created_at).toLocaleDateString("fr-FR")}
                         </TableCell>
                       )}
-                      <TableCell>
-                        <div className="flex gap-1">
-                          <Button variant="ghost" size="icon" onClick={() => setEditClient(c)}>
-                            <Edit className="w-4 h-4" />
+                      <TableCell className="px-2 py-1.5">
+                        <div className="flex gap-0.5">
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditClient(c)}>
+                            <Edit className="w-3.5 h-3.5" />
                           </Button>
-                          <Button variant="ghost" size="icon" onClick={() => handleDelete(c.id)}>
-                            <Trash2 className="w-4 h-4 text-destructive" />
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDelete(c.id)}>
+                            <Trash2 className="w-3.5 h-3.5 text-destructive" />
                           </Button>
                         </div>
                       </TableCell>

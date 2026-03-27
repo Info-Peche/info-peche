@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { CheckCircle, Loader2, AlertCircle, BookOpen, User } from "lucide-react";
+import { CheckCircle, Loader2, AlertCircle, BookOpen, User, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useCart } from "@/context/CartContext";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
@@ -13,6 +14,7 @@ type OrderDetails = {
   customer_email?: string;
   total?: string;
   order_type?: string;
+  digital_issue_ids?: string[];
   line_items?: { name: string; quantity: number; amount: string }[];
   message?: string;
 };
@@ -24,6 +26,7 @@ const OrderConfirmation = () => {
   const [loading, setLoading] = useState(true);
   const [order, setOrder] = useState<OrderDetails | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { clearCart } = useCart();
 
   useEffect(() => {
     if (!sessionId) {
@@ -38,8 +41,11 @@ const OrderConfirmation = () => {
         });
         if (fnError) throw fnError;
         setOrder(data);
+        // Clear cart on successful payment
+        if (data?.success) {
+          clearCart();
+        }
       } catch (err: any) {
-        // Even if verification fails, show a success-like message since we have a session_id
         setError(err.message || "Impossible de vérifier le paiement.");
       } finally {
         setLoading(false);
@@ -49,8 +55,8 @@ const OrderConfirmation = () => {
     verifyPayment();
   }, [sessionId]);
 
-  // If there's a session_id, the user came from Stripe — treat as success even on error
   const showSuccessFallback = !!sessionId && error;
+  const hasDigitalIssues = order?.digital_issue_ids && order.digital_issue_ids.length > 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -63,7 +69,6 @@ const OrderConfirmation = () => {
               <p className="text-muted-foreground">Vérification de votre paiement...</p>
             </div>
           ) : showSuccessFallback ? (
-            // Fallback success when verify-payment fails but we have a session_id
             <>
               <CheckCircle className="w-20 h-20 mx-auto text-primary mb-6" />
               <h1 className="text-3xl font-serif font-bold mb-4 text-foreground">
@@ -119,6 +124,29 @@ const OrderConfirmation = () => {
                   <div className="border-t border-border mt-4 pt-3 flex justify-between">
                     <span className="font-bold">Total</span>
                     <span className="font-bold text-primary">{order.total}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Direct access to purchased digital magazines */}
+              {hasDigitalIssues && (
+                <div className="bg-green-50 border border-green-200 rounded-xl p-6 mb-8">
+                  <h3 className="font-bold text-green-800 mb-2 flex items-center justify-center gap-2">
+                    <Eye className="w-5 h-5" /> Votre magazine est prêt !
+                  </h3>
+                  <p className="text-sm text-green-700 mb-4">
+                    Vous pouvez consulter votre magazine en ligne immédiatement.
+                  </p>
+                  <div className="flex flex-col gap-2">
+                    {order.digital_issue_ids!.map((issueId) => (
+                      <Button
+                        key={issueId}
+                        onClick={() => navigate(`/lire?issue=${issueId}`)}
+                        className="bg-green-600 hover:bg-green-700 text-white rounded-xl px-6 py-4"
+                      >
+                        <Eye className="w-4 h-4 mr-2" /> Lire le magazine maintenant
+                      </Button>
+                    ))}
                   </div>
                 </div>
               )}

@@ -67,7 +67,7 @@ const Header = () => {
     >
       <div className="container mx-auto px-4 flex items-center justify-between">
         <Link to="/" className="flex items-center">
-          <img src={logo} alt="Info Pêche" className="h-12 md:h-14 object-contain" />
+          <img src={logo} alt="Info Pêche" className="h-12 md:h-14 object-contain" width={140} height={56} />
         </Link>
 
         {/* Desktop Navigation */}

@@ -14,7 +14,11 @@ const Hero = () => {
           <img
             src={heroMobile}
             alt="Pêcheur au coup en action au bord de l'eau"
-            className="w-full h-full object-cover object-top scale-105" />
+            className="w-full h-full object-cover object-top scale-105"
+            fetchPriority="high"
+            decoding="async"
+            width={1920}
+            height={1080} />
         </picture>
         <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/30 to-black/60" />
       </div>

@@ -7,7 +7,7 @@ const Footer = () => {
       <div className="container px-4 mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
           <div className="md:col-span-1">
-            <img src="/images/info-peche-logo.png" alt="Info-Pêche" className="h-14 mb-6 brightness-0 invert" />
+            <img src="/images/info-peche-logo.png" alt="Info-Pêche" className="h-14 mb-6 brightness-0 invert" loading="lazy" decoding="async" width={140} height={56} />
             <p className="text-white/70 mb-6 leading-relaxed">
               Le magazine de référence pour tous les passionnés de pêche au coup. Techniques, matériel, compétitions.
             </p>

@@ -60,6 +60,10 @@ const LatestEdition = () => {
                     src={`https://img.youtube.com/vi/${edition.youtube_video_id}/hqdefault.jpg`}
                     alt="Vidéo de présentation du magazine Info-Pêche"
                     className="w-full h-auto rounded-xl aspect-video object-cover"
+                    loading="lazy"
+                    decoding="async"
+                    width={480}
+                    height={360}
                     onError={(e) => {
                       const img = e.currentTarget;
                       if (img.src.includes("hqdefault")) {

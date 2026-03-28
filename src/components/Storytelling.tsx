@@ -26,6 +26,10 @@ const Storytelling = () => {
               src={nicolasImage}
               alt="Nicolas Béroud, rédacteur en chef d'Info Pêche, au bord de l'eau"
               className="w-full max-w-[280px] md:max-w-sm mx-auto rounded-2xl shadow-xl object-cover aspect-[3/4]"
+              loading="lazy"
+              decoding="async"
+              width={384}
+              height={512}
             />
             {/* Floating stat card */}
             <div className="absolute -bottom-4 right-4 md:-bottom-6 md:right-0 lg:-right-6 bg-white rounded-xl shadow-2xl border border-border p-4 md:p-6 max-w-[200px] md:max-w-[240px]">

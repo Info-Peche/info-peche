@@ -302,6 +302,9 @@ const CustomerReviews = () => {
                         objectPosition: `center ${review.avatar_position ?? 50}%`,
                       }}
                       loading="lazy"
+                      decoding="async"
+                      width={300}
+                      height={400}
                     />
                   </div>
                 )}

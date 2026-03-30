@@ -74,19 +74,40 @@ serve(async (req) => {
       logStep("Shipping added", { shippingAmount, country: customer_info.country });
     }
 
-    // Store customer info + items as metadata
-    const metadata = {
+    // Store customer info + items as metadata (Stripe limits each value to 500 chars)
+    // Compress items to only essential fields to stay within limits
+    const compactItems = items.map((i: any) => ({
+      id: i.id,
+      n: i.issue_number || "",
+      p: i.price_id,
+      q: i.quantity || 1,
+      m: i.mode,
+      a: i.unit_amount || 0,
+    }));
+    const itemsStr = JSON.stringify(compactItems);
+    
+    // If still too long, split across multiple metadata keys
+    const itemsChunks: Record<string, string> = {};
+    if (itemsStr.length <= 500) {
+      itemsChunks.items_json = itemsStr;
+    } else {
+      for (let i = 0; i < itemsStr.length; i += 500) {
+        itemsChunks[`items_json_${Math.floor(i / 500)}`] = itemsStr.slice(i, i + 500);
+      }
+    }
+
+    const metadata: Record<string, string> = {
       first_name: customer_info.first_name,
       last_name: customer_info.last_name,
       phone: customer_info.phone || "",
       address_line1: customer_info.address_line1,
-      address_line2: customer_info.address_line2 || "",
+      address_line2: (customer_info.address_line2 || "").slice(0, 500),
       city: customer_info.city,
       postal_code: customer_info.postal_code,
       country: customer_info.country || "FR",
       order_type: mode,
-      items_json: JSON.stringify(items),
-      comment: customer_info.comment || "",
+      ...itemsChunks,
+      comment: (customer_info.comment || "").slice(0, 500),
       billing_different: customer_info.billing_different ? "true" : "false",
       billing_first_name: customer_info.billing_first_name || "",
       billing_last_name: customer_info.billing_last_name || "",

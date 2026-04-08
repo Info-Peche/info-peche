@@ -174,9 +174,34 @@ const AdminEditionManager = () => {
           <label className="text-sm font-medium text-foreground mb-1 block">Numéro</label>
           <Input
             value={data.issue_number}
-            onChange={(e) => setData((d) => ({ ...d, issue_number: e.target.value }))}
+            onChange={(e) => {
+              setData((d) => ({ ...d, issue_number: e.target.value }));
+              checkShopMatch(e.target.value);
+            }}
             placeholder="N°101"
           />
+          {shopMatch !== null && (
+            <div className="mt-1.5">
+              {shopMatch.found ? (
+                <div className="flex items-center gap-1.5 text-xs">
+                  <Store className="w-3.5 h-3.5 text-primary" />
+                  <span className="text-muted-foreground">
+                    Trouvé en boutique
+                    {shopMatch.isCurrent ? (
+                      <Badge variant="default" className="ml-1.5 text-[10px] px-1.5 py-0">En cours</Badge>
+                    ) : (
+                      <span className="text-muted-foreground/70"> — sera marqué « en cours » à la sauvegarde</span>
+                    )}
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 text-xs text-amber-600">
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  <span>Numéro introuvable en boutique — créez-le dans l'onglet Stock</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
         <div>
           <label className="text-sm font-medium text-foreground mb-1 block">Période</label>

@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Loader2, Upload, Save, Youtube, Image, List, CheckCircle } from "lucide-react";
+import { Loader2, Upload, Save, Youtube, Image, List, CheckCircle, AlertTriangle, Store } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface EditionData {
   issue_number: string;
@@ -28,7 +29,26 @@ const AdminEditionManager = () => {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [shopMatch, setShopMatch] = useState<{ found: boolean; isCurrent: boolean } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Extract plain number from "N°101" → "101"
+  const extractPlainNumber = (input: string) => input.replace(/[^0-9]/g, "");
+
+  // Check if issue_number exists in digital_issues
+  const checkShopMatch = async (issueNumber: string) => {
+    const plain = extractPlainNumber(issueNumber);
+    if (!plain) { setShopMatch(null); return; }
+    const { data: issues } = await supabase
+      .from("digital_issues")
+      .select("issue_number, is_current")
+      .or(`issue_number.eq.${plain},issue_number.eq.N°${plain}`);
+    if (issues && issues.length > 0) {
+      setShopMatch({ found: true, isCurrent: issues[0].is_current ?? false });
+    } else {
+      setShopMatch({ found: false, isCurrent: false });
+    }
+  };
 
   useEffect(() => {
     const fetch = async () => {
@@ -39,13 +59,15 @@ const AdminEditionManager = () => {
         .single();
       if (row) {
         const val = row.value as any;
-        setData({
+        const editionData = {
           issue_number: val.issue_number || DEFAULTS.issue_number,
           issue_period: val.issue_period || DEFAULTS.issue_period,
           youtube_video_id: val.youtube_video_id || DEFAULTS.youtube_video_id,
           cover_image: val.cover_image || "",
           highlights: val.highlights?.length >= 4 ? val.highlights : DEFAULTS.highlights,
-        });
+        };
+        setData(editionData);
+        checkShopMatch(editionData.issue_number);
       }
       setLoading(false);
     };
@@ -79,14 +101,39 @@ const AdminEditionManager = () => {
       .from("site_settings")
       .update({ value: data as any, updated_at: new Date().toISOString() } as any)
       .eq("key", "current_edition");
-    setSaving(false);
+    
     if (error) {
+      setSaving(false);
       toast.error("Erreur : " + error.message);
-    } else {
-      setSaved(true);
-      toast.success("Édition du mois mise à jour !");
-      setTimeout(() => setSaved(false), 3000);
+      return;
     }
+
+    // Sync is_current in digital_issues
+    const plain = extractPlainNumber(data.issue_number);
+    if (plain) {
+      // Reset all issues
+      await supabase.from("digital_issues").update({ is_current: false } as any).neq("issue_number", "___");
+      // Set new current
+      const { data: matched } = await supabase
+        .from("digital_issues")
+        .update({ is_current: true } as any)
+        .or(`issue_number.eq.${plain},issue_number.eq.N°${plain}`)
+        .select("id");
+      
+      if (matched && matched.length > 0) {
+        toast.success("Édition du mois et boutique mises à jour !");
+        setShopMatch({ found: true, isCurrent: true });
+      } else {
+        toast.warning("Édition du mois sauvegardée, mais aucun numéro correspondant trouvé dans la boutique. Pensez à le créer dans l'onglet Stock.");
+        setShopMatch({ found: false, isCurrent: false });
+      }
+    } else {
+      toast.success("Édition du mois mise à jour !");
+    }
+
+    setSaving(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 3000);
   };
 
   const updateHighlight = (index: number, value: string) => {
@@ -127,9 +174,34 @@ const AdminEditionManager = () => {
           <label className="text-sm font-medium text-foreground mb-1 block">Numéro</label>
           <Input
             value={data.issue_number}
-            onChange={(e) => setData((d) => ({ ...d, issue_number: e.target.value }))}
+            onChange={(e) => {
+              setData((d) => ({ ...d, issue_number: e.target.value }));
+              checkShopMatch(e.target.value);
+            }}
             placeholder="N°101"
           />
+          {shopMatch !== null && (
+            <div className="mt-1.5">
+              {shopMatch.found ? (
+                <div className="flex items-center gap-1.5 text-xs">
+                  <Store className="w-3.5 h-3.5 text-primary" />
+                  <span className="text-muted-foreground">
+                    Trouvé en boutique
+                    {shopMatch.isCurrent ? (
+                      <Badge variant="default" className="ml-1.5 text-[10px] px-1.5 py-0">En cours</Badge>
+                    ) : (
+                      <span className="text-muted-foreground/70"> — sera marqué « en cours » à la sauvegarde</span>
+                    )}
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 text-xs text-amber-600">
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  <span>Numéro introuvable en boutique — créez-le dans l'onglet Stock</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
         <div>
           <label className="text-sm font-medium text-foreground mb-1 block">Période</label>

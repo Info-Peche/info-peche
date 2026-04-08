@@ -103,6 +103,13 @@ serve(async (req) => {
       .maybeSingle();
 
     if (client && client.is_active_subscriber && client.subscription_type) {
+      // Check expiry date — if expired, deny access
+      if (client.subscription_end_date && new Date(client.subscription_end_date) < new Date()) {
+        return new Response(JSON.stringify({ subscribed: false }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       const productId = SUBSCRIPTION_TYPE_TO_PRODUCT[client.subscription_type];
       if (productId) {
         return new Response(JSON.stringify({

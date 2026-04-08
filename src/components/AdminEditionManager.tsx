@@ -29,7 +29,26 @@ const AdminEditionManager = () => {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [shopMatch, setShopMatch] = useState<{ found: boolean; isCurrent: boolean } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Extract plain number from "N°101" → "101"
+  const extractPlainNumber = (input: string) => input.replace(/[^0-9]/g, "");
+
+  // Check if issue_number exists in digital_issues
+  const checkShopMatch = async (issueNumber: string) => {
+    const plain = extractPlainNumber(issueNumber);
+    if (!plain) { setShopMatch(null); return; }
+    const { data: issues } = await supabase
+      .from("digital_issues")
+      .select("issue_number, is_current")
+      .or(`issue_number.eq.${plain},issue_number.eq.N°${plain}`);
+    if (issues && issues.length > 0) {
+      setShopMatch({ found: true, isCurrent: issues[0].is_current ?? false });
+    } else {
+      setShopMatch({ found: false, isCurrent: false });
+    }
+  };
 
   useEffect(() => {
     const fetch = async () => {
@@ -40,13 +59,15 @@ const AdminEditionManager = () => {
         .single();
       if (row) {
         const val = row.value as any;
-        setData({
+        const editionData = {
           issue_number: val.issue_number || DEFAULTS.issue_number,
           issue_period: val.issue_period || DEFAULTS.issue_period,
           youtube_video_id: val.youtube_video_id || DEFAULTS.youtube_video_id,
           cover_image: val.cover_image || "",
           highlights: val.highlights?.length >= 4 ? val.highlights : DEFAULTS.highlights,
-        });
+        };
+        setData(editionData);
+        checkShopMatch(editionData.issue_number);
       }
       setLoading(false);
     };

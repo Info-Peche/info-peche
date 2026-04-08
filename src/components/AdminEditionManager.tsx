@@ -101,14 +101,39 @@ const AdminEditionManager = () => {
       .from("site_settings")
       .update({ value: data as any, updated_at: new Date().toISOString() } as any)
       .eq("key", "current_edition");
-    setSaving(false);
+    
     if (error) {
+      setSaving(false);
       toast.error("Erreur : " + error.message);
-    } else {
-      setSaved(true);
-      toast.success("Édition du mois mise à jour !");
-      setTimeout(() => setSaved(false), 3000);
+      return;
     }
+
+    // Sync is_current in digital_issues
+    const plain = extractPlainNumber(data.issue_number);
+    if (plain) {
+      // Reset all issues
+      await supabase.from("digital_issues").update({ is_current: false } as any).neq("issue_number", "___");
+      // Set new current
+      const { data: matched } = await supabase
+        .from("digital_issues")
+        .update({ is_current: true } as any)
+        .or(`issue_number.eq.${plain},issue_number.eq.N°${plain}`)
+        .select("id");
+      
+      if (matched && matched.length > 0) {
+        toast.success("Édition du mois et boutique mises à jour !");
+        setShopMatch({ found: true, isCurrent: true });
+      } else {
+        toast.warning("Édition du mois sauvegardée, mais aucun numéro correspondant trouvé dans la boutique. Pensez à le créer dans l'onglet Stock.");
+        setShopMatch({ found: false, isCurrent: false });
+      }
+    } else {
+      toast.success("Édition du mois mise à jour !");
+    }
+
+    setSaving(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 3000);
   };
 
   const updateHighlight = (index: number, value: string) => {

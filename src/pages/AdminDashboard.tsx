@@ -80,7 +80,7 @@ type Order = {
   order_number: number | null;
 };
 
-type ColumnKey = "order_number" | "date" | "client" | "email" | "tel" | "paiement_type" | "formule" | "total" | "paiement_status" | "fin_abo" | "renouvellement" | "client_depuis" | "ville" | "pays" | "commentaire" | "factu_nom" | "factu_adresse" | "factu_ville";
+type ColumnKey = "order_number" | "date" | "client" | "email" | "tel" | "paiement_type" | "formule" | "total" | "paiement_status" | "debut_abo" | "fin_abo" | "renouvellement" | "client_depuis" | "ville" | "pays" | "commentaire" | "factu_nom" | "factu_adresse" | "factu_ville";
 
 const ALL_COLUMNS: { key: ColumnKey; label: string; defaultVisible: boolean; minWidth: number; defaultWidth: number }[] = [
   { key: "date", label: "Date", defaultVisible: true, minWidth: 80, defaultWidth: 90 },
@@ -92,7 +92,8 @@ const ALL_COLUMNS: { key: ColumnKey; label: string; defaultVisible: boolean; min
   { key: "formule", label: "Formule", defaultVisible: true, minWidth: 80, defaultWidth: 130 },
   { key: "total", label: "Net", defaultVisible: true, minWidth: 60, defaultWidth: 70 },
   { key: "paiement_status", label: "Statut", defaultVisible: true, minWidth: 60, defaultWidth: 70 },
-  { key: "fin_abo", label: "Fin abo", defaultVisible: false, minWidth: 80, defaultWidth: 90 },
+  { key: "debut_abo", label: "Début abo", defaultVisible: true, minWidth: 80, defaultWidth: 90 },
+  { key: "fin_abo", label: "Fin abo", defaultVisible: true, minWidth: 80, defaultWidth: 90 },
   { key: "renouvellement", label: "Renouvl.", defaultVisible: false, minWidth: 80, defaultWidth: 100 },
   { key: "client_depuis", label: "Depuis", defaultVisible: false, minWidth: 70, defaultWidth: 80 },
   { key: "ville", label: "Ville", defaultVisible: true, minWidth: 70, defaultWidth: 100 },
@@ -625,6 +626,10 @@ const AdminDashboard = () => {
       }
       case "paiement_status":
         return <Badge variant={statusColor(order.payment_status) as any} className="text-xs">{order.payment_status}</Badge>;
+      case "debut_abo":
+        return order.subscription_start_date
+          ? <span className="whitespace-nowrap">{new Date(order.subscription_start_date).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" })}</span>
+          : "—";
       case "fin_abo":
         return order.subscription_end_date
           ? <span className="whitespace-nowrap">{new Date(order.subscription_end_date).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" })}</span>
@@ -983,10 +988,16 @@ const AdminDashboard = () => {
 
               <TabsContent value="active">
                 {selectedOrders.size > 0 && (
-                  <div className="flex items-center gap-3 mb-4 p-3 bg-muted/50 rounded-lg border border-border">
+                  <div className="flex items-center gap-3 mb-4 p-3 bg-muted/50 rounded-lg border border-border flex-wrap">
                     <span className="text-sm font-medium">{selectedOrders.size} commande{selectedOrders.size > 1 ? "s" : ""} sélectionnée{selectedOrders.size > 1 ? "s" : ""}</span>
                     <Button size="sm" variant="outline" onClick={() => setShowArchiveConfirm(true)}>
                       <Archive className="w-4 h-4 mr-2" /> Archiver la sélection
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => {
+                      const selected = activeOrders.filter(o => selectedOrders.has(o.id));
+                      doExport(selected, "selection-a-traiter");
+                    }}>
+                      <Download className="w-4 h-4 mr-2" /> Exporter la sélection
                     </Button>
                     <Button size="sm" variant="ghost" onClick={() => setSelectedOrders(new Set())}>
                       Désélectionner
@@ -1239,6 +1250,9 @@ const AdminDashboard = () => {
               </div>
 
               <p style={{ fontSize: 13, marginBottom: 8 }}><strong>Email :</strong> {invoiceOrder.email}</p>
+              {invoiceOrder.phone && (
+                <p style={{ fontSize: 13, marginBottom: 8 }}><strong>Tél :</strong> {invoiceOrder.phone}</p>
+              )}
               {invoiceOrder.subscriber_number && (
                 <p style={{ fontSize: 13, marginBottom: 8 }}><strong>N° abonné :</strong> {invoiceOrder.subscriber_number}</p>
               )}

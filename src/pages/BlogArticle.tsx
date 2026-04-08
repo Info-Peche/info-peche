@@ -237,6 +237,7 @@ const BlogArticle = () => {
       setMeta("property", "og:image", article.cover_image);
       setMeta("name", "twitter:image", article.cover_image);
     }
+    setMeta("property", "og:url", `https://www.info-peche.fr/blog/${slug}`);
     setMeta("name", "twitter:card", "summary_large_image");
     setMeta("name", "twitter:title", article.title);
     setMeta("name", "twitter:description", article.excerpt.substring(0, 160));

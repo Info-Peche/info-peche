@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Loader2, Upload, Save, Youtube, Image, List, CheckCircle } from "lucide-react";
+import { Loader2, Upload, Save, Youtube, Image, List, CheckCircle, AlertTriangle, Store } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface EditionData {
   issue_number: string;

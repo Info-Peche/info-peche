@@ -21,6 +21,13 @@ const SUBSCRIPTION_LABELS: Record<string, string> = {
   "price_1T11i1KbRd4yKDMHppfC8rE9": "Abonnement 6 mois",
 };
 
+// Duration in months for each subscription price
+const SUBSCRIPTION_DURATION_MONTHS: Record<string, number> = {
+  "price_1T11hVKbRd4yKDMHHCpMLRc3": 24,  // 2 ans
+  "price_1T11hkKbRd4yKDMH6WlS54AH": 12,  // 1 an
+  "price_1T11i1KbRd4yKDMHppfC8rE9": 6,   // 6 mois
+};
+
 // Enrich line item name with issue number if applicable
 const enrichItemName = (productName: string, items: any[]): string => {
   const lower = productName.toLowerCase();
@@ -162,12 +169,28 @@ serve(async (req) => {
         const sub = await stripe.subscriptions.retrieve(subId);
         logStep("Subscription retrieved", { subId, start: sub.current_period_start, end: sub.current_period_end });
 
-        if (sub.current_period_start && typeof sub.current_period_start === "number") {
-          updatePayload.subscription_start_date = new Date(sub.current_period_start * 1000).toISOString();
-        }
-        if (sub.current_period_end && typeof sub.current_period_end === "number") {
+        // Use Stripe's period start as the subscription start date
+        const startDate = sub.current_period_start && typeof sub.current_period_start === "number"
+          ? new Date(sub.current_period_start * 1000)
+          : new Date();
+        updatePayload.subscription_start_date = startDate.toISOString();
+
+        // Calculate end date based on the actual subscription duration (not Stripe billing cycle)
+        // Stripe's current_period_end only reflects the billing interval, not the full commitment
+        const priceId = sub.items?.data?.[0]?.price?.id || "";
+        const durationMonths = SUBSCRIPTION_DURATION_MONTHS[priceId];
+        
+        if (durationMonths) {
+          const endDate = new Date(startDate);
+          endDate.setMonth(endDate.getMonth() + durationMonths);
+          updatePayload.subscription_end_date = endDate.toISOString();
+          logStep("Subscription end date calculated from duration", { priceId, durationMonths, endDate: endDate.toISOString() });
+        } else if (sub.current_period_end && typeof sub.current_period_end === "number") {
+          // Fallback to Stripe's period end if price not recognized
           updatePayload.subscription_end_date = new Date(sub.current_period_end * 1000).toISOString();
+          logStep("Subscription end date from Stripe period (fallback)", { priceId });
         }
+        
         updatePayload.is_recurring = true;
 
         if (sub.default_payment_method && typeof sub.default_payment_method !== "string") {
@@ -489,6 +512,7 @@ serve(async (req) => {
                   <h3 style="color: #d41227; margin: 0 0 10px; font-family: 'Playfair Display', Georgia, serif;">🎣 Accédez à votre espace abonné</h3>
                   <p style="color: #555; line-height: 1.6; margin: 0 0 15px; font-family: 'Inter', Arial, sans-serif; font-size: 14px;">
                     Votre numéro d'abonné : <strong>${subscriberNumber || "—"}</strong><br>
+                    ${order?.subscription_start_date && order?.subscription_end_date ? `Période d'abonnement : <strong>${new Date(order.subscription_start_date).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })} — ${new Date(order.subscription_end_date).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}</strong><br>` : ""}
                     Votre compte est rattaché à votre adresse email <strong>${customerEmail}</strong>.<br>
                     Pour activer votre espace, rendez-vous sur votre compte et cliquez sur <em>« 🎣 Première connexion abonné ? »</em> pour créer votre mot de passe.
                   </p>

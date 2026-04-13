@@ -1256,6 +1256,9 @@ const AdminDashboard = () => {
               {invoiceOrder.subscriber_number && (
                 <p style={{ fontSize: 13, marginBottom: 8 }}><strong>N° abonné :</strong> {invoiceOrder.subscriber_number}</p>
               )}
+              {invoiceOrder.subscription_start_date && invoiceOrder.subscription_end_date && (
+                <p style={{ fontSize: 13, marginBottom: 8 }}><strong>Période d'abonnement :</strong> {new Date(invoiceOrder.subscription_start_date).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })} — {new Date(invoiceOrder.subscription_end_date).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}</p>
+              )}
 
               <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 16 }}>
                 <thead>

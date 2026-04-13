@@ -512,6 +512,7 @@ serve(async (req) => {
                   <h3 style="color: #d41227; margin: 0 0 10px; font-family: 'Playfair Display', Georgia, serif;">🎣 Accédez à votre espace abonné</h3>
                   <p style="color: #555; line-height: 1.6; margin: 0 0 15px; font-family: 'Inter', Arial, sans-serif; font-size: 14px;">
                     Votre numéro d'abonné : <strong>${subscriberNumber || "—"}</strong><br>
+                    ${order?.subscription_start_date && order?.subscription_end_date ? `Période d'abonnement : <strong>${new Date(order.subscription_start_date).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })} — ${new Date(order.subscription_end_date).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}</strong><br>` : ""}
                     Votre compte est rattaché à votre adresse email <strong>${customerEmail}</strong>.<br>
                     Pour activer votre espace, rendez-vous sur votre compte et cliquez sur <em>« 🎣 Première connexion abonné ? »</em> pour créer votre mot de passe.
                   </p>

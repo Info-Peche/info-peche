@@ -21,6 +21,13 @@ const SUBSCRIPTION_LABELS: Record<string, string> = {
   "price_1T11i1KbRd4yKDMHppfC8rE9": "Abonnement 6 mois",
 };
 
+// Duration in months for each subscription price
+const SUBSCRIPTION_DURATION_MONTHS: Record<string, number> = {
+  "price_1T11hVKbRd4yKDMHHCpMLRc3": 24,  // 2 ans
+  "price_1T11hkKbRd4yKDMH6WlS54AH": 12,  // 1 an
+  "price_1T11i1KbRd4yKDMHppfC8rE9": 6,   // 6 mois
+};
+
 // Enrich line item name with issue number if applicable
 const enrichItemName = (productName: string, items: any[]): string => {
   const lower = productName.toLowerCase();

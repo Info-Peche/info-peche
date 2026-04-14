@@ -1,6 +1,6 @@
 /**
  * Appends Supabase Storage image transformation parameters to resize images on the fly.
- * Only works with Supabase public storage URLs.
+ * Uses the /render/image/public/ endpoint for on-the-fly transforms.
  * @see https://supabase.com/docs/guides/storage/serving/image-transformations
  */
 export function resizeSupabaseImage(
@@ -14,9 +14,16 @@ export function resizeSupabaseImage(
   // Only transform Supabase storage URLs
   if (!url.includes("supabase.co/storage/")) return url;
 
-  const separator = url.includes("?") ? "&" : "?";
+  // Convert /object/public/ URL to /render/image/public/ for transforms
+  const renderUrl = url.replace(
+    "/storage/v1/object/public/",
+    "/storage/v1/render/image/public/"
+  );
+
+  const separator = renderUrl.includes("?") ? "&" : "?";
   const params = [`width=${width}`, `quality=${quality}`];
   if (height) params.push(`height=${height}`);
+  params.push("resize=contain");
 
-  return `${url}${separator}${params.join("&")}`;
+  return `${renderUrl}${separator}${params.join("&")}`;
 }

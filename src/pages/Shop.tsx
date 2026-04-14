@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { resizeSupabaseImage } from "@/lib/imageUtils";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -220,7 +221,7 @@ const ShopContent = () => {
                   <Card className="group overflow-hidden border-border/50 hover:shadow-xl transition-all duration-300 h-full flex flex-col rounded-2xl">
                     <div className="relative overflow-hidden bg-muted/30 flex items-center justify-center p-4">
                       <img
-                        src={issue.cover_image || "https://fokaikipfikcokjwyeka.supabase.co/storage/v1/object/public/magazine-covers/ip100-cover.png"}
+                        src={resizeSupabaseImage(issue.cover_image || "https://fokaikipfikcokjwyeka.supabase.co/storage/v1/object/public/magazine-covers/ip100-cover.png", 400, 568)}
                         alt={issue.title}
                         className="w-auto h-72 object-contain drop-shadow-lg group-hover:scale-105 transition-transform duration-500 rounded-sm"
                       />

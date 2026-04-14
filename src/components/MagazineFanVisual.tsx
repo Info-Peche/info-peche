@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { resizeSupabaseImage } from "@/lib/imageUtils";
 
 interface MagazineFanVisualProps {
   count: 3 | 6 | 12;
@@ -69,7 +70,7 @@ const MagazineFanVisual = ({ count, className = "", showBadge = true }: Magazine
           style={getFanStyle(i, covers.length)}
         >
           <img
-            src={url}
+            src={resizeSupabaseImage(url, config.w * 2, config.h * 2)}
             alt=""
             aria-hidden="true"
             className="w-full h-full object-cover"

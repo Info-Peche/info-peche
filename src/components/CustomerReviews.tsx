@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { resizeSupabaseImage } from "@/lib/imageUtils";
 
 interface Review {
   id: string;
@@ -294,7 +295,7 @@ const CustomerReviews = () => {
                 {review.avatar_url && (
                   <div className="w-full aspect-[3/4] overflow-hidden">
                     <img
-                      src={review.avatar_url}
+                      src={resizeSupabaseImage(review.avatar_url, 400, 533)}
                       alt={review.author_name}
                       className="w-full h-full object-cover"
                       style={{

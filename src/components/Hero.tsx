@@ -14,9 +14,9 @@ const Hero = () => {
           <img
             src={heroMobile}
             alt="Pêcheur au coup en action au bord de l'eau"
-            className="w-full h-full object-cover object-top scale-105"
+            className="w-full h-full object-cover object-top"
             fetchPriority="high"
-            decoding="async"
+            decoding="sync"
             width={1920}
             height={1080} />
         </picture>

@@ -104,7 +104,23 @@ const CheckoutContent = () => {
 
       if (error) throw error;
       if (data?.url) {
-        window.location.href = data.url;
+        const checkoutUrl = data.url as string;
+
+        try {
+          if (window.top && window.top !== window) {
+            window.top.location.href = checkoutUrl;
+            return;
+          }
+        } catch {
+          // Cross-origin iframe access can throw in preview environments.
+        }
+
+        const popup = window.open(checkoutUrl, "_blank", "noopener,noreferrer");
+        if (popup) {
+          return;
+        }
+
+        window.location.href = checkoutUrl;
       } else {
         throw new Error("Pas d'URL de paiement reçue");
       }

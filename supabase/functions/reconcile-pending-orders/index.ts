@@ -19,8 +19,8 @@ const log = (step: string, details?: any) => {
   console.log(`[RECONCILE-PENDING] ${step}${d}`);
 };
 
-const MIN_AGE_MINUTES = 15;
-const MAX_AGE_DAYS = 7;
+const DEFAULT_MIN_AGE_MINUTES = 15;
+const DEFAULT_MAX_AGE_DAYS = 7;
 const EXPIRE_AFTER_HOURS = 24;
 
 serve(async (req) => {

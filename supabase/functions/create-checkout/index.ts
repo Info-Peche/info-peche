@@ -163,7 +163,7 @@ serve(async (req) => {
 
     const sessionParams: any = {
       customer: customerId,
-      customer_email: customerId ? undefined : customer_info.email,
+      // Do NOT set customer_email when `customer` is provided
       line_items: lineItems,
       mode,
       metadata,
@@ -171,7 +171,28 @@ serve(async (req) => {
       success_url: `${origin}/commande-confirmee?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/boutique`,
       locale: "fr",
-      shipping_address_collection: {
+      // Required when reusing an existing customer alongside shipping/billing collection:
+      // tells Stripe to sync any edits the customer makes in Checkout back to the customer object.
+      customer_update: {
+        name: "auto",
+        address: "auto",
+        shipping: "auto",
+      },
+      custom_text: {
+        submit: {
+          message: "🎣 Rejoignez les 20 000+ lecteurs qui nous font confiance.",
+        },
+        after_submit: {
+          message: "L'équipe Info-Pêche vous souhaite une bonne lecture !",
+        },
+      },
+    };
+
+    // Only collect shipping in Stripe for physical orders.
+    // The customer's shipping address is already pre-filled from the form (see customer create/update above),
+    // so the user just confirms — no double entry.
+    if (!isDigitalOnly) {
+      sessionParams.shipping_address_collection = {
         allowed_countries: [
           // France & voisins francophones
           "FR", "BE", "CH", "LU", "MC",
@@ -186,16 +207,8 @@ serve(async (req) => {
           // DOM-TOM
           "RE", "GP", "MQ", "GF", "YT", "PF", "NC",
         ],
-      },
-      custom_text: {
-        submit: {
-          message: "🎣 Rejoignez les 20 000+ lecteurs qui nous font confiance.",
-        },
-        after_submit: {
-          message: "L'équipe Info-Pêche vous souhaite une bonne lecture !",
-        },
-      },
-    };
+      };
+    }
 
     // Add description based on mode
     if (mode === "payment") {

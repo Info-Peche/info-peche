@@ -105,17 +105,18 @@ serve(async (req) => {
           (Date.now() - new Date(order.created_at as string).getTime() >
             EXPIRE_AFTER_HOURS * 60 * 60 * 1000)
         ) {
-          // Mark as expired so admin "À traiter" view stays clean.
+          // Mark as failed (CHECK constraint accepts: pending/paid/failed/refunded)
+          // so admin "À traiter" view stays clean.
           const { error: updateError } = await supabaseAdmin
             .from("orders")
-            .update({ payment_status: "expired", status: "cancelled" })
+            .update({ payment_status: "failed", status: "cancelled" })
             .eq("id", order.id);
           if (updateError) {
             results.errors++;
             log("Expire update error", { orderId: order.id, error: updateError.message });
           } else {
             results.expired++;
-            log("Marked expired", { orderId: order.id });
+            log("Marked failed (expired)", { orderId: order.id });
           }
         } else {
           results.still_pending++;

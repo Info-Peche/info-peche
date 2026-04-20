@@ -1,23 +1,56 @@
 
 
-## Problème actuel
+L'utilisateur n'a pas de compte Google Cloud → on **abandonne l'autocomplétion Google Places**. On garde uniquement l'élargissement des pays Stripe + la liste interne. Le reste du plan (réconciliation des paiements pending) reste inchangé.
 
-L'onglet **Édition du mois** met à jour uniquement la table `site_settings` (clé `current_edition`), qui alimente la page d'accueil (LatestEdition, PricingCards). Mais le champ `is_current` dans la table `digital_issues` (qui contrôle le tri en boutique et le badge "Numéro en cours") n'est **pas synchronisé**. Il faut actuellement le modifier manuellement — ce qui n'est possible nulle part dans l'admin actuel.
+## Plan révisé
 
-## Plan
+### 1. Correction immédiate des 2 commandes pending (Martial & Thierry)
 
-### 1. Synchroniser automatiquement `is_current` lors de la sauvegarde de l'Édition du mois
+Réconcilier en relançant `verify-payment` avec leurs `session_id` Stripe. Résultat :
+- `payment_status` → `paid`, `status` → `confirmed`
+- attribution du numéro de commande + numéro d'abonné
+- dates de début/fin d'abonnement correctes (24 mois Martial, 12 mois Thierry)
+- création/MAJ de la fiche client + envoi des emails de confirmation
 
-Dans `AdminEditionManager.tsx`, après la sauvegarde dans `site_settings`, ajouter une logique qui :
-- Recherche dans `digital_issues` le numéro correspondant au `issue_number` saisi (ex: "N°101" → cherche `issue_number = "101"` ou `"N°101"`)
-- Si trouvé : met `is_current = true` sur ce numéro, et `is_current = false` sur tous les autres (2 requêtes Supabase)
-- Affiche un toast de confirmation indiquant que la boutique a aussi été mise à jour
-- Si pas trouvé : affiche un avertissement "Aucun numéro correspondant trouvé dans la boutique, pensez à le créer dans l'onglet Stock"
+### 2. Filet de sécurité — nouvelle Edge Function `reconcile-pending-orders`
 
-### 2. Ajouter un indicateur visuel dans l'Édition du mois
+Pour éviter que ça se reproduise (clients qui ferment l'onglet après paiement Stripe avant le retour sur `/commande-confirmee`).
 
-Afficher sous le champ "Numéro" un petit badge ou texte confirmant si ce numéro existe dans la boutique et s'il est bien marqué comme numéro en cours, pour donner confiance à l'admin.
+La fonction :
+- récupère les commandes `payment_status = 'pending'` créées il y a entre 15 min et 7 jours
+- pour chacune, interroge Stripe via `stripe_checkout_session_id`
+- si Stripe = `paid` → exécute la même logique que `verify-payment` (finalisation complète, idempotente)
+- si Stripe = `expired` ou >24h sans paiement → marque comme `expired`
 
-### Fichiers modifiés
-- `src/components/AdminEditionManager.tsx` — ajout de la synchro `is_current` dans `handleSave` + indicateur visuel
+Planification **pg_cron toutes les 15 minutes**.
+
+### 3. Refacto léger de `verify-payment`
+
+Extraire la logique de finalisation dans une fonction utilitaire interne, partagée entre `verify-payment` et `reconcile-pending-orders`, pour garantir un comportement strictement identique (mêmes emails, mêmes dates, idempotence).
+
+### 4. Élargissement des pays acceptés (sans autocomplétion Google)
+
+**a) Stripe Checkout** — dans `supabase/functions/create-checkout/index.ts`, étendre `shipping_address_collection.allowed_countries` à une liste large :
+- Europe : FR, BE, CH, LU, MC, DE, IT, ES, PT, NL, GB, IE, AT, DK, SE, FI, NO, PL, CZ, GR, HU, RO, BG, HR, SI, SK, EE, LV, LT, IS, MT, CY
+- Amérique du Nord : US, CA
+- Maghreb / Afrique francophone : MA, TN, DZ, SN, CI, CM, GA, BF, BJ, ML, TG, MG, RE
+- DOM-TOM : GP, MQ, GF, YT, PF, NC
+
+**b) Liste front `SHIPPING_COUNTRIES`** dans `src/lib/shipping.ts` — ajouter les principaux pays (Allemagne, Italie, Espagne, Portugal, Pays-Bas, Royaume-Uni, USA, Canada, Maroc, Tunisie, Algérie, Sénégal, Belgique, Suisse, Luxembourg, Monaco, etc.) avec tarif `international` appliqué automatiquement (sauf FR).
+
+**c) Améliorer le sélecteur de pays dans Checkout** — passer d'un `<select>` à un **Combobox cherchable** (composant shadcn `Command` déjà disponible) pour faciliter la recherche parmi ~50 pays. Le client tape les premières lettres de son pays, sélectionne, et continue.
+
+### Fichiers concernés
+
+- **Nouveau** : `supabase/functions/reconcile-pending-orders/index.ts`
+- **Nouveau** : migration SQL pour le cron (15 min)
+- **Modifié** : `supabase/functions/verify-payment/index.ts` (refacto)
+- **Modifié** : `supabase/functions/create-checkout/index.ts` (allowed_countries élargi)
+- **Modifié** : `src/lib/shipping.ts` (liste de pays étendue)
+- **Modifié** : `src/pages/Checkout.tsx` (Combobox pays cherchable)
+- **Action immédiate** : relancer `verify-payment` pour les 2 sessions pending
+
+### Note importante sur la simplification d'adresse
+
+Sans autocomplétion d'adresse externe, on ne peut pas pré-remplir automatiquement code postal/ville depuis une frappe libre. En revanche, le **Combobox pays cherchable** + l'élargissement Stripe permettront déjà à un Italien, Allemand ou Marocain de finaliser sa commande sans bug. Si plus tard tu crées un compte Google Cloud (gratuit, 200 $/mois de crédit Maps), on pourra ajouter l'autocomplétion par-dessus en 1 PR.
 

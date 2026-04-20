@@ -19,8 +19,8 @@ const log = (step: string, details?: any) => {
   console.log(`[RECONCILE-PENDING] ${step}${d}`);
 };
 
-const MIN_AGE_MINUTES = 15;
-const MAX_AGE_DAYS = 7;
+const DEFAULT_MIN_AGE_MINUTES = 15;
+const DEFAULT_MAX_AGE_DAYS = 7;
 const EXPIRE_AFTER_HOURS = 24;
 
 serve(async (req) => {
@@ -30,6 +30,20 @@ serve(async (req) => {
 
   try {
     log("Starting reconciliation");
+
+    // Optional overrides via body (used by admin tools / one-off backfills)
+    let minAgeMinutes = DEFAULT_MIN_AGE_MINUTES;
+    let maxAgeDays = DEFAULT_MAX_AGE_DAYS;
+    try {
+      const body = await req.json();
+      if (typeof body?.min_age_minutes === "number") minAgeMinutes = body.min_age_minutes;
+      if (typeof body?.max_age_days === "number") maxAgeDays = body.max_age_days;
+      // back-compat: accept max_age_hours
+      if (typeof body?.max_age_hours === "number") maxAgeDays = body.max_age_hours / 24;
+    } catch {
+      // no body, use defaults
+    }
+    log("Window", { minAgeMinutes, maxAgeDays });
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2025-08-27.basil",
@@ -42,8 +56,8 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
-    const minAgeIso = new Date(Date.now() - MIN_AGE_MINUTES * 60 * 1000).toISOString();
-    const maxAgeIso = new Date(Date.now() - MAX_AGE_DAYS * 24 * 60 * 60 * 1000).toISOString();
+    const minAgeIso = new Date(Date.now() - minAgeMinutes * 60 * 1000).toISOString();
+    const maxAgeIso = new Date(Date.now() - maxAgeDays * 24 * 60 * 60 * 1000).toISOString();
 
     const { data: pendingOrders, error: fetchError } = await supabaseAdmin
       .from("orders")

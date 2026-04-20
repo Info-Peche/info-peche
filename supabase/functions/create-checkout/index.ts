@@ -199,6 +199,19 @@ serve(async (req) => {
           "RE", "GP", "MQ", "GF", "YT", "PF", "NC",
         ],
       };
+
+      // When we pass an existing `customer` (subscription mode) and ALSO collect a
+      // shipping address, Stripe REQUIRES `customer_update` so it knows how to
+      // persist the address back on the Customer. Omitting it caused the
+      // hosted Checkout page to hang on a loading skeleton.
+      // For one-shot orders we don't pass `customer`, so this isn't needed.
+      if (customerId) {
+        sessionParams.customer_update = {
+          name: "auto",
+          address: "auto",
+          shipping: "auto",
+        };
+      }
     }
 
     // Add description based on mode + pre-fill shipping address for one-shot orders

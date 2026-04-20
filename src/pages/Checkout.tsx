@@ -19,7 +19,6 @@ import {
   calculateShipping,
   countPhysicalMagazines,
   hasOnlySubscriptions,
-  SHIPPING_COUNTRIES,
 } from "@/lib/shipping";
 
 const CheckoutContent = () => {

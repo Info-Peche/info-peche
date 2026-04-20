@@ -41,12 +41,52 @@ serve(async (req) => {
     const mode = hasSubscription ? "subscription" : "payment";
     logStep("Checkout mode", { mode });
 
-    // Check for existing Stripe customer
+    // Detect if order contains only digital items (no shipping needed)
+    const isDigitalOnly = items.every((i: any) => typeof i.id === "string" && i.id.startsWith("digital-"));
+    logStep("Order type", { isDigitalOnly });
+
+    // Build full name + address payload from the form
+    const fullName = `${customer_info.first_name || ""} ${customer_info.last_name || ""}`.trim();
+    const shippingPayload = {
+      name: fullName,
+      phone: customer_info.phone || undefined,
+      address: {
+        line1: customer_info.address_line1 || "",
+        line2: customer_info.address_line2 || undefined,
+        city: customer_info.city || "",
+        postal_code: customer_info.postal_code || "",
+        country: customer_info.country || "FR",
+      },
+    };
+
+    // Check for existing Stripe customer; create or update so address is pre-filled in Checkout
     const customers = await stripe.customers.list({ email: customer_info.email, limit: 1 });
     let customerId: string | undefined;
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
-      logStep("Existing customer found", { customerId });
+      // Update existing customer with latest address from our form
+      try {
+        await stripe.customers.update(customerId, {
+          name: fullName || undefined,
+          phone: customer_info.phone || undefined,
+          address: isDigitalOnly ? undefined : shippingPayload.address,
+          shipping: isDigitalOnly ? undefined : shippingPayload,
+        });
+        logStep("Existing customer updated with address", { customerId });
+      } catch (e) {
+        logStep("Customer update failed (non-blocking)", { error: (e as Error).message });
+      }
+    } else {
+      // Pre-create customer so Stripe Checkout shows pre-filled address (no double entry)
+      const created = await stripe.customers.create({
+        email: customer_info.email,
+        name: fullName || undefined,
+        phone: customer_info.phone || undefined,
+        address: isDigitalOnly ? undefined : shippingPayload.address,
+        shipping: isDigitalOnly ? undefined : shippingPayload,
+      });
+      customerId = created.id;
+      logStep("New customer created with address", { customerId });
     }
 
     const origin = req.headers.get("origin") || "https://www.info-peche.fr";

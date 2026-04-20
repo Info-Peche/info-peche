@@ -41,12 +41,52 @@ serve(async (req) => {
     const mode = hasSubscription ? "subscription" : "payment";
     logStep("Checkout mode", { mode });
 
-    // Check for existing Stripe customer
+    // Detect if order contains only digital items (no shipping needed)
+    const isDigitalOnly = items.every((i: any) => typeof i.id === "string" && i.id.startsWith("digital-"));
+    logStep("Order type", { isDigitalOnly });
+
+    // Build full name + address payload from the form
+    const fullName = `${customer_info.first_name || ""} ${customer_info.last_name || ""}`.trim();
+    const shippingPayload = {
+      name: fullName,
+      phone: customer_info.phone || undefined,
+      address: {
+        line1: customer_info.address_line1 || "",
+        line2: customer_info.address_line2 || undefined,
+        city: customer_info.city || "",
+        postal_code: customer_info.postal_code || "",
+        country: customer_info.country || "FR",
+      },
+    };
+
+    // Check for existing Stripe customer; create or update so address is pre-filled in Checkout
     const customers = await stripe.customers.list({ email: customer_info.email, limit: 1 });
     let customerId: string | undefined;
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
-      logStep("Existing customer found", { customerId });
+      // Update existing customer with latest address from our form
+      try {
+        await stripe.customers.update(customerId, {
+          name: fullName || undefined,
+          phone: customer_info.phone || undefined,
+          address: isDigitalOnly ? undefined : shippingPayload.address,
+          shipping: isDigitalOnly ? undefined : shippingPayload,
+        });
+        logStep("Existing customer updated with address", { customerId });
+      } catch (e) {
+        logStep("Customer update failed (non-blocking)", { error: (e as Error).message });
+      }
+    } else {
+      // Pre-create customer so Stripe Checkout shows pre-filled address (no double entry)
+      const created = await stripe.customers.create({
+        email: customer_info.email,
+        name: fullName || undefined,
+        phone: customer_info.phone || undefined,
+        address: isDigitalOnly ? undefined : shippingPayload.address,
+        shipping: isDigitalOnly ? undefined : shippingPayload,
+      });
+      customerId = created.id;
+      logStep("New customer created with address", { customerId });
     }
 
     const origin = req.headers.get("origin") || "https://www.info-peche.fr";
@@ -123,7 +163,7 @@ serve(async (req) => {
 
     const sessionParams: any = {
       customer: customerId,
-      customer_email: customerId ? undefined : customer_info.email,
+      // Do NOT set customer_email when `customer` is provided
       line_items: lineItems,
       mode,
       metadata,
@@ -131,7 +171,28 @@ serve(async (req) => {
       success_url: `${origin}/commande-confirmee?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/boutique`,
       locale: "fr",
-      shipping_address_collection: {
+      // Required when reusing an existing customer alongside shipping/billing collection:
+      // tells Stripe to sync any edits the customer makes in Checkout back to the customer object.
+      customer_update: {
+        name: "auto",
+        address: "auto",
+        shipping: "auto",
+      },
+      custom_text: {
+        submit: {
+          message: "🎣 Rejoignez les 20 000+ lecteurs qui nous font confiance.",
+        },
+        after_submit: {
+          message: "L'équipe Info-Pêche vous souhaite une bonne lecture !",
+        },
+      },
+    };
+
+    // Only collect shipping in Stripe for physical orders.
+    // The customer's shipping address is already pre-filled from the form (see customer create/update above),
+    // so the user just confirms — no double entry.
+    if (!isDigitalOnly) {
+      sessionParams.shipping_address_collection = {
         allowed_countries: [
           // France & voisins francophones
           "FR", "BE", "CH", "LU", "MC",
@@ -146,16 +207,8 @@ serve(async (req) => {
           // DOM-TOM
           "RE", "GP", "MQ", "GF", "YT", "PF", "NC",
         ],
-      },
-      custom_text: {
-        submit: {
-          message: "🎣 Rejoignez les 20 000+ lecteurs qui nous font confiance.",
-        },
-        after_submit: {
-          message: "L'équipe Info-Pêche vous souhaite une bonne lecture !",
-        },
-      },
-    };
+      };
+    }
 
     // Add description based on mode
     if (mode === "payment") {

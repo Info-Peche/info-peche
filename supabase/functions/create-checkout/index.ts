@@ -132,7 +132,20 @@ serve(async (req) => {
       cancel_url: `${origin}/boutique`,
       locale: "fr",
       shipping_address_collection: {
-        allowed_countries: ["FR", "BE", "CH", "LU", "MC"],
+        allowed_countries: [
+          // France & voisins francophones
+          "FR", "BE", "CH", "LU", "MC",
+          // Europe
+          "DE", "IT", "ES", "PT", "NL", "GB", "IE", "AT", "DK", "SE", "FI", "NO",
+          "PL", "CZ", "GR", "HU", "RO", "BG", "HR", "SI", "SK", "EE", "LV", "LT",
+          "IS", "MT", "CY",
+          // Amérique du Nord
+          "US", "CA",
+          // Maghreb / Afrique francophone
+          "MA", "TN", "DZ", "SN", "CI", "CM", "GA", "BF", "BJ", "ML", "TG", "MG",
+          // DOM-TOM
+          "RE", "GP", "MQ", "GF", "YT", "PF", "NC",
+        ],
       },
       custom_text: {
         submit: {

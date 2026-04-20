@@ -41,12 +41,50 @@ serve(async (req) => {
     const mode = hasSubscription ? "subscription" : "payment";
     logStep("Checkout mode", { mode });
 
-    // Check for existing Stripe customer
-    const customers = await stripe.customers.list({ email: customer_info.email, limit: 1 });
+    // Detect if order contains only digital items (no shipping needed)
+    const isDigitalOnly = items.every((i: any) => typeof i.id === "string" && i.id.startsWith("digital-"));
+    logStep("Order type", { isDigitalOnly });
+
+    // Build the shipping address object from the form data (used to pre-fill Stripe Checkout
+    // so the customer doesn't have to re-type their address).
+    const fullName = `${customer_info.first_name || ""} ${customer_info.last_name || ""}`.trim();
+    const shippingAddress = !isDigitalOnly && customer_info.address_line1
+      ? {
+          name: fullName,
+          phone: customer_info.phone || undefined,
+          address: {
+            line1: customer_info.address_line1,
+            line2: customer_info.address_line2 || undefined,
+            city: customer_info.city,
+            postal_code: customer_info.postal_code,
+            country: customer_info.country || "FR",
+          },
+        }
+      : null;
+
+    // Customer handling differs by mode:
+    // - subscription mode: we MUST pass a Customer; create it pre-filled with address/shipping
+    //   in a single call (no later customer_update — that combo previously caused the Checkout
+    //   page to hang on a loading skeleton).
+    // - payment mode: skip Customer entirely and use payment_intent_data.shipping to pre-fill
+    //   the shipping address. Simpler and more reliable.
     let customerId: string | undefined;
-    if (customers.data.length > 0) {
-      customerId = customers.data[0].id;
-      logStep("Existing customer found", { customerId });
+    if (hasSubscription) {
+      const existing = await stripe.customers.list({ email: customer_info.email, limit: 1 });
+      if (existing.data.length > 0) {
+        customerId = existing.data[0].id;
+        logStep("Existing customer reused for subscription (no update)", { customerId });
+      } else {
+        const created = await stripe.customers.create({
+          email: customer_info.email,
+          name: fullName || undefined,
+          phone: customer_info.phone || undefined,
+          address: shippingAddress?.address,
+          shipping: shippingAddress || undefined,
+        });
+        customerId = created.id;
+        logStep("New customer created with pre-filled address", { customerId });
+      }
     }
 
     const origin = req.headers.get("origin") || "https://www.info-peche.fr";
@@ -131,9 +169,6 @@ serve(async (req) => {
       success_url: `${origin}/commande-confirmee?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/boutique`,
       locale: "fr",
-      shipping_address_collection: {
-        allowed_countries: ["FR", "BE", "CH", "LU", "MC"],
-      },
       custom_text: {
         submit: {
           message: "🎣 Rejoignez les 20 000+ lecteurs qui nous font confiance.",
@@ -144,9 +179,47 @@ serve(async (req) => {
       },
     };
 
-    // Add description based on mode
+    // Only collect shipping in Stripe for physical orders.
+    // The customer's shipping address is already pre-filled from the form (see customer create/update above),
+    // so the user just confirms — no double entry.
+    if (!isDigitalOnly) {
+      sessionParams.shipping_address_collection = {
+        allowed_countries: [
+          // France & voisins francophones
+          "FR", "BE", "CH", "LU", "MC",
+          // Europe
+          "DE", "IT", "ES", "PT", "NL", "GB", "IE", "AT", "DK", "SE", "FI", "NO",
+          "PL", "CZ", "GR", "HU", "RO", "BG", "HR", "SI", "SK", "EE", "LV", "LT",
+          "IS", "MT", "CY",
+          // Amérique du Nord
+          "US", "CA",
+          // Maghreb / Afrique francophone
+          "MA", "TN", "DZ", "SN", "CI", "CM", "GA", "BF", "BJ", "ML", "TG", "MG",
+          // DOM-TOM
+          "RE", "GP", "MQ", "GF", "YT", "PF", "NC",
+        ],
+      };
+
+      // When we pass an existing `customer` (subscription mode) and ALSO collect a
+      // shipping address, Stripe REQUIRES `customer_update` so it knows how to
+      // persist the address back on the Customer. Omitting it caused the
+      // hosted Checkout page to hang on a loading skeleton.
+      // For one-shot orders we don't pass `customer`, so this isn't needed.
+      if (customerId) {
+        sessionParams.customer_update = {
+          name: "auto",
+          address: "auto",
+          shipping: "auto",
+        };
+      }
+    }
+
+    // Add description based on mode + pre-fill shipping address for one-shot orders
     if (mode === "payment") {
-      sessionParams.payment_intent_data = { description: paymentDescription };
+      sessionParams.payment_intent_data = {
+        description: paymentDescription,
+        ...(shippingAddress ? { shipping: shippingAddress } : {}),
+      };
     } else {
       sessionParams.subscription_data = { description: paymentDescription };
     }

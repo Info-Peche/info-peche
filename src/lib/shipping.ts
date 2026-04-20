@@ -91,13 +91,71 @@ export function calculateShipping(
 }
 
 /**
- * List of countries for the shipping selector
+ * List of countries for the shipping selector.
+ * Order: France first, then most-frequent French-speaking destinations,
+ * then alphabetical for the rest. Used to power a searchable Combobox.
  */
 export const SHIPPING_COUNTRIES = [
+  // France & voisins francophones
   { code: "FR", label: "France" },
   { code: "BE", label: "Belgique" },
   { code: "CH", label: "Suisse" },
   { code: "LU", label: "Luxembourg" },
   { code: "MC", label: "Monaco" },
-  { code: "OTHER", label: "Autre destination" },
+
+  // Europe
+  { code: "DE", label: "Allemagne" },
+  { code: "AT", label: "Autriche" },
+  { code: "BG", label: "Bulgarie" },
+  { code: "CY", label: "Chypre" },
+  { code: "HR", label: "Croatie" },
+  { code: "DK", label: "Danemark" },
+  { code: "ES", label: "Espagne" },
+  { code: "EE", label: "Estonie" },
+  { code: "FI", label: "Finlande" },
+  { code: "GR", label: "Grèce" },
+  { code: "HU", label: "Hongrie" },
+  { code: "IE", label: "Irlande" },
+  { code: "IS", label: "Islande" },
+  { code: "IT", label: "Italie" },
+  { code: "LV", label: "Lettonie" },
+  { code: "LT", label: "Lituanie" },
+  { code: "MT", label: "Malte" },
+  { code: "NO", label: "Norvège" },
+  { code: "NL", label: "Pays-Bas" },
+  { code: "PL", label: "Pologne" },
+  { code: "PT", label: "Portugal" },
+  { code: "CZ", label: "République tchèque" },
+  { code: "RO", label: "Roumanie" },
+  { code: "GB", label: "Royaume-Uni" },
+  { code: "SK", label: "Slovaquie" },
+  { code: "SI", label: "Slovénie" },
+  { code: "SE", label: "Suède" },
+
+  // Amérique du Nord
+  { code: "US", label: "États-Unis" },
+  { code: "CA", label: "Canada" },
+
+  // Maghreb / Afrique francophone
+  { code: "DZ", label: "Algérie" },
+  { code: "BJ", label: "Bénin" },
+  { code: "BF", label: "Burkina Faso" },
+  { code: "CM", label: "Cameroun" },
+  { code: "CI", label: "Côte d'Ivoire" },
+  { code: "GA", label: "Gabon" },
+  { code: "MG", label: "Madagascar" },
+  { code: "ML", label: "Mali" },
+  { code: "MA", label: "Maroc" },
+  { code: "SN", label: "Sénégal" },
+  { code: "TG", label: "Togo" },
+  { code: "TN", label: "Tunisie" },
+
+  // DOM-TOM
+  { code: "GP", label: "Guadeloupe" },
+  { code: "GF", label: "Guyane" },
+  { code: "MQ", label: "Martinique" },
+  { code: "YT", label: "Mayotte" },
+  { code: "NC", label: "Nouvelle-Calédonie" },
+  { code: "PF", label: "Polynésie française" },
+  { code: "RE", label: "La Réunion" },
 ] as const;

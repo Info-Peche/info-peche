@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import CountryCombobox from "@/components/CountryCombobox";
 import { useCart } from "@/context/CartContext";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,7 +19,6 @@ import {
   calculateShipping,
   countPhysicalMagazines,
   hasOnlySubscriptions,
-  SHIPPING_COUNTRIES,
 } from "@/lib/shipping";
 
 const CheckoutContent = () => {
@@ -105,7 +104,23 @@ const CheckoutContent = () => {
 
       if (error) throw error;
       if (data?.url) {
-        window.location.href = data.url;
+        const checkoutUrl = data.url as string;
+
+        try {
+          if (window.top && window.top !== window) {
+            window.top.location.href = checkoutUrl;
+            return;
+          }
+        } catch {
+          // Cross-origin iframe access can throw in preview environments.
+        }
+
+        const popup = window.open(checkoutUrl, "_blank", "noopener,noreferrer");
+        if (popup) {
+          return;
+        }
+
+        window.location.href = checkoutUrl;
       } else {
         throw new Error("Pas d'URL de paiement reçue");
       }
@@ -216,18 +231,11 @@ const CheckoutContent = () => {
                 </div>
                 <div>
                   <Label htmlFor="country">Pays *</Label>
-                  <Select value={form.country} onValueChange={handleCountryChange}>
-                    <SelectTrigger id="country">
-                      <SelectValue placeholder="Choisir un pays" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {SHIPPING_COUNTRIES.map((c) => (
-                        <SelectItem key={c.code} value={c.code}>
-                          {c.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <CountryCombobox
+                    id="country"
+                    value={form.country}
+                    onChange={handleCountryChange}
+                  />
                 </div>
               </div>
 

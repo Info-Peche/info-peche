@@ -1,56 +1,54 @@
 
 
-L'utilisateur n'a pas de compte Google Cloud → on **abandonne l'autocomplétion Google Places**. On garde uniquement l'élargissement des pays Stripe + la liste interne. Le reste du plan (réconciliation des paiements pending) reste inchangé.
+OK, on abandonne l'idée du Payment Element intégré (trop complexe vs bénéfice). On reste sur Stripe Checkout mais on **règle vraiment le problème de la double saisie** sans casser ce qui marche.
 
-## Plan révisé
+## Le vrai problème
 
-### 1. Correction immédiate des 2 commandes pending (Martial & Thierry)
+L'adresse saisie sur `/commande` n'est aujourd'hui PAS transmise à Stripe Checkout. La précédente tentative (pré-remplir via `customer_update` + création de customer côté serveur) a cassé l'affichage Stripe → on a rollback. Du coup on est revenu à zéro côté UX.
 
-Réconcilier en relançant `verify-payment` avec leurs `session_id` Stripe. Résultat :
-- `payment_status` → `paid`, `status` → `confirmed`
-- attribution du numéro de commande + numéro d'abonné
-- dates de début/fin d'abonnement correctes (24 mois Martial, 12 mois Thierry)
-- création/MAJ de la fiche client + envoi des emails de confirmation
+## Solution simple et robuste
 
-### 2. Filet de sécurité — nouvelle Edge Function `reconcile-pending-orders`
+**Pour les achats one-shot (numéros papier, digitaux)** : utiliser le mode `payment` de Stripe Checkout avec `payment_intent_data.shipping` qui accepte directement une adresse pré-remplie SANS passer par un objet Customer. C'est le mécanisme officiel et stable pour ce cas, ça n'avait pas été tenté.
 
-Pour éviter que ça se reproduise (clients qui ferment l'onglet après paiement Stripe avant le retour sur `/commande-confirmee`).
+**Pour les abonnements** : c'est là que ça avait cassé (mode `subscription` + `customer_update` = conflit). Solution : créer le Customer Stripe AVEC `shipping` et `address` pré-remplis dès la création (pas de `customer_update` ensuite), puis passer `customer: customerId` à la session **sans** `customer_update`. L'adresse sera affichée pré-remplie dans Checkout.
 
-La fonction :
-- récupère les commandes `payment_status = 'pending'` créées il y a entre 15 min et 7 jours
-- pour chacune, interroge Stripe via `stripe_checkout_session_id`
-- si Stripe = `paid` → exécute la même logique que `verify-payment` (finalisation complète, idempotente)
-- si Stripe = `expired` ou >24h sans paiement → marque comme `expired`
+### Différence clé avec la tentative précédente
 
-Planification **pg_cron toutes les 15 minutes**.
+Avant : on faisait `customer.update()` ET `customer_update: { shipping: 'auto' }` dans la session → Stripe se retrouvait avec deux sources de vérité concurrentes → page bloquée.
 
-### 3. Refacto léger de `verify-payment`
+Maintenant : on met l'adresse UNE SEULE FOIS (à la création du Customer, ou via `payment_intent_data.shipping`), et on retire complètement `customer_update`.
 
-Extraire la logique de finalisation dans une fonction utilitaire interne, partagée entre `verify-payment` et `reconcile-pending-orders`, pour garantir un comportement strictement identique (mêmes emails, mêmes dates, idempotence).
+## Plan d'implémentation
 
-### 4. Élargissement des pays acceptés (sans autocomplétion Google)
+### Modifier `supabase/functions/create-checkout/index.ts`
 
-**a) Stripe Checkout** — dans `supabase/functions/create-checkout/index.ts`, étendre `shipping_address_collection.allowed_countries` à une liste large :
-- Europe : FR, BE, CH, LU, MC, DE, IT, ES, PT, NL, GB, IE, AT, DK, SE, FI, NO, PL, CZ, GR, HU, RO, BG, HR, SI, SK, EE, LV, LT, IS, MT, CY
-- Amérique du Nord : US, CA
-- Maghreb / Afrique francophone : MA, TN, DZ, SN, CI, CM, GA, BF, BJ, ML, TG, MG, RE
-- DOM-TOM : GP, MQ, GF, YT, PF, NC
+1. **Cas one-shot (mode `payment`)** :
+   - Ajouter `payment_intent_data: { shipping: { name, address: { line1, line2, city, postal_code, country } } }`
+   - Garder `shipping_address_collection` (Stripe affichera l'adresse pré-remplie, modifiable)
+   - **Ne pas** créer/modifier de Customer
 
-**b) Liste front `SHIPPING_COUNTRIES`** dans `src/lib/shipping.ts` — ajouter les principaux pays (Allemagne, Italie, Espagne, Portugal, Pays-Bas, Royaume-Uni, USA, Canada, Maroc, Tunisie, Algérie, Sénégal, Belgique, Suisse, Luxembourg, Monaco, etc.) avec tarif `international` appliqué automatiquement (sauf FR).
+2. **Cas abonnement (mode `subscription`)** :
+   - Créer le Customer avec `name`, `email`, `phone`, `address`, `shipping` en un seul appel `customers.create()`
+   - Ne réutiliser un customer existant que s'il existe déjà ; sinon en créer un complet
+   - Passer `customer: customerId` à la session
+   - **Retirer complètement** `customer_update` (la cause du bug précédent)
+   - Garder `shipping_address_collection` pour permettre la modification
 
-**c) Améliorer le sélecteur de pays dans Checkout** — passer d'un `<select>` à un **Combobox cherchable** (composant shadcn `Command` déjà disponible) pour faciliter la recherche parmi ~50 pays. Le client tape les premières lettres de son pays, sélectionne, et continue.
+3. Garder l'élargissement à 56 pays + tout le reste inchangé.
+
+### Test obligatoire avant de valider
+
+- Achat numéro papier (one-shot) : vérifier que l'adresse est pré-remplie sur Stripe et que la page s'affiche
+- Achat abonnement 1 an : vérifier idem + que la page Stripe ne reste pas bloquée
+- Achat numérique : vérifier qu'aucune adresse n'est demandée (déjà OK)
+
+### Plan B si ça re-bloque
+
+Si malgré tout le mode subscription re-bloque avec un Customer pré-rempli, fallback minimaliste : afficher sur `/commande` un message clair *"Vous confirmerez votre adresse à l'étape suivante (paiement sécurisé Stripe)"* et ne pas tenter de pré-remplir. Au moins le client est prévenu et ne se sent pas trahi.
 
 ### Fichiers concernés
 
-- **Nouveau** : `supabase/functions/reconcile-pending-orders/index.ts`
-- **Nouveau** : migration SQL pour le cron (15 min)
-- **Modifié** : `supabase/functions/verify-payment/index.ts` (refacto)
-- **Modifié** : `supabase/functions/create-checkout/index.ts` (allowed_countries élargi)
-- **Modifié** : `src/lib/shipping.ts` (liste de pays étendue)
-- **Modifié** : `src/pages/Checkout.tsx` (Combobox pays cherchable)
-- **Action immédiate** : relancer `verify-payment` pour les 2 sessions pending
+- **Modifié** : `supabase/functions/create-checkout/index.ts` uniquement
 
-### Note importante sur la simplification d'adresse
-
-Sans autocomplétion d'adresse externe, on ne peut pas pré-remplir automatiquement code postal/ville depuis une frappe libre. En revanche, le **Combobox pays cherchable** + l'élargissement Stripe permettront déjà à un Italien, Allemand ou Marocain de finaliser sa commande sans bug. Si plus tard tu crées un compte Google Cloud (gratuit, 200 $/mois de crédit Maps), on pourra ajouter l'autocomplétion par-dessus en 1 PR.
+Pas de migration DB, pas de nouveau composant, pas de refacto frontend. C'est une modif chirurgicale dans une seule Edge Function.
 

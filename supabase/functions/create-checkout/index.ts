@@ -129,7 +129,7 @@ serve(async (req) => {
 
     const sessionParams: any = {
       customer: customerId,
-      // Do NOT set customer_email when `customer` is provided
+      customer_email: customerId ? undefined : customer_info.email,
       line_items: lineItems,
       mode,
       metadata,
@@ -137,13 +137,6 @@ serve(async (req) => {
       success_url: `${origin}/commande-confirmee?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/boutique`,
       locale: "fr",
-      // Required when reusing an existing customer alongside shipping/billing collection:
-      // tells Stripe to sync any edits the customer makes in Checkout back to the customer object.
-      customer_update: {
-        name: "auto",
-        address: "auto",
-        shipping: "auto",
-      },
       custom_text: {
         submit: {
           message: "🎣 Rejoignez les 20 000+ lecteurs qui nous font confiance.",

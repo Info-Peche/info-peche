@@ -201,9 +201,12 @@ serve(async (req) => {
       };
     }
 
-    // Add description based on mode
+    // Add description based on mode + pre-fill shipping address for one-shot orders
     if (mode === "payment") {
-      sessionParams.payment_intent_data = { description: paymentDescription };
+      sessionParams.payment_intent_data = {
+        description: paymentDescription,
+        ...(shippingAddress ? { shipping: shippingAddress } : {}),
+      };
     } else {
       sessionParams.subscription_data = { description: paymentDescription };
     }

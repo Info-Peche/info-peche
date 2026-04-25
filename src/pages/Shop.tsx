@@ -86,9 +86,12 @@ const ShopContent = () => {
   }, [issues, viewMode, selectedYear]);
 
   const handleAddPhysical = (issue: any) => {
+    const displayNumber = /^N°/i.test(issue.issue_number)
+      ? issue.issue_number
+      : `N°${issue.issue_number}`;
     addItem({
       id: `physical-${issue.id}`,
-      name: `Info Pêche ${issue.issue_number} (Papier)`,
+      name: `Info Pêche ${displayNumber} (Papier)`,
       price: (issue.physical_price_cents || 500) / 100,
       image: issue.cover_image || undefined,
       description: issue.title,

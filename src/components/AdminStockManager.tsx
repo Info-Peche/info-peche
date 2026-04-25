@@ -60,7 +60,6 @@ const AdminStockManager = () => {
     price_euros: "3.00",
   });
   const [coverFile, setCoverFile] = useState<File | null>(null);
-  const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
 
   const fetchIssues = async () => {
@@ -89,7 +88,6 @@ const AdminStockManager = () => {
       price_euros: "3.00",
     });
     setCoverFile(null);
-    setPdfFile(null);
     setCoverPreview(null);
     setCreateOpen(true);
   };
@@ -153,20 +151,6 @@ const AdminStockManager = () => {
         cover_image = urlData.publicUrl;
       }
 
-      // Upload PDF (optional)
-      let pdf_url: string | null = null;
-      if (pdfFile) {
-        if (pdfFile.size > 50 * 1024 * 1024) {
-          throw new Error("PDF trop volumineux (max 50 Mo)");
-        }
-        const path = `IP${num}.pdf`;
-        const { error: pdfErr } = await supabase.storage
-          .from("magazine-pdfs")
-          .upload(path, pdfFile, { contentType: "application/pdf", upsert: true });
-        if (pdfErr) throw new Error("Upload PDF : " + pdfErr.message);
-        pdf_url = path; // stored as relative path; signed URLs are generated on demand
-      }
-
       const title = `Info Pêche n°${num} - ${period}`;
       const { data: inserted, error: insErr } = await supabase
         .from("digital_issues")
@@ -174,7 +158,6 @@ const AdminStockManager = () => {
           issue_number: num,
           title,
           cover_image,
-          pdf_url,
           physical_stock,
           physical_price_cents,
           price_cents,
@@ -587,56 +570,34 @@ const AdminStockManager = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              {/* Cover */}
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1.5">
-                  <ImageIcon className="w-3.5 h-3.5" /> Couverture (JPG/PNG)
-                </label>
-                <label className="block cursor-pointer">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => handleCoverPick(e.target.files?.[0] || null)}
-                  />
-                  <div className="border border-dashed border-border rounded-lg p-3 hover:border-primary transition-colors flex items-center gap-3">
-                    {coverPreview ? (
-                      <img src={coverPreview} alt="Aperçu" className="w-12 h-16 object-cover rounded shrink-0" />
-                    ) : (
-                      <div className="w-12 h-16 bg-muted rounded flex items-center justify-center shrink-0">
-                        <Upload className="w-4 h-4 text-muted-foreground" />
-                      </div>
-                    )}
-                    <span className="text-xs text-muted-foreground truncate">
-                      {coverFile ? coverFile.name : "Choisir un fichier"}
-                    </span>
-                  </div>
-                </label>
-              </div>
-
-              {/* PDF */}
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1.5">
-                  <FileText className="w-3.5 h-3.5" /> PDF du magazine
-                </label>
-                <label className="block cursor-pointer">
-                  <input
-                    type="file"
-                    accept="application/pdf"
-                    className="hidden"
-                    onChange={(e) => setPdfFile(e.target.files?.[0] || null)}
-                  />
-                  <div className="border border-dashed border-border rounded-lg p-3 hover:border-primary transition-colors flex items-center gap-3 h-[88px]">
+            {/* Cover */}
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1.5">
+                <ImageIcon className="w-3.5 h-3.5" /> Couverture (JPG/PNG)
+              </label>
+              <label className="block cursor-pointer">
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => handleCoverPick(e.target.files?.[0] || null)}
+                />
+                <div className="border border-dashed border-border rounded-lg p-3 hover:border-primary transition-colors flex items-center gap-3">
+                  {coverPreview ? (
+                    <img src={coverPreview} alt="Aperçu" className="w-12 h-16 object-cover rounded shrink-0" />
+                  ) : (
                     <div className="w-12 h-16 bg-muted rounded flex items-center justify-center shrink-0">
-                      <FileText className="w-4 h-4 text-muted-foreground" />
+                      <Upload className="w-4 h-4 text-muted-foreground" />
                     </div>
-                    <span className="text-xs text-muted-foreground truncate">
-                      {pdfFile ? pdfFile.name : "Choisir un PDF (max 50 Mo)"}
-                    </span>
-                  </div>
-                </label>
-              </div>
+                  )}
+                  <span className="text-xs text-muted-foreground truncate">
+                    {coverFile ? coverFile.name : "Choisir un fichier"}
+                  </span>
+                </div>
+              </label>
+              <p className="text-xs text-muted-foreground mt-1.5">
+                Le PDF du magazine s'upload depuis l'onglet « Édition du mois ».
+              </p>
             </div>
           </div>
 

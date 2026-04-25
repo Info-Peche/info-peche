@@ -46,7 +46,7 @@ const MagazineViewerContent = () => {
   const [verified, setVerified] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
-  const [previewPages, setPreviewPages] = useState(4);
+  const [previewPages, setPreviewPages] = useState(6);
   const [issueInfo, setIssueInfo] = useState<{ title: string; issue_number: string; price_cents: number } | null>(null);
   const [subscriberFullAccess, setSubscriberFullAccess] = useState(false);
 
@@ -107,7 +107,7 @@ const MagazineViewerContent = () => {
       }
       if (data?.url) {
         setPdfUrl(data.url);
-        setPreviewPages(data.preview_pages || 4);
+        setPreviewPages(data.preview_pages || 6);
         setIssueInfo({
           title: data.title,
           issue_number: data.issue_number,

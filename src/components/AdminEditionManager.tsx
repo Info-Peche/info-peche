@@ -286,14 +286,26 @@ const AdminEditionManager = () => {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="text-sm font-medium text-foreground mb-1 block">Numéro</label>
-          <Input
-            value={data.issue_number}
-            onChange={(e) => {
-              setData((d) => ({ ...d, issue_number: e.target.value }));
-              checkShopMatch(e.target.value);
-            }}
-            placeholder="N°101"
-          />
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none select-none">
+              N°
+            </span>
+            <Input
+              value={extractPlainNumber(data.issue_number)}
+              onChange={(e) => {
+                const digits = e.target.value.replace(/[^0-9]/g, "");
+                const stored = digits ? `N°${digits}` : "";
+                setData((d) => ({ ...d, issue_number: stored }));
+                checkShopMatch(stored);
+              }}
+              inputMode="numeric"
+              placeholder="101"
+              className="pl-9"
+            />
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            Saisissez uniquement le numéro. Le préfixe « N° » sera ajouté automatiquement sur le site.
+          </p>
           {shopMatch !== null && (
             <div className="mt-1.5">
               {shopMatch.found ? (

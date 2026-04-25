@@ -80,10 +80,11 @@ const AdminEditionManager = () => {
   const checkShopMatch = async (issueNumber: string) => {
     const plain = extractPlainNumber(issueNumber);
     if (!plain) { setShopMatch(null); return; }
+    const variants = [plain, `N°${plain}`, `n°${plain}`];
     const { data: issues } = await supabase
       .from("digital_issues")
       .select("issue_number, is_current, pdf_url")
-      .or(`issue_number.eq.${plain},issue_number.eq.N°${plain}`);
+      .in("issue_number", variants);
     if (issues && issues.length > 0) {
       setShopMatch({ found: true, isCurrent: issues[0].is_current ?? false });
       setCurrentPdfName(issues[0].pdf_url ?? null);

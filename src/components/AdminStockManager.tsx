@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Save, PackageOpen, AlertTriangle, Check, Search, ArrowUpDown, ArrowUp, ArrowDown, Monitor, BookOpen, Plus, Upload, FileText, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
+import { compressImageFile } from "@/lib/imageUtils";
 import {
   Dialog,
   DialogContent,
@@ -93,10 +94,33 @@ const AdminStockManager = () => {
     setCreateOpen(true);
   };
 
-  const handleCoverPick = (file: File | null) => {
-    setCoverFile(file);
+  const handleCoverPick = async (file: File | null) => {
+    if (!file) {
+      if (coverPreview) URL.revokeObjectURL(coverPreview);
+      setCoverFile(null);
+      setCoverPreview(null);
+      return;
+    }
+    let finalFile = file;
+    if (file.size > 5 * 1024 * 1024) {
+      const t = toast.loading("Compression de la couverture…");
+      try {
+        finalFile = await compressImageFile(file, 5 * 1024 * 1024);
+        if (finalFile.size > 5 * 1024 * 1024) {
+          toast.error("Impossible de compresser sous 5 Mo, choisissez une image plus petite", { id: t });
+          return;
+        }
+        const before = (file.size / 1024 / 1024).toFixed(1);
+        const after = (finalFile.size / 1024 / 1024).toFixed(1);
+        toast.success(`Couverture compressée (${before} Mo → ${after} Mo)`, { id: t });
+      } catch (e: any) {
+        toast.error(e.message || "Erreur de compression", { id: t });
+        return;
+      }
+    }
+    setCoverFile(finalFile);
     if (coverPreview) URL.revokeObjectURL(coverPreview);
-    setCoverPreview(file ? URL.createObjectURL(file) : null);
+    setCoverPreview(URL.createObjectURL(finalFile));
   };
 
   const createIssue = async () => {
@@ -121,9 +145,6 @@ const AdminStockManager = () => {
       // Upload cover (optional but recommended)
       let cover_image: string | null = null;
       if (coverFile) {
-        if (coverFile.size > 5 * 1024 * 1024) {
-          throw new Error("Couverture trop volumineuse (max 5 Mo)");
-        }
         const ext = coverFile.name.split(".").pop() || "jpg";
         const path = `cover-n${num}-${Date.now()}.${ext}`;
         const { error: upErr } = await supabase.storage.from("magazine-covers").upload(path, coverFile);

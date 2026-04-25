@@ -166,7 +166,7 @@ const AdminEditionManager = () => {
       // Set new current
       const { data: matched } = await supabase
         .from("digital_issues")
-        .update({ is_current: true } as any)
+        .update({ is_current: true, is_archived: false } as any)
         .or(`issue_number.eq.${plain},issue_number.eq.N°${plain}`)
         .select("id");
       

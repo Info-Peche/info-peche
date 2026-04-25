@@ -90,7 +90,21 @@ const MagazineViewerContent = () => {
       const { data, error } = await supabase.functions.invoke("get-preview-url", {
         body: { issue_id: issueId },
       });
-      if (error) throw error;
+      if (error) {
+        // Distinguish "PDF not uploaded yet" from a real error
+        const ctx: any = (error as any).context;
+        let body: any = null;
+        try { body = await ctx?.json?.(); } catch {}
+        if (body?.error === "pdf_not_available") {
+          toast({
+            title: "Numéro pas encore disponible en ligne",
+            description: "Le PDF de ce numéro sera mis en ligne très prochainement.",
+          });
+          setVerifying(false);
+          return;
+        }
+        throw error;
+      }
       if (data?.url) {
         setPdfUrl(data.url);
         setPreviewPages(data.preview_pages || 4);

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Loader2, Upload, Save, Youtube, Image, List, CheckCircle, AlertTriangle, Store } from "lucide-react";
+import { Loader2, Upload, Save, Youtube, Image, List, CheckCircle, AlertTriangle, Store, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface EditionData {
@@ -31,22 +31,69 @@ const AdminEditionManager = () => {
   const [saved, setSaved] = useState(false);
   const [shopMatch, setShopMatch] = useState<{ found: boolean; isCurrent: boolean } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const pdfRef = useRef<HTMLInputElement>(null);
+  const [pdfUploading, setPdfUploading] = useState(false);
+  const [currentPdfName, setCurrentPdfName] = useState<string | null>(null);
 
   // Extract plain number from "N°101" → "101"
   const extractPlainNumber = (input: string) => input.replace(/[^0-9]/g, "");
+
+  // Build slug from period like "mai-juin 2026" or "Mai - Juin 2026" → "mai-juin_2026"
+  const buildPeriodSlug = (period: string) => {
+    if (!period) return "";
+    const normalized = period
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "") // remove accents
+      .trim();
+    const yearMatch = normalized.match(/(19|20)\d{2}/);
+    const year = yearMatch ? yearMatch[0] : "";
+    const withoutYear = normalized.replace(/(19|20)\d{2}/, "").trim();
+    // Extract month tokens (handles "mai-juin", "mai - juin", "mai juin", "mai/juin")
+    const months = withoutYear
+      .split(/[\s\-_/,]+/)
+      .map((m) => m.trim())
+      .filter(Boolean);
+    const monthsPart = months.join("-");
+    if (!monthsPart || !year) return "";
+    return `${monthsPart}_${year}`;
+  };
+
+  const buildPdfFileName = (issueNumber: string, period: string) => {
+    const plain = extractPlainNumber(issueNumber);
+    const slug = buildPeriodSlug(period);
+    if (!plain) return "";
+    // Store all magazine PDFs under the "Magazine/" folder of the bucket
+    return slug
+      ? `Magazine/IP${plain}_${slug}.pdf`
+      : `Magazine/IP${plain}.pdf`;
+  };
+
+  const buildCoverFileName = (issueNumber: string, period: string, ext: string) => {
+    const plain = extractPlainNumber(issueNumber);
+    const slug = buildPeriodSlug(period);
+    const safeExt = (ext || "jpg").toLowerCase();
+    if (!plain) return `cover-${Date.now()}.${safeExt}`;
+    return slug
+      ? `IP${plain}_${slug}_couverture.${safeExt}`
+      : `IP${plain}_couverture.${safeExt}`;
+  };
 
   // Check if issue_number exists in digital_issues
   const checkShopMatch = async (issueNumber: string) => {
     const plain = extractPlainNumber(issueNumber);
     if (!plain) { setShopMatch(null); return; }
+    const variants = [plain, `N°${plain}`, `n°${plain}`];
     const { data: issues } = await supabase
       .from("digital_issues")
-      .select("issue_number, is_current")
-      .or(`issue_number.eq.${plain},issue_number.eq.N°${plain}`);
+      .select("issue_number, is_current, pdf_url")
+      .in("issue_number", variants);
     if (issues && issues.length > 0) {
       setShopMatch({ found: true, isCurrent: issues[0].is_current ?? false });
+      setCurrentPdfName(issues[0].pdf_url ?? null);
     } else {
       setShopMatch({ found: false, isCurrent: false });
+      setCurrentPdfName(null);
     }
   };
 
@@ -80,10 +127,22 @@ const AdminEditionManager = () => {
       toast.error("Image trop volumineuse (max 5 Mo)");
       return;
     }
+    const plain = extractPlainNumber(data.issue_number);
+    if (!plain) {
+      toast.error("Renseignez d'abord le numéro de l'édition");
+      return;
+    }
+    const slug = buildPeriodSlug(data.issue_period);
+    if (!slug) {
+      toast.error('Renseignez la période au format "mai-juin 2026"');
+      return;
+    }
     setUploading(true);
     const ext = file.name.split(".").pop();
-    const path = `cover-${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from("magazine-covers").upload(path, file);
+    const path = buildCoverFileName(data.issue_number, data.issue_period, ext || "jpg");
+    const { error } = await supabase.storage
+      .from("magazine-covers")
+      .upload(path, file, { upsert: true, contentType: file.type });
     if (error) {
       toast.error("Erreur d'upload : " + error.message);
       setUploading(false);
@@ -93,6 +152,56 @@ const AdminEditionManager = () => {
     setData((d) => ({ ...d, cover_image: urlData.publicUrl }));
     setUploading(false);
     toast.success("Couverture uploadée !");
+  };
+
+  const handlePdfUpload = async (file: File) => {
+    if (!file) return;
+    const plain = extractPlainNumber(data.issue_number);
+    if (!plain) {
+      toast.error("Renseignez d'abord le numéro de l'édition");
+      return;
+    }
+    const slug = buildPeriodSlug(data.issue_period);
+    if (!slug) {
+      toast.error('Renseignez la période au format "mai-juin 2026" avant d\'uploader le PDF');
+      return;
+    }
+    if (!shopMatch?.found) {
+      toast.error(`Le numéro N°${plain} n'existe pas en boutique. Créez-le d'abord dans l'onglet Stock.`);
+      return;
+    }
+    if (file.type !== "application/pdf") {
+      toast.error("Le fichier doit être un PDF");
+      return;
+    }
+    if (file.size > 50 * 1024 * 1024) {
+      toast.error("PDF trop volumineux (max 50 Mo)");
+      return;
+    }
+
+    setPdfUploading(true);
+    const t = toast.loading("Upload du PDF en cours…");
+    try {
+      const path = buildPdfFileName(data.issue_number, data.issue_period);
+      const { error: upErr } = await supabase.storage
+        .from("magazine-pdfs")
+        .upload(path, file, { contentType: "application/pdf", upsert: true });
+      if (upErr) throw new Error(upErr.message);
+
+      // Update pdf_url on the matching issue (try plain and N° variants)
+      const { error: updErr } = await supabase
+        .from("digital_issues")
+        .update({ pdf_url: path } as any)
+        .in("issue_number", [plain, `N°${plain}`, `n°${plain}`]);
+      if (updErr) throw new Error(updErr.message);
+
+      setCurrentPdfName(path);
+      toast.success(`PDF du N°${plain} mis en ligne !`, { id: t });
+    } catch (e: any) {
+      toast.error("Erreur : " + (e.message || "upload échoué"), { id: t });
+    } finally {
+      setPdfUploading(false);
+    }
   };
 
   const handleSave = async () => {
@@ -111,16 +220,24 @@ const AdminEditionManager = () => {
     // Sync is_current in digital_issues
     const plain = extractPlainNumber(data.issue_number);
     if (plain) {
-      // Reset all issues
-      await supabase.from("digital_issues").update({ is_current: false } as any).neq("issue_number", "___");
-      // Set new current
-      const { data: matched } = await supabase
+      const variants = [plain, `N°${plain}`, `n°${plain}`];
+      // Reset all OTHER issues (don't touch the one we're about to mark current)
+      const { error: resetErr } = await supabase
         .from("digital_issues")
-        .update({ is_current: true } as any)
-        .or(`issue_number.eq.${plain},issue_number.eq.N°${plain}`)
+        .update({ is_current: false } as any)
+        .not("issue_number", "in", `(${variants.map((v) => `"${v}"`).join(",")})`);
+      if (resetErr) console.error("reset is_current error", resetErr);
+
+      // Set new current
+      const { data: matched, error: updErr } = await supabase
+        .from("digital_issues")
+        .update({ is_current: true, is_archived: false } as any)
+        .in("issue_number", variants)
         .select("id");
-      
-      if (matched && matched.length > 0) {
+
+      if (updErr) {
+        toast.error("Erreur de mise à jour : " + updErr.message);
+      } else if (matched && matched.length > 0) {
         toast.success("Édition du mois et boutique mises à jour !");
         setShopMatch({ found: true, isCurrent: true });
       } else {
@@ -172,14 +289,26 @@ const AdminEditionManager = () => {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="text-sm font-medium text-foreground mb-1 block">Numéro</label>
-          <Input
-            value={data.issue_number}
-            onChange={(e) => {
-              setData((d) => ({ ...d, issue_number: e.target.value }));
-              checkShopMatch(e.target.value);
-            }}
-            placeholder="N°101"
-          />
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none select-none">
+              N°
+            </span>
+            <Input
+              value={extractPlainNumber(data.issue_number)}
+              onChange={(e) => {
+                const digits = e.target.value.replace(/[^0-9]/g, "");
+                const stored = digits ? `N°${digits}` : "";
+                setData((d) => ({ ...d, issue_number: stored }));
+                checkShopMatch(stored);
+              }}
+              inputMode="numeric"
+              placeholder="101"
+              className="pl-9"
+            />
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            Saisissez uniquement le numéro. Le préfixe « N° » sera ajouté automatiquement sur le site.
+          </p>
           {shopMatch !== null && (
             <div className="mt-1.5">
               {shopMatch.found ? (
@@ -295,6 +424,44 @@ const AdminEditionManager = () => {
               Format recommandé : 800×1100 px, max 5 Mo. Cette image sera utilisée dans les offres d'abonnement et le panier.
             </p>
           </div>
+        </div>
+      </div>
+
+      {/* PDF du magazine */}
+      <div>
+        <label className="text-sm font-medium text-foreground mb-1 flex items-center gap-2">
+          <FileText className="w-4 h-4" /> PDF du magazine
+        </label>
+        <div className="space-y-2">
+          <input
+            ref={pdfRef}
+            type="file"
+            accept="application/pdf"
+            className="hidden"
+            onChange={(e) => e.target.files?.[0] && handlePdfUpload(e.target.files[0])}
+          />
+          <div className="flex items-center gap-3 flex-wrap">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => pdfRef.current?.click()}
+              disabled={pdfUploading || !shopMatch?.found}
+            >
+              {pdfUploading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
+              {pdfUploading ? "Upload en cours…" : currentPdfName ? "Remplacer le PDF" : "Charger le PDF"}
+            </Button>
+            {currentPdfName && (
+              <span className="text-xs text-muted-foreground inline-flex items-center gap-1.5">
+                <CheckCircle className="w-3.5 h-3.5 text-green-600" />
+                {currentPdfName}
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {shopMatch?.found
+              ? <>Le PDF sera enregistré sous <code className="bg-muted px-1 rounded">{buildPdfFileName(data.issue_number, data.issue_period) || `IP${extractPlainNumber(data.issue_number)}.pdf`}</code> dans le stockage privé et associé au numéro en boutique. Période attendue : <code className="bg-muted px-1 rounded">mai-juin 2026</code>. Max 50 Mo.</>
+              : "Renseignez un numéro existant en boutique pour activer l'upload (sinon créez-le d'abord dans l'onglet Stock)."}
+          </p>
         </div>
       </div>
 

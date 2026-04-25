@@ -3,8 +3,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Save, PackageOpen, AlertTriangle, Check, Search, ArrowUpDown, ArrowUp, ArrowDown, Monitor, BookOpen } from "lucide-react";
+import { Loader2, Save, PackageOpen, AlertTriangle, Check, Search, ArrowUpDown, ArrowUp, ArrowDown, Monitor, BookOpen, Plus, Upload, FileText, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
+import { compressImageFile } from "@/lib/imageUtils";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 type Issue = {
   id: string;
@@ -40,6 +49,19 @@ const AdminStockManager = () => {
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [availFilter, setAvailFilter] = useState<AvailFilter>("all");
 
+  // Create new issue dialog
+  const [createOpen, setCreateOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [newIssue, setNewIssue] = useState({
+    issue_number: "",
+    period: "",
+    physical_stock: "100",
+    physical_price_euros: "6.50",
+    price_euros: "3.00",
+  });
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
+
   const fetchIssues = async () => {
     setLoading(true);
     const { data, error } = await supabase
@@ -51,6 +73,126 @@ const AdminStockManager = () => {
   };
 
   useEffect(() => { fetchIssues(); }, []);
+
+  // Suggest next issue number when opening dialog
+  const openCreateDialog = () => {
+    const maxNum = issues.reduce((max, i) => {
+      const n = parseInt(i.issue_number, 10);
+      return isNaN(n) ? max : Math.max(max, n);
+    }, 0);
+    setNewIssue({
+      issue_number: maxNum > 0 ? String(maxNum + 1) : "",
+      period: "",
+      physical_stock: "100",
+      physical_price_euros: "6.50",
+      price_euros: "3.00",
+    });
+    setCoverFile(null);
+    setCoverPreview(null);
+    setCreateOpen(true);
+  };
+
+  const handleCoverPick = async (file: File | null) => {
+    if (!file) {
+      if (coverPreview) URL.revokeObjectURL(coverPreview);
+      setCoverFile(null);
+      setCoverPreview(null);
+      return;
+    }
+    let finalFile = file;
+    if (file.size > 5 * 1024 * 1024) {
+      const t = toast.loading("Compression de la couverture…");
+      try {
+        finalFile = await compressImageFile(file, 5 * 1024 * 1024);
+        if (finalFile.size > 5 * 1024 * 1024) {
+          toast.error("Impossible de compresser sous 5 Mo, choisissez une image plus petite", { id: t });
+          return;
+        }
+        const before = (file.size / 1024 / 1024).toFixed(1);
+        const after = (finalFile.size / 1024 / 1024).toFixed(1);
+        toast.success(`Couverture compressée (${before} Mo → ${after} Mo)`, { id: t });
+      } catch (e: any) {
+        toast.error(e.message || "Erreur de compression", { id: t });
+        return;
+      }
+    }
+    setCoverFile(finalFile);
+    if (coverPreview) URL.revokeObjectURL(coverPreview);
+    setCoverPreview(URL.createObjectURL(finalFile));
+  };
+
+  const createIssue = async () => {
+    const num = newIssue.issue_number.trim().replace(/[^0-9]/g, "");
+    const period = newIssue.period.trim();
+    if (!num) { toast.error("Numéro requis"); return; }
+    if (!period) { toast.error("Période requise (ex : Mai-Juin 2026)"); return; }
+    if (issues.some(i => i.issue_number === num)) {
+      toast.error(`Le numéro ${num} existe déjà`);
+      return;
+    }
+    const physical_stock = parseInt(newIssue.physical_stock, 10);
+    const physical_price_cents = Math.round(parseFloat(newIssue.physical_price_euros) * 100);
+    const price_cents = Math.round(parseFloat(newIssue.price_euros) * 100);
+    if (isNaN(physical_stock) || isNaN(physical_price_cents) || isNaN(price_cents)) {
+      toast.error("Valeurs numériques invalides");
+      return;
+    }
+
+    setCreating(true);
+    try {
+      // Build period slug for filenames: "Mai-Juin 2026" → "mai-juin_2026"
+      const buildPeriodSlug = (p: string) => {
+        const normalized = p.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+        const yearMatch = normalized.match(/(19|20)\d{2}/);
+        const year = yearMatch ? yearMatch[0] : "";
+        const withoutYear = normalized.replace(/(19|20)\d{2}/, "").trim();
+        const months = withoutYear.split(/[\s\-_/,]+/).map((m) => m.trim()).filter(Boolean).join("-");
+        return months && year ? `${months}_${year}` : "";
+      };
+      const periodSlug = buildPeriodSlug(period);
+
+      // Upload cover (optional but recommended)
+      let cover_image: string | null = null;
+      if (coverFile) {
+        const ext = coverFile.name.split(".").pop() || "jpg";
+        const path = periodSlug
+          ? `IP${num}_${periodSlug}_couverture.${ext}`
+          : `IP${num}_couverture.${ext}`;
+        const { error: upErr } = await supabase.storage
+          .from("magazine-covers")
+          .upload(path, coverFile, { upsert: true, contentType: coverFile.type });
+        if (upErr) throw new Error("Upload couverture : " + upErr.message);
+        const { data: urlData } = supabase.storage.from("magazine-covers").getPublicUrl(path);
+        cover_image = urlData.publicUrl;
+      }
+
+      const title = `Info Pêche n°${num} - ${period}`;
+      const { data: inserted, error: insErr } = await supabase
+        .from("digital_issues")
+        .insert({
+          issue_number: num,
+          title,
+          cover_image,
+          physical_stock,
+          physical_price_cents,
+          price_cents,
+        } as any)
+        .select()
+        .single();
+
+      if (insErr) throw new Error(insErr.message);
+
+      toast.success(`Numéro ${num} créé !`);
+      setCreateOpen(false);
+      if (coverPreview) URL.revokeObjectURL(coverPreview);
+      setCoverPreview(null);
+      await fetchIssues();
+    } catch (e: any) {
+      toast.error(e.message || "Erreur lors de la création");
+    } finally {
+      setCreating(false);
+    }
+  };
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -203,7 +345,12 @@ const AdminStockManager = () => {
           <PackageOpen className="w-5 h-5 text-primary" />
           Gestion des stocks & tarifs
         </h2>
-        <Badge variant="outline">{filteredAndSorted.length} / {issues.length} numéros</Badge>
+        <div className="flex items-center gap-2">
+          <Badge variant="outline">{filteredAndSorted.length} / {issues.length} numéros</Badge>
+          <Button size="sm" onClick={openCreateDialog} className="h-8 gap-1.5">
+            <Plus className="w-4 h-4" /> Nouveau numéro
+          </Button>
+        </div>
       </div>
 
       {/* Search + Filters */}
@@ -369,6 +516,116 @@ const AdminStockManager = () => {
           </table>
         </div>
       </div>
+
+      {/* Create new issue dialog */}
+      <Dialog open={createOpen} onOpenChange={(o) => !creating && setCreateOpen(o)}>
+        <DialogContent className="sm:max-w-[560px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Ajouter un nouveau numéro</DialogTitle>
+            <DialogDescription>
+              Crée un numéro dans la boutique avec un stock initial de 100 (modifiable ensuite).
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Numéro *</label>
+                <Input
+                  value={newIssue.issue_number}
+                  onChange={(e) => setNewIssue(s => ({ ...s, issue_number: e.target.value.replace(/[^0-9]/g, "") }))}
+                  placeholder="101"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Période *</label>
+                <Input
+                  value={newIssue.period}
+                  onChange={(e) => setNewIssue(s => ({ ...s, period: e.target.value }))}
+                  placeholder="Mai-Juin 2026"
+                />
+              </div>
+            </div>
+
+            {newIssue.issue_number && newIssue.period && (
+              <p className="text-xs text-muted-foreground">
+                Titre : <span className="font-medium text-foreground">Info Pêche n°{newIssue.issue_number} - {newIssue.period}</span>
+              </p>
+            )}
+
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Stock papier</label>
+                <Input
+                  type="number"
+                  min={0}
+                  value={newIssue.physical_stock}
+                  onChange={(e) => setNewIssue(s => ({ ...s, physical_stock: e.target.value }))}
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Prix papier (€)</label>
+                <Input
+                  type="number"
+                  step={0.01}
+                  min={0}
+                  value={newIssue.physical_price_euros}
+                  onChange={(e) => setNewIssue(s => ({ ...s, physical_price_euros: e.target.value }))}
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Prix digital (€)</label>
+                <Input
+                  type="number"
+                  step={0.01}
+                  min={0}
+                  value={newIssue.price_euros}
+                  onChange={(e) => setNewIssue(s => ({ ...s, price_euros: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            {/* Cover */}
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1.5">
+                <ImageIcon className="w-3.5 h-3.5" /> Couverture (JPG/PNG)
+              </label>
+              <label className="block cursor-pointer">
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => handleCoverPick(e.target.files?.[0] || null)}
+                />
+                <div className="border border-dashed border-border rounded-lg p-3 hover:border-primary transition-colors flex items-center gap-3">
+                  {coverPreview ? (
+                    <img src={coverPreview} alt="Aperçu" className="w-12 h-16 object-cover rounded shrink-0" />
+                  ) : (
+                    <div className="w-12 h-16 bg-muted rounded flex items-center justify-center shrink-0">
+                      <Upload className="w-4 h-4 text-muted-foreground" />
+                    </div>
+                  )}
+                  <span className="text-xs text-muted-foreground truncate">
+                    {coverFile ? coverFile.name : "Choisir un fichier"}
+                  </span>
+                </div>
+              </label>
+              <p className="text-xs text-muted-foreground mt-1.5">
+                Le PDF du magazine s'upload depuis l'onglet « Édition du mois ».
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setCreateOpen(false)} disabled={creating}>
+              Annuler
+            </Button>
+            <Button onClick={createIssue} disabled={creating}>
+              {creating ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Création…</> : <><Plus className="w-4 h-4 mr-2" /> Créer le numéro</>}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

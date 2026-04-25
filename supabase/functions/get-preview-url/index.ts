@@ -31,8 +31,19 @@ serve(async (req) => {
       .eq("id", issue_id)
       .single();
 
-    if (issueError || !issue?.pdf_url) {
-      throw new Error("Issue not found or no PDF available");
+    if (issueError || !issue) {
+      return new Response(
+        JSON.stringify({ error: "issue_not_found" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 404 }
+      );
+    }
+
+    if (!issue.pdf_url) {
+      // PDF not uploaded yet — not an error, just unavailable
+      return new Response(
+        JSON.stringify({ error: "pdf_not_available", title: issue.title, issue_number: issue.issue_number }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 404 }
+      );
     }
 
     // Try multiple path variations to find the PDF

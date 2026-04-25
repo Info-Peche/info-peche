@@ -222,26 +222,30 @@ const ShopContent = () => {
                   transition={{ delay: index * 0.08 }}
                 >
                   <Card className="group overflow-hidden border-border/50 hover:shadow-xl transition-all duration-300 h-full flex flex-col rounded-2xl">
-                    <div className="relative overflow-hidden bg-muted/30 flex items-center justify-center p-4">
+                    {/* Badges row above the cover — keeps the magazine artwork fully visible */}
+                    <div className="flex items-center justify-between gap-2 px-4 pt-4 pb-2">
+                      <Badge
+                        variant="secondary"
+                        className="bg-muted text-foreground/80 border border-border text-[11px] font-semibold rounded-full"
+                      >
+                        {viewMode === "online" ? (
+                          <><Monitor className="w-3 h-3 mr-1" /> Version numérique</>
+                        ) : (
+                          <><Package className="w-3 h-3 mr-1" /> Papier</>
+                        )}
+                      </Badge>
+                      {issue.is_current && (
+                        <Badge className="bg-primary text-primary-foreground text-[11px] font-bold rounded-full shadow-sm">
+                          Numéro en cours
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="relative overflow-hidden bg-muted/30 flex items-center justify-center px-4 pb-4">
                       <img
                         src={resizeSupabaseImage(issue.cover_image || "https://fokaikipfikcokjwyeka.supabase.co/storage/v1/object/public/magazine-covers/ip100-cover.png", 400, 568)}
                         alt={issue.title}
                         className="w-auto h-72 object-contain drop-shadow-lg group-hover:scale-105 transition-transform duration-500 rounded-sm"
                       />
-                      <div className="absolute top-3 left-3 flex flex-col gap-1">
-                        <Badge variant="secondary" className="bg-white/90 backdrop-blur-sm text-foreground text-xs font-bold shadow-sm">
-                          {viewMode === "online" ? (
-                            <><Monitor className="w-3 h-3 mr-1" /> Version numérique</>
-                          ) : (
-                            <><Package className="w-3 h-3 mr-1" /> Papier</>
-                          )}
-                        </Badge>
-                        {issue.is_current && (
-                          <Badge className="bg-primary text-primary-foreground text-xs font-bold shadow-sm">
-                            Numéro en cours
-                          </Badge>
-                        )}
-                      </div>
                       {viewMode === "physical" && hasPhysical && issue.physical_stock! <= 15 && (
                         <div className="absolute top-3 right-3">
                           <Badge className="bg-destructive text-destructive-foreground text-xs font-bold shadow-sm animate-pulse">

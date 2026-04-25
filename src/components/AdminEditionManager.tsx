@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Loader2, Upload, Save, Youtube, Image, List, CheckCircle, AlertTriangle, Store } from "lucide-react";
+import { Loader2, Upload, Save, Youtube, Image, List, CheckCircle, AlertTriangle, Store, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface EditionData {
@@ -31,6 +31,9 @@ const AdminEditionManager = () => {
   const [saved, setSaved] = useState(false);
   const [shopMatch, setShopMatch] = useState<{ found: boolean; isCurrent: boolean } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const pdfRef = useRef<HTMLInputElement>(null);
+  const [pdfUploading, setPdfUploading] = useState(false);
+  const [currentPdfName, setCurrentPdfName] = useState<string | null>(null);
 
   // Extract plain number from "N°101" → "101"
   const extractPlainNumber = (input: string) => input.replace(/[^0-9]/g, "");
@@ -41,12 +44,14 @@ const AdminEditionManager = () => {
     if (!plain) { setShopMatch(null); return; }
     const { data: issues } = await supabase
       .from("digital_issues")
-      .select("issue_number, is_current")
+      .select("issue_number, is_current, pdf_url")
       .or(`issue_number.eq.${plain},issue_number.eq.N°${plain}`);
     if (issues && issues.length > 0) {
       setShopMatch({ found: true, isCurrent: issues[0].is_current ?? false });
+      setCurrentPdfName(issues[0].pdf_url ?? null);
     } else {
       setShopMatch({ found: false, isCurrent: false });
+      setCurrentPdfName(null);
     }
   };
 
@@ -93,6 +98,51 @@ const AdminEditionManager = () => {
     setData((d) => ({ ...d, cover_image: urlData.publicUrl }));
     setUploading(false);
     toast.success("Couverture uploadée !");
+  };
+
+  const handlePdfUpload = async (file: File) => {
+    if (!file) return;
+    const plain = extractPlainNumber(data.issue_number);
+    if (!plain) {
+      toast.error("Renseignez d'abord le numéro de l'édition");
+      return;
+    }
+    if (!shopMatch?.found) {
+      toast.error(`Le numéro N°${plain} n'existe pas en boutique. Créez-le d'abord dans l'onglet Stock.`);
+      return;
+    }
+    if (file.type !== "application/pdf") {
+      toast.error("Le fichier doit être un PDF");
+      return;
+    }
+    if (file.size > 50 * 1024 * 1024) {
+      toast.error("PDF trop volumineux (max 50 Mo)");
+      return;
+    }
+
+    setPdfUploading(true);
+    const t = toast.loading("Upload du PDF en cours…");
+    try {
+      const path = `IP${plain}.pdf`;
+      const { error: upErr } = await supabase.storage
+        .from("magazine-pdfs")
+        .upload(path, file, { contentType: "application/pdf", upsert: true });
+      if (upErr) throw new Error(upErr.message);
+
+      // Update pdf_url on the matching issue (try plain and N° variants)
+      const { error: updErr } = await supabase
+        .from("digital_issues")
+        .update({ pdf_url: path } as any)
+        .or(`issue_number.eq.${plain},issue_number.eq.N°${plain}`);
+      if (updErr) throw new Error(updErr.message);
+
+      setCurrentPdfName(path);
+      toast.success(`PDF du N°${plain} mis en ligne !`, { id: t });
+    } catch (e: any) {
+      toast.error("Erreur : " + (e.message || "upload échoué"), { id: t });
+    } finally {
+      setPdfUploading(false);
+    }
   };
 
   const handleSave = async () => {
@@ -295,6 +345,44 @@ const AdminEditionManager = () => {
               Format recommandé : 800×1100 px, max 5 Mo. Cette image sera utilisée dans les offres d'abonnement et le panier.
             </p>
           </div>
+        </div>
+      </div>
+
+      {/* PDF du magazine */}
+      <div>
+        <label className="text-sm font-medium text-foreground mb-1 flex items-center gap-2">
+          <FileText className="w-4 h-4" /> PDF du magazine
+        </label>
+        <div className="space-y-2">
+          <input
+            ref={pdfRef}
+            type="file"
+            accept="application/pdf"
+            className="hidden"
+            onChange={(e) => e.target.files?.[0] && handlePdfUpload(e.target.files[0])}
+          />
+          <div className="flex items-center gap-3 flex-wrap">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => pdfRef.current?.click()}
+              disabled={pdfUploading || !shopMatch?.found}
+            >
+              {pdfUploading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
+              {pdfUploading ? "Upload en cours…" : currentPdfName ? "Remplacer le PDF" : "Charger le PDF"}
+            </Button>
+            {currentPdfName && (
+              <span className="text-xs text-muted-foreground inline-flex items-center gap-1.5">
+                <CheckCircle className="w-3.5 h-3.5 text-green-600" />
+                {currentPdfName}
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {shopMatch?.found
+              ? <>Le PDF sera enregistré sous <code className="bg-muted px-1 rounded">IP{extractPlainNumber(data.issue_number)}.pdf</code> dans le stockage privé et associé au numéro en boutique. Max 50 Mo.</>
+              : "Renseignez un numéro existant en boutique pour activer l'upload (sinon créez-le d'abord dans l'onglet Stock)."}
+          </p>
         </div>
       </div>
 

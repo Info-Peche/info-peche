@@ -216,16 +216,24 @@ const AdminEditionManager = () => {
     // Sync is_current in digital_issues
     const plain = extractPlainNumber(data.issue_number);
     if (plain) {
-      // Reset all issues
-      await supabase.from("digital_issues").update({ is_current: false } as any).neq("issue_number", "___");
+      const variants = [plain, `N°${plain}`, `n°${plain}`];
+      // Reset all OTHER issues (don't touch the one we're about to mark current)
+      const { error: resetErr } = await supabase
+        .from("digital_issues")
+        .update({ is_current: false } as any)
+        .not("issue_number", "in", `(${variants.map((v) => `"${v}"`).join(",")})`);
+      if (resetErr) console.error("reset is_current error", resetErr);
+
       // Set new current
-      const { data: matched } = await supabase
+      const { data: matched, error: updErr } = await supabase
         .from("digital_issues")
         .update({ is_current: true, is_archived: false } as any)
-        .or(`issue_number.eq.${plain},issue_number.eq.N°${plain}`)
+        .in("issue_number", variants)
         .select("id");
-      
-      if (matched && matched.length > 0) {
+
+      if (updErr) {
+        toast.error("Erreur de mise à jour : " + updErr.message);
+      } else if (matched && matched.length > 0) {
         toast.success("Édition du mois et boutique mises à jour !");
         setShopMatch({ found: true, isCurrent: true });
       } else {

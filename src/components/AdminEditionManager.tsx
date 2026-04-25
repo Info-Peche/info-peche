@@ -189,7 +189,7 @@ const AdminEditionManager = () => {
       const { error: updErr } = await supabase
         .from("digital_issues")
         .update({ pdf_url: path } as any)
-        .or(`issue_number.eq.${plain},issue_number.eq.N°${plain}`);
+        .in("issue_number", [plain, `N°${plain}`, `n°${plain}`]);
       if (updErr) throw new Error(updErr.message);
 
       setCurrentPdfName(path);

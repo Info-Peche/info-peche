@@ -38,6 +38,44 @@ const AdminEditionManager = () => {
   // Extract plain number from "N°101" → "101"
   const extractPlainNumber = (input: string) => input.replace(/[^0-9]/g, "");
 
+  // Build slug from period like "mai-juin 2026" or "Mai - Juin 2026" → "mai-juin_2026"
+  const buildPeriodSlug = (period: string) => {
+    if (!period) return "";
+    const normalized = period
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "") // remove accents
+      .trim();
+    const yearMatch = normalized.match(/(19|20)\d{2}/);
+    const year = yearMatch ? yearMatch[0] : "";
+    const withoutYear = normalized.replace(/(19|20)\d{2}/, "").trim();
+    // Extract month tokens (handles "mai-juin", "mai - juin", "mai juin", "mai/juin")
+    const months = withoutYear
+      .split(/[\s\-_/,]+/)
+      .map((m) => m.trim())
+      .filter(Boolean);
+    const monthsPart = months.join("-");
+    if (!monthsPart || !year) return "";
+    return `${monthsPart}_${year}`;
+  };
+
+  const buildPdfFileName = (issueNumber: string, period: string) => {
+    const plain = extractPlainNumber(issueNumber);
+    const slug = buildPeriodSlug(period);
+    if (!plain) return "";
+    return slug ? `IP${plain}_${slug}.pdf` : `IP${plain}.pdf`;
+  };
+
+  const buildCoverFileName = (issueNumber: string, period: string, ext: string) => {
+    const plain = extractPlainNumber(issueNumber);
+    const slug = buildPeriodSlug(period);
+    const safeExt = (ext || "jpg").toLowerCase();
+    if (!plain) return `cover-${Date.now()}.${safeExt}`;
+    return slug
+      ? `IP${plain}_${slug}_couverture.${safeExt}`
+      : `IP${plain}_couverture.${safeExt}`;
+  };
+
   // Check if issue_number exists in digital_issues
   const checkShopMatch = async (issueNumber: string) => {
     const plain = extractPlainNumber(issueNumber);
@@ -85,10 +123,22 @@ const AdminEditionManager = () => {
       toast.error("Image trop volumineuse (max 5 Mo)");
       return;
     }
+    const plain = extractPlainNumber(data.issue_number);
+    if (!plain) {
+      toast.error("Renseignez d'abord le numéro de l'édition");
+      return;
+    }
+    const slug = buildPeriodSlug(data.issue_period);
+    if (!slug) {
+      toast.error('Renseignez la période au format "mai-juin 2026"');
+      return;
+    }
     setUploading(true);
     const ext = file.name.split(".").pop();
-    const path = `cover-${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from("magazine-covers").upload(path, file);
+    const path = buildCoverFileName(data.issue_number, data.issue_period, ext || "jpg");
+    const { error } = await supabase.storage
+      .from("magazine-covers")
+      .upload(path, file, { upsert: true, contentType: file.type });
     if (error) {
       toast.error("Erreur d'upload : " + error.message);
       setUploading(false);
@@ -107,6 +157,11 @@ const AdminEditionManager = () => {
       toast.error("Renseignez d'abord le numéro de l'édition");
       return;
     }
+    const slug = buildPeriodSlug(data.issue_period);
+    if (!slug) {
+      toast.error('Renseignez la période au format "mai-juin 2026" avant d\'uploader le PDF');
+      return;
+    }
     if (!shopMatch?.found) {
       toast.error(`Le numéro N°${plain} n'existe pas en boutique. Créez-le d'abord dans l'onglet Stock.`);
       return;
@@ -123,7 +178,7 @@ const AdminEditionManager = () => {
     setPdfUploading(true);
     const t = toast.loading("Upload du PDF en cours…");
     try {
-      const path = `IP${plain}.pdf`;
+      const path = buildPdfFileName(data.issue_number, data.issue_period);
       const { error: upErr } = await supabase.storage
         .from("magazine-pdfs")
         .upload(path, file, { contentType: "application/pdf", upsert: true });
@@ -380,7 +435,7 @@ const AdminEditionManager = () => {
           </div>
           <p className="text-xs text-muted-foreground">
             {shopMatch?.found
-              ? <>Le PDF sera enregistré sous <code className="bg-muted px-1 rounded">IP{extractPlainNumber(data.issue_number)}.pdf</code> dans le stockage privé et associé au numéro en boutique. Max 50 Mo.</>
+              ? <>Le PDF sera enregistré sous <code className="bg-muted px-1 rounded">{buildPdfFileName(data.issue_number, data.issue_period) || `IP${extractPlainNumber(data.issue_number)}.pdf`}</code> dans le stockage privé et associé au numéro en boutique. Période attendue : <code className="bg-muted px-1 rounded">mai-juin 2026</code>. Max 50 Mo.</>
               : "Renseignez un numéro existant en boutique pour activer l'upload (sinon créez-le d'abord dans l'onglet Stock)."}
           </p>
         </div>

@@ -140,12 +140,27 @@ const AdminStockManager = () => {
 
     setCreating(true);
     try {
+      // Build period slug for filenames: "Mai-Juin 2026" → "mai-juin_2026"
+      const buildPeriodSlug = (p: string) => {
+        const normalized = p.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+        const yearMatch = normalized.match(/(19|20)\d{2}/);
+        const year = yearMatch ? yearMatch[0] : "";
+        const withoutYear = normalized.replace(/(19|20)\d{2}/, "").trim();
+        const months = withoutYear.split(/[\s\-_/,]+/).map((m) => m.trim()).filter(Boolean).join("-");
+        return months && year ? `${months}_${year}` : "";
+      };
+      const periodSlug = buildPeriodSlug(period);
+
       // Upload cover (optional but recommended)
       let cover_image: string | null = null;
       if (coverFile) {
         const ext = coverFile.name.split(".").pop() || "jpg";
-        const path = `cover-n${num}-${Date.now()}.${ext}`;
-        const { error: upErr } = await supabase.storage.from("magazine-covers").upload(path, coverFile);
+        const path = periodSlug
+          ? `IP${num}_${periodSlug}_couverture.${ext}`
+          : `IP${num}_couverture.${ext}`;
+        const { error: upErr } = await supabase.storage
+          .from("magazine-covers")
+          .upload(path, coverFile, { upsert: true, contentType: coverFile.type });
         if (upErr) throw new Error("Upload couverture : " + upErr.message);
         const { data: urlData } = supabase.storage.from("magazine-covers").getPublicUrl(path);
         cover_image = urlData.publicUrl;

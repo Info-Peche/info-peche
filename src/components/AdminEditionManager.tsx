@@ -63,7 +63,10 @@ const AdminEditionManager = () => {
     const plain = extractPlainNumber(issueNumber);
     const slug = buildPeriodSlug(period);
     if (!plain) return "";
-    return slug ? `IP${plain}_${slug}.pdf` : `IP${plain}.pdf`;
+    // Store all magazine PDFs under the "Magazine/" folder of the bucket
+    return slug
+      ? `Magazine/IP${plain}_${slug}.pdf`
+      : `Magazine/IP${plain}.pdf`;
   };
 
   const buildCoverFileName = (issueNumber: string, period: string, ext: string) => {

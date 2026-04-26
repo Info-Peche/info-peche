@@ -62,7 +62,7 @@ const Storytelling = () => {
                 Diplômé en biologie cellulaire, il choisit pourtant le journalisme halieutique. Formé aux côtés des plus grands champions français et perfectionné en compétition en Angleterre, il devient <strong className="text-foreground">l'adjoint de Daniel Maury, le rédacteur emblématique de La Pêche et les Poissons</strong> alors qu'il est encore étudiant.
               </p>
               <p>
-                En 1998, Nicolas crée le tout premier magazine exclusivement consacré aux techniques de pêches au coup en France <em>Déclic Pêche</em>. Il prend aussi la direction de quatre autres titres de pêche en eau douce et en mer avant de se consacrer uniquement à <strong className="text-foreground">Info Pêche à partir de 2012</strong>.
+                En 1998, Nicolas crée le tout premier magazine exclusivement consacré aux techniques de pêches au coup en France <em>Déclic Pêche</em>. Il prend aussi la direction de quatre autres titres de pêche en eau douce et en mer avant de se consacrer uniquement au magazine <strong className="text-foreground">Info Pêche à partir de 2012</strong>.
               </p>
               <p>
                 Aujourd'hui, Nicolas partage aussi sa passion sur la <a href="https://www.youtube.com/@InfoPêche" target="_blank" rel="noopener noreferrer" className="text-primary font-semibold underline underline-offset-2 hover:text-primary/80 transition-colors">chaîne YouTube Info Pêche</a> suivie par plus de 16 000 abonnés, avec des tutos, des interviews et des reportages en direct sur les plus grandes épreuves nationales et internationales.

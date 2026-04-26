@@ -79,7 +79,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         url: signedData.signedUrl,
-        preview_pages: issue.preview_pages || 4,
+        preview_pages: issue.preview_pages || 6,
         title: issue.title,
         issue_number: issue.issue_number,
         price_cents: issue.price_cents,

@@ -17,7 +17,7 @@ const BackIssuesSection = () => {
             Anciens numéros
           </span>
           <h2 className="text-4xl md:text-5xl font-serif font-bold mt-2 mb-4 text-foreground">
-            Retrouvez tous les anciens numéros
+            Retrouvez tous les anciens magazines
           </h2>
           <p className="text-muted-foreground text-lg">
             Consultez-les en ligne immédiatement ou recevez-les chez vous — chaque numéro est une mine d'or pour progresser.

@@ -82,7 +82,7 @@ const JsonLd = () => {
         name: "Combien coûte l'abonnement Info Pêche ?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "L'abonnement numérique est à 33€/an (11 numéros) et l'abonnement papier + numérique est à 55€/an.",
+          text: "L'abonnement papier + numérique est à 14,50 € pour 6 mois (3 numéros), 26,50 € pour 1 an (6 numéros) ou 48 € pour 2 ans (12 numéros). Le magazine est bimestriel.",
         },
       },
       {
@@ -90,7 +90,7 @@ const JsonLd = () => {
         name: "Puis-je consulter un numéro avant de m'abonner ?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Oui, vous pouvez consulter gratuitement les 4 premières pages de chaque numéro avant de décider.",
+          text: "Oui, vous pouvez consulter gratuitement les 6 premières pages de chaque numéro avant de décider.",
         },
       },
     ],

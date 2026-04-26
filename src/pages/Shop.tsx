@@ -114,7 +114,7 @@ const ShopContent = () => {
             Boutique
           </span>
           <h1 className="text-4xl md:text-5xl font-serif font-bold text-foreground mb-4">
-            Retrouvez tous les numéros
+            Retrouvez tous les anciens magazines
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-10">
             Chaque magazine est une mine d'informations pour progresser. Choisissez votre format préféré.

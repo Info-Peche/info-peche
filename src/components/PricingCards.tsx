@@ -89,11 +89,8 @@ const PricingCards = () => {
           viewport={{ once: true }}
           className="text-center max-w-3xl mx-auto mb-4 md:mb-6">
 
-          <span className="text-primary font-bold tracking-widest uppercase text-[10px] md:text-xs mb-2 md:mb-3 block">
-            La Boutique Officielle
-          </span>
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif font-bold mb-4 md:mb-6 text-foreground">
-            La Boutique officielle
+            Nos abonnements à notre magazine de pêche
           </h2>
           <p className="text-muted-foreground text-base md:text-lg leading-relaxed">Rejoignez plus de 15 000 lecteurs et recevez chaque numéro directement chez vous.
           </p>

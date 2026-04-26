@@ -89,6 +89,9 @@ const PricingCards = () => {
           viewport={{ once: true }}
           className="text-center max-w-3xl mx-auto mb-4 md:mb-6">
 
+          <span className="text-primary font-bold tracking-widest uppercase text-[10px] md:text-xs mb-2 md:mb-3 block">
+            Abonnements
+          </span>
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif font-bold mb-4 md:mb-6 text-foreground">
             Nos abonnements à notre magazine de pêche
           </h2>

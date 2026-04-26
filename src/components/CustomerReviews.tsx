@@ -129,10 +129,10 @@ const CustomerReviews = () => {
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-8 md:mb-10">
           <h2 className="text-2xl md:text-3xl lg:text-4xl font-serif font-bold italic text-foreground mb-2">
-            Vous en parlez mieux que nous…
+            Pourquoi choisir notre magazine de pêche ?
           </h2>
           <p className="text-sm md:text-base text-muted-foreground">
-            Des milliers de lecteurs passionnés partout en France... et dans le monde !
+            Vous en parlez mieux que nous. Des milliers de lecteurs passionnés partout en France... et dans le monde !
           </p>
         </div>
 

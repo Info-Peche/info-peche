@@ -70,20 +70,35 @@ serve(async (req) => {
     //   the shipping address. Simpler and more reliable.
     let customerId: string | undefined;
     if (hasSubscription) {
-      const existing = await stripe.customers.list({ email: customer_info.email, limit: 1 });
-      if (existing.data.length > 0) {
-        customerId = existing.data[0].id;
-        logStep("Existing customer reused for subscription (no update)", { customerId });
-      } else {
-        const created = await stripe.customers.create({
-          email: customer_info.email,
-          name: fullName || undefined,
-          phone: customer_info.phone || undefined,
-          address: shippingAddress?.address,
-          shipping: shippingAddress || undefined,
-        });
-        customerId = created.id;
-        logStep("New customer created with pre-filled address", { customerId });
+      try {
+        const existing = await stripe.customers.list({ email: customer_info.email, limit: 1 });
+        if (existing.data.length > 0) {
+          customerId = existing.data[0].id;
+          logStep("Existing customer reused for subscription (no update)", { customerId });
+        } else {
+          // Sanitize phone: Stripe rejects unusual characters. Keep digits, +, spaces, dots, dashes, parentheses.
+          const safePhone = (customer_info.phone || "")
+            .replace(/[^0-9+\s().-]/g, "")
+            .trim()
+            .slice(0, 20) || undefined;
+          const created = await stripe.customers.create({
+            email: customer_info.email,
+            name: fullName || undefined,
+            phone: safePhone,
+            address: shippingAddress?.address,
+            shipping: shippingAddress
+              ? { ...shippingAddress, phone: safePhone }
+              : undefined,
+          });
+          customerId = created.id;
+          logStep("New customer created with pre-filled address", { customerId });
+        }
+      } catch (custErr) {
+        // If Stripe rejects any field (phone format, address chars, etc.),
+        // fall back to letting Checkout create the customer from scratch.
+        const m = custErr instanceof Error ? custErr.message : String(custErr);
+        logStep("Customer create/list failed — falling back to email-only checkout", { error: m });
+        customerId = undefined;
       }
     }
 

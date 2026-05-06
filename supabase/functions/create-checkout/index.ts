@@ -233,7 +233,11 @@ serve(async (req) => {
     if (mode === "payment") {
       sessionParams.payment_intent_data = {
         description: paymentDescription,
-        ...(shippingAddress ? { shipping: shippingAddress } : {}),
+        // Note: do NOT set `shipping` here when `shipping_address_collection` is
+        // enabled — Stripe rejects the combo with:
+        // "You can not collect shipping address and specify shipping payment intent data simultaneously."
+        // Only pre-fill via payment_intent_data.shipping for digital-only orders (no collection).
+        ...(isDigitalOnly && shippingAddress ? { shipping: shippingAddress } : {}),
       };
     } else {
       sessionParams.subscription_data = { description: paymentDescription };

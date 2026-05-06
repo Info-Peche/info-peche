@@ -69,12 +69,17 @@ serve(async (req) => {
     // - payment mode: skip Customer entirely and use payment_intent_data.shipping to pre-fill
     //   the shipping address. Simpler and more reliable.
     let customerId: string | undefined;
-    if (hasSubscription) {
+    // Create / reuse a Stripe Customer for BOTH subscriptions AND physical one-shot
+    // orders so we can pre-fill the shipping address on Checkout (better UX —
+    // user doesn't have to retype the address they just entered on our form).
+    // For digital-only one-shots we skip this (no shipping needed).
+    const needsCustomer = hasSubscription || !isDigitalOnly;
+    if (needsCustomer) {
       try {
         const existing = await stripe.customers.list({ email: customer_info.email, limit: 1 });
         if (existing.data.length > 0) {
           customerId = existing.data[0].id;
-          logStep("Existing customer reused for subscription (no update)", { customerId });
+          logStep("Existing customer reused", { customerId });
         } else {
           // Sanitize phone: Stripe rejects unusual characters. Keep digits, +, spaces, dots, dashes, parentheses.
           const safePhone = (customer_info.phone || "")
@@ -233,11 +238,10 @@ serve(async (req) => {
     if (mode === "payment") {
       sessionParams.payment_intent_data = {
         description: paymentDescription,
-        // Note: do NOT set `shipping` here when `shipping_address_collection` is
-        // enabled — Stripe rejects the combo with:
-        // "You can not collect shipping address and specify shipping payment intent data simultaneously."
-        // Only pre-fill via payment_intent_data.shipping for digital-only orders (no collection).
-        ...(isDigitalOnly && shippingAddress ? { shipping: shippingAddress } : {}),
+        // Note: never set `shipping` here when `shipping_address_collection` is
+        // enabled — Stripe rejects the combo. The shipping address is pre-filled
+        // via the Stripe Customer (customer.shipping) instead, and Checkout will
+        // display it pre-populated in the shipping address form.
       };
     } else {
       sessionParams.subscription_data = { description: paymentDescription };

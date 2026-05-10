@@ -11,6 +11,11 @@ const GATEWAY_URL = 'https://connector-gateway.lovable.dev/google_sheets/v4';
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   try {
+    const body = await req.json().catch(() => ({}));
+    const limit: number = body.limit ?? 0; // 0 = no limit
+    const dryRun: boolean = body.dry_run ?? false;
+    const note: string = body.note ?? '';
+    const reason: 'duplicate' | 'fraudulent' | 'requested_by_customer' = body.reason ?? 'duplicate';
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, { apiVersion: '2024-11-20.acacia' });
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY')!;
     const SHEETS_KEY = Deno.env.get('GOOGLE_SHEETS_API_KEY')!;
@@ -41,8 +46,10 @@ Deno.serve(async (req) => {
 
     const results: any[] = [];
     const updates: { range: string; values: string[][] }[] = [];
+    let processed = 0;
 
     for (let i = 1; i < rows.length; i++) {
+      if (limit > 0 && processed >= limit) break;
       const row = rows[i];
       const current = row[statusCol] || '';
       if (current.toLowerCase().includes('ok') || current.toLowerCase().includes('remboursé')) {
@@ -51,14 +58,23 @@ Deno.serve(async (req) => {
       }
       const chargeId = (chargeCol >= 0 ? row[chargeCol] : '') || '';
       const piId = (piCol >= 0 ? row[piCol] : '') || '';
+      if (!chargeId && !piId) {
+        results.push({ row: i + 1, skipped: true, reason: 'no charge/pi id' });
+        continue;
+      }
+      processed++;
+      if (dryRun) {
+        results.push({ row: i + 1, dry_run: true, charge_id: chargeId, payment_intent_id: piId, would_refund_with_reason: reason, would_note: note });
+        continue;
+      }
       try {
         const refund = await stripe.refunds.create({
           ...(chargeId ? { charge: chargeId } : { payment_intent: piId }),
-          reason: 'duplicate',
-          metadata: { migration_2y: 'true' },
+          reason,
+          metadata: { migration_2y: 'true', note },
         });
         const cell = `Sheet1!${statusColLetter}${i + 1}`;
-        const status = `OK ${refund.id}`;
+        const status = note ? `OK ${refund.id} — ${note}` : `OK ${refund.id}`;
         updates.push({ range: cell, values: [[status]] });
         results.push({ row: i + 1, refund_id: refund.id, status: refund.status });
       } catch (e: any) {

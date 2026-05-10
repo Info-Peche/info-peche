@@ -8,7 +8,11 @@ const corsHeaders = {
 
 // Bulk repositionne le renouvellement Stripe à first_invoice_date + 2 ans,
 // et met à jour orders.subscription_end_date en miroir.
-// Body: { emails: string[], dry_run?: boolean, exclude_emails?: string[] }
+// Body: { emails?: string[], dry_run?: boolean, exclude_emails?: string[], batch?: number, batch_size?: number }
+// Si emails non fourni: lit le Google Sheet de migration. batch (1-based) découpe la liste en lots de batch_size.
+const SHEET_ID = '15biczhHx-BgtnT8g2XbhKHwxTQr7_mDifyzH5BcauXo';
+const GATEWAY_URL = 'https://connector-gateway.lovable.dev/google_sheets/v4';
+const DEFAULT_EXCLUDE = ['gianna5652@gmail.com', 'gregory.gobin44@orange.fr'];
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   try {
@@ -19,15 +23,37 @@ Deno.serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
-    const { emails, dry_run = true, exclude_emails = [] } = await req.json();
-    if (!Array.isArray(emails) || emails.length === 0) throw new Error('emails[] requis');
+    const body = await req.json().catch(() => ({}));
+    const { emails: bodyEmails, dry_run = true, exclude_emails = DEFAULT_EXCLUDE, batch = 0, batch_size = 30 } = body;
+
+    let emails: string[] = Array.isArray(bodyEmails) ? bodyEmails : [];
+    if (emails.length === 0) {
+      // Auto-fetch from sheet
+      const sheetHeaders = {
+        'Authorization': `Bearer ${Deno.env.get('LOVABLE_API_KEY')!}`,
+        'X-Connection-Api-Key': Deno.env.get('GOOGLE_SHEETS_API_KEY')!,
+      };
+      const r = await fetch(`${GATEWAY_URL}/spreadsheets/${SHEET_ID}/values/Sheet1`, { headers: sheetHeaders });
+      const j = await r.json();
+      const rows: string[][] = j.values || [];
+      if (rows.length < 2) throw new Error('Sheet vide');
+      const header = rows[0];
+      const emailCol = header.findIndex(h => h.toLowerCase().includes('email') || h.toLowerCase().includes('mail'));
+      if (emailCol < 0) throw new Error(`Colonne email introuvable dans header: ${header.join(',')}`);
+      emails = rows.slice(1).map(r => r[emailCol]).filter(Boolean);
+    }
 
     const exclude = new Set(exclude_emails.map((e: string) => e.toLowerCase().trim()));
-    const targets = emails
+    let targets = emails
       .map((e: string) => e.toLowerCase().trim())
       .filter((e: string) => e && !exclude.has(e));
     // Dédoublonner
-    const unique = Array.from(new Set(targets));
+    let unique = Array.from(new Set(targets));
+    const totalAll = unique.length;
+    if (batch > 0) {
+      const start = (batch - 1) * batch_size;
+      unique = unique.slice(start, start + batch_size);
+    }
 
     const results: any[] = [];
     const nowSec = Math.floor(Date.now() / 1000);
@@ -186,6 +212,9 @@ Deno.serve(async (req) => {
     }
 
     const summary = {
+      total_all: totalAll,
+      batch,
+      batch_size,
       total: unique.length,
       updated: results.filter(r => r.status === 'updated').length,
       would_update: results.filter(r => r.status === 'would_update').length,

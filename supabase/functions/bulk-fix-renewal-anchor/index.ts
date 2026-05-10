@@ -34,7 +34,24 @@ Deno.serve(async (req) => {
 
     for (const email of unique) {
       try {
-        const customers = await stripe.customers.list({ email, limit: 5 });
+        // Stripe email filter is case-sensitive — try lowercase + a few variants
+        const tried = new Set<string>();
+        const customersMap = new Map<string, Stripe.Customer>();
+        const variants = [email, email.toLowerCase(), email.charAt(0).toUpperCase() + email.slice(1)];
+        for (const v of variants) {
+          if (tried.has(v)) continue;
+          tried.add(v);
+          const r = await stripe.customers.list({ email: v, limit: 5 });
+          for (const c of r.data) customersMap.set(c.id, c);
+        }
+        // Also do a search across all variants (case-insensitive)
+        if (customersMap.size === 0) {
+          try {
+            const s = await stripe.customers.search({ query: `email:"${email}"`, limit: 5 });
+            for (const c of s.data) customersMap.set(c.id, c);
+          } catch (_e) {}
+        }
+        const customers = { data: Array.from(customersMap.values()) };
         if (customers.data.length === 0) {
           results.push({ email, status: 'skip', reason: 'no_stripe_customer' });
           continue;

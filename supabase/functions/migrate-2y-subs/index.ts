@@ -31,24 +31,29 @@ serve(async (req) => {
         starting_after: startingAfter,
       });
 
-      for (const sub of page.data) {
-        const item = sub.items.data[0];
-        if (!item || item.price.id !== OLD_PRICE) continue;
-        try {
-          await stripe.subscriptions.update(sub.id, {
-            items: [{ id: item.id, price: NEW_PRICE }],
-            proration_behavior: "none",
-            cancel_at_period_end: false,
-          });
-          results.push({ id: sub.id, status: "ok" });
-          total++;
-        } catch (e) {
-          results.push({
-            id: sub.id,
-            status: "error",
-            error: e instanceof Error ? e.message : String(e),
-          });
-        }
+      const updates = page.data
+        .filter((sub: any) => sub.items.data[0]?.price.id === OLD_PRICE)
+        .map(async (sub: any) => {
+          const item = sub.items.data[0];
+          try {
+            await stripe.subscriptions.update(sub.id, {
+              items: [{ id: item.id, price: NEW_PRICE }],
+              proration_behavior: "none",
+              cancel_at_period_end: false,
+            });
+            return { id: sub.id, status: "ok" };
+          } catch (e) {
+            return {
+              id: sub.id,
+              status: "error",
+              error: e instanceof Error ? e.message : String(e),
+            };
+          }
+        });
+      const settled = await Promise.all(updates);
+      for (const r of settled) {
+        results.push(r);
+        if (r.status === "ok") total++;
       }
 
       hasMore = page.has_more;

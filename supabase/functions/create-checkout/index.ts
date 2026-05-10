@@ -109,11 +109,26 @@ serve(async (req) => {
 
     const origin = req.headers.get("origin") || "https://www.info-peche.fr";
 
-    // Build line items
-    const lineItems: any[] = items.map((item: any) => ({
-      price: item.price_id,
-      quantity: item.quantity || 1,
-    }));
+    // Build line items.
+    // For variable-priced items (archive physical issues whose price is set per-issue
+    // in the admin), we use price_data so we can charge the exact admin-set amount
+    // while still attaching the line to the "Ancien numéro" Stripe product.
+    const lineItems: any[] = items.map((item: any) => {
+      if (item.variable_price && item.unit_amount && item.product_id) {
+        return {
+          price_data: {
+            currency: "eur",
+            product: item.product_id,
+            unit_amount: item.unit_amount,
+          },
+          quantity: item.quantity || 1,
+        };
+      }
+      return {
+        price: item.price_id,
+        quantity: item.quantity || 1,
+      };
+    });
 
     // Add shipping as a line item if applicable
     const shippingAmount = shipping_cents || 0;

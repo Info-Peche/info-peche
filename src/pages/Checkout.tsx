@@ -72,22 +72,31 @@ const CheckoutContent = () => {
     try {
       const checkoutItems = items.map((item) => {
         const isDigital = item.id.startsWith("digital-");
+        const isArchivePhysical = item.id.startsWith("physical-");
         const product = isDigital
           ? PRODUCTS.lectureNumero
-          : Object.values(PRODUCTS).find((p) => p.id === item.id) || PRODUCTS.ancienNumero;
-        
+          : isArchivePhysical
+            ? PRODUCTS.ancienNumero
+            : Object.values(PRODUCTS).find((p) => p.id === item.id) || PRODUCTS.ancienNumero;
+
         // Extract issue_number from item name (e.g. "Info Pêche N°98 (Papier)" → "98")
         const issueNumMatch = item.name.match(/N°?\s*(\d+)/i) || item.name.match(/(\d+)/);
         const issueNumber = issueNumMatch ? issueNumMatch[1] : undefined;
-        
+
+        // For archive physical issues, the price is variable (set per-issue in admin),
+        // so we send unit_amount from the cart and let the edge function build price_data.
+        const unit_amount = Math.round(item.price * 100);
+
         return {
           id: item.id,
           name: item.name,
           issue_number: issueNumber,
           price_id: product.price_id,
+          product_id: product.product_id,
           quantity: item.quantity,
           mode: product.mode,
-          unit_amount: Math.round(product.price * 100),
+          unit_amount,
+          variable_price: isArchivePhysical,
         };
       });
 

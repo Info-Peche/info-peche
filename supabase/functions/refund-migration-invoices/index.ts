@@ -44,12 +44,10 @@ serve(async (req) => {
 
       for (const inv of page.data) {
         scanned++;
-        // Only target invoices for the Abo 2 ans product on the new price
-        const line = inv.lines?.data?.[0];
-        const priceId = line?.price?.id || line?.pricing?.price_details?.price;
-        const productId = line?.price?.product || line?.pricing?.price_details?.product;
-        if (productId !== TARGET_PRODUCT && priceId !== NEW_PRICE) {
-          skipped.push({ id: inv.id, reason: "not 2y migration", productId, priceId });
+        // Filter: subscription invoice of exactly 48€ EUR (the 2y migration amount).
+        // We rely on amount + subscription presence to be robust to API line shape changes.
+        if (inv.currency !== "eur" || inv.total !== 4800 || !inv.subscription) {
+          skipped.push({ id: inv.id, reason: "not 48€ subscription", total: inv.total });
           continue;
         }
 

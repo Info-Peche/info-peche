@@ -92,6 +92,19 @@ serve(async (req) => {
       }
     }
 
+    const out = {
+      v: 3,
+      dryRun,
+      scanned,
+      refunded_count: refunded.length,
+      voided_count: voided.length,
+      skipped_count: skipped.length,
+      errors_count: errors.length,
+      refunded,
+      voided,
+      skipped_sample: skipped.slice(0, 8),
+      errors,
+    };
     return new Response(
       JSON.stringify({
         dryRun,

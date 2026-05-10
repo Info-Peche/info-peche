@@ -102,6 +102,7 @@ serve(async (req) => {
         errors_count: errors.length,
         refunded,
         voided,
+        skipped_sample: skipped.slice(0, 10),
         errors,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 },

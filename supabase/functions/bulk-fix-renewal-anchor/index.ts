@@ -120,7 +120,7 @@ Deno.serve(async (req) => {
         const { data: ord } = await supabase
           .from('orders')
           .select('id, subscription_end_date')
-          .eq('email', email)
+          .ilike('email', email)
           .eq('is_recurring', true)
           .eq('payment_status', 'paid')
           .order('created_at', { ascending: false });

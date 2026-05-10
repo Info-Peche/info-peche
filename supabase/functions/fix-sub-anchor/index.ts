@@ -32,8 +32,10 @@ Deno.serve(async (req) => {
     const customer = customers.data[0];
 
     // Trouver les subs actives
-    const subs = await stripe.subscriptions.list({ customer: customer.id, status: 'active', limit: 10 });
-    if (subs.data.length === 0) throw new Error(`Aucun abonnement actif pour ${email}`);
+    const subsActive = await stripe.subscriptions.list({ customer: customer.id, status: 'active', limit: 10 });
+    const subsTrialing = await stripe.subscriptions.list({ customer: customer.id, status: 'trialing', limit: 10 });
+    const subs = { data: [...subsActive.data, ...subsTrialing.data] };
+    if (subs.data.length === 0) throw new Error(`Aucun abonnement actif/trialing pour ${email}`);
     if (subs.data.length > 1) {
       return new Response(JSON.stringify({
         warning: 'Plusieurs subs actives — préciser sub_id',

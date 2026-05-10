@@ -1,54 +1,30 @@
+## Objectif
 
+Recaler la prochaine date de facturation de l'abonnement 2 ans d'Alain Vasseur (xhrouet@aol.com) au **18 mars 2028**, sans rien prélever.
 
-OK, on abandonne l'idée du Payment Element intégré (trop complexe vs bénéfice). On reste sur Stripe Checkout mais on **règle vraiment le problème de la double saisie** sans casser ce qui marche.
+## Cible
 
-## Le vrai problème
+- Email : `xhrouet@aol.com`
+- Subscription Stripe : `sub_1TDi86KbRd4yKDMHlFjWE26x` (active, 48 €/2 ans)
+- Date de renouvellement actuelle : à vérifier (probablement mai 2028, comme les autres cas migration)
+- **Date cible : 18 mars 2028** (= 1ʳᵉ facture du 18/03/2026 + 2 ans)
 
-L'adresse saisie sur `/commande` n'est aujourd'hui PAS transmise à Stripe Checkout. La précédente tentative (pré-remplir via `customer_update` + création de customer côté serveur) a cassé l'affichage Stripe → on a rollback. Du coup on est revenu à zéro côté UX.
+## Étapes
 
-## Solution simple et robuste
+1. **Dry-run** de l'edge function `fix-sub-anchor` avec :
+   ```json
+   { "email": "xhrouet@aol.com", "target_date": "2028-03-18", "dry_run": true }
+   ```
+   → afficher le before / after attendu pour validation visuelle.
 
-**Pour les achats one-shot (numéros papier, digitaux)** : utiliser le mode `payment` de Stripe Checkout avec `payment_intent_data.shipping` qui accepte directement une adresse pré-remplie SANS passer par un objet Customer. C'est le mécanisme officiel et stable pour ce cas, ça n'avait pas été tenté.
+2. **Validation manuelle** par l'utilisateur du résultat dry-run.
 
-**Pour les abonnements** : c'est là que ça avait cassé (mode `subscription` + `customer_update` = conflit). Solution : créer le Customer Stripe AVEC `shipping` et `address` pré-remplis dès la création (pas de `customer_update` ensuite), puis passer `customer: customerId` à la session **sans** `customer_update`. L'adresse sera affichée pré-remplie dans Checkout.
+3. **Exécution réelle** (même appel sans `dry_run`) → la fonction pose `trial_end = 2028-03-18 12:00 UTC`, `proration_behavior: 'none'`, `cancel_at: null`. Aucun débit déclenché.
 
-### Différence clé avec la tentative précédente
+4. **Vérification** dans Stripe Dashboard : la prochaine facture doit afficher « 48,00 € le 18 mars 2028 », puis tous les 2 ans (18 mars 2030, etc.).
 
-Avant : on faisait `customer.update()` ET `customer_update: { shipping: 'auto' }` dans la session → Stripe se retrouvait avec deux sources de vérité concurrentes → page bloquée.
+## Notes
 
-Maintenant : on met l'adresse UNE SEULE FOIS (à la création du Customer, ou via `payment_intent_data.shipping`), et on retire complètement `customer_update`.
-
-## Plan d'implémentation
-
-### Modifier `supabase/functions/create-checkout/index.ts`
-
-1. **Cas one-shot (mode `payment`)** :
-   - Ajouter `payment_intent_data: { shipping: { name, address: { line1, line2, city, postal_code, country } } }`
-   - Garder `shipping_address_collection` (Stripe affichera l'adresse pré-remplie, modifiable)
-   - **Ne pas** créer/modifier de Customer
-
-2. **Cas abonnement (mode `subscription`)** :
-   - Créer le Customer avec `name`, `email`, `phone`, `address`, `shipping` en un seul appel `customers.create()`
-   - Ne réutiliser un customer existant que s'il existe déjà ; sinon en créer un complet
-   - Passer `customer: customerId` à la session
-   - **Retirer complètement** `customer_update` (la cause du bug précédent)
-   - Garder `shipping_address_collection` pour permettre la modification
-
-3. Garder l'élargissement à 56 pays + tout le reste inchangé.
-
-### Test obligatoire avant de valider
-
-- Achat numéro papier (one-shot) : vérifier que l'adresse est pré-remplie sur Stripe et que la page s'affiche
-- Achat abonnement 1 an : vérifier idem + que la page Stripe ne reste pas bloquée
-- Achat numérique : vérifier qu'aucune adresse n'est demandée (déjà OK)
-
-### Plan B si ça re-bloque
-
-Si malgré tout le mode subscription re-bloque avec un Customer pré-rempli, fallback minimaliste : afficher sur `/commande` un message clair *"Vous confirmerez votre adresse à l'étape suivante (paiement sécurisé Stripe)"* et ne pas tenter de pré-remplir. Au moins le client est prévenu et ne se sent pas trahi.
-
-### Fichiers concernés
-
-- **Modifié** : `supabase/functions/create-checkout/index.ts` uniquement
-
-Pas de migration DB, pas de nouveau composant, pas de refacto frontend. C'est une modif chirurgicale dans une seule Edge Function.
-
+- Aucun remboursement n'est nécessaire (déjà fait côté utilisateur).
+- Aucune modification du Google Sheet ni de la base.
+- Si l'opération réussit, on pourra appliquer la même méthode aux autres abonnés 2 ans en attente, un par un avec leur propre date cible (1ʳᵉ commande légitime + 2 ans).

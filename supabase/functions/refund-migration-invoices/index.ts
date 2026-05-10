@@ -46,8 +46,9 @@ serve(async (req) => {
         scanned++;
         // Filter: subscription invoice of exactly 48€ EUR (the 2y migration amount).
         // We rely on amount + subscription presence to be robust to API line shape changes.
-        if (inv.currency !== "eur" || inv.total !== 4800 || !inv.subscription) {
-          skipped.push({ id: inv.id, reason: "not 48€ subscription", total: inv.total });
+        const subRef = inv.subscription || inv.parent?.subscription_details?.subscription;
+        if (inv.currency !== "eur" || inv.total !== 4800 || !subRef) {
+          skipped.push({ id: inv.id, reason: "not 48€ subscription", total: inv.total, status: inv.status, hasSub: !!subRef });
           continue;
         }
 

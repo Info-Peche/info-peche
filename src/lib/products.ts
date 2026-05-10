@@ -4,7 +4,7 @@ export const PRODUCTS = {
     id: "abo-2-ans",
     name: "Abonnement 2 ans",
     price: 48,
-    price_id: "price_1T11hVKbRd4yKDMHHCpMLRc3",
+    price_id: "price_1TValJKbRd4yKDMHmg0axQkG",
     product_id: "prod_Tyzgq3QeYl52IS",
     mode: "subscription" as const,
     interval: "2 ans",

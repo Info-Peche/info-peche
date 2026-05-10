@@ -52,15 +52,29 @@ serve(async (req) => {
         }
 
         try {
-          if (inv.status === "paid" && inv.charge) {
+          if (inv.status === "paid") {
+            // Resolve a refundable target. In newer Stripe API, `inv.charge` may be absent;
+            // prefer payment_intent / latest_charge / payments.
+            let chargeId: string | undefined = (inv as any).charge || (inv as any).latest_charge;
+            const piId: string | undefined = (inv as any).payment_intent;
+            if (!chargeId && !piId) {
+              // Fallback: scan payments[]
+              const payments: any = (inv as any).payments;
+              const firstPay = payments?.data?.[0];
+              chargeId = firstPay?.payment?.charge || chargeId;
+            }
+            if (!chargeId && !piId) {
+              skipped.push({ id: inv.id, reason: "paid but no charge/PI found" });
+              continue;
+            }
             if (!dryRun) {
-              const refund = await stripe.refunds.create({
-                charge: inv.charge as string,
-                reason: "duplicate",
-              });
-              refunded.push({ invoice: inv.id, charge: inv.charge, refund: refund.id, amount: inv.total });
+              const refundParams: any = { reason: "duplicate" };
+              if (piId) refundParams.payment_intent = piId;
+              else refundParams.charge = chargeId;
+              const refund = await stripe.refunds.create(refundParams);
+              refunded.push({ invoice: inv.id, payment_intent: piId, charge: chargeId, refund: refund.id, amount: inv.total });
             } else {
-              refunded.push({ invoice: inv.id, charge: inv.charge, amount: inv.total, dryRun: true });
+              refunded.push({ invoice: inv.id, payment_intent: piId, charge: chargeId, amount: inv.total, dryRun: true });
             }
           } else if (inv.status === "open") {
             if (!dryRun) {

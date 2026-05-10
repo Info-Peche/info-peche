@@ -7,13 +7,18 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const OLD_PRICE = "price_1T11hVKbRd4yKDMHHCpMLRc3";
-const NEW_PRICE = "price_1TValJKbRd4yKDMHmg0axQkG";
+const DEFAULT_OLD = "price_1T11hVKbRd4yKDMHHCpMLRc3";
+const DEFAULT_NEW = "price_1TValJKbRd4yKDMHmg0axQkG";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    let body: any = {};
+    try { body = await req.json(); } catch { body = {}; }
+    const OLD_PRICE: string = body.from || DEFAULT_OLD;
+    const NEW_PRICE: string = body.to || DEFAULT_NEW;
+
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2025-08-27.basil",
     });
@@ -65,7 +70,7 @@ serve(async (req) => {
       }
     }
 
-    return new Response(JSON.stringify({ migrated: total, results }), {
+    return new Response(JSON.stringify({ from: OLD_PRICE, to: NEW_PRICE, migrated: total, results }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });

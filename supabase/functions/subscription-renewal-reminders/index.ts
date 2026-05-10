@@ -17,6 +17,7 @@ const SUBSCRIPTION_LABELS: Record<string, string> = {
   "price_1TValJKbRd4yKDMHmg0axQkG": "Abonnement 2 ans",
   "price_1T11hkKbRd4yKDMH6WlS54AH": "Abonnement 1 an",
   "price_1T11i1KbRd4yKDMHppfC8rE9": "Abonnement 6 mois",
+  "price_1TVbcZKbRd4yKDMHu80N9Mif": "Abonnement 6 mois",
 };
 
 serve(async (req) => {

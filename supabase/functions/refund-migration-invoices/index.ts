@@ -106,18 +106,7 @@ serve(async (req) => {
       errors,
     };
     return new Response(
-      JSON.stringify({
-        dryRun,
-        scanned,
-        refunded_count: refunded.length,
-        voided_count: voided.length,
-        skipped_count: skipped.length,
-        errors_count: errors.length,
-        refunded,
-        voided,
-        skipped_sample: skipped.slice(0, 10),
-        errors,
-      }),
+      JSON.stringify(out),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 },
     );
   } catch (error) {

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
 import { useState } from "react";
 import { useCurrentEdition } from "@/hooks/useCurrentEdition";
+import { PRODUCTS } from "@/lib/products";
 
 const LatestEdition = () => {
   const { addItem } = useCart();
@@ -13,9 +14,9 @@ const LatestEdition = () => {
   if (!edition) return null;
 
   const product = {
-    id: "mag-current",
+    id: PRODUCTS.numeroCourant.id,
     name: `Info-Pêche - ${edition.issue_number}`,
-    price: 6.50,
+    price: PRODUCTS.numeroCourant.price,
     image: edition.cover_image,
     description: "Le guide ultime pour réussir votre saison de pêche."
   };

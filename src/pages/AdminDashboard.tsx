@@ -433,6 +433,14 @@ const AdminDashboard = () => {
     const id = String(item?.id || "");
     const priceId = String(item?.price_id || "");
 
+    // Renewal items injected by stripe-webhook
+    if (id.startsWith("renewal-")) {
+      if (id === "renewal-6m") return "Renouvellement abo 6 mois";
+      if (id === "renewal-1y") return "Renouvellement abo 1 an";
+      if (id === "renewal-2y") return "Renouvellement abo 2 ans";
+      return name || "Renouvellement abonnement";
+    }
+
     const issueNum = item?.issue_number || name.match(/Info\s+Pêche\s+(\d+)/i)?.[1] || name.match(/N°?\s*(\d+)/)?.[1] || "";
 
     const product = Object.values(PRODUCTS).find(

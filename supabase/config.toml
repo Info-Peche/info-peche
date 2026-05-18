@@ -3,9 +3,6 @@ project_id = "fokaikipfikcokjwyeka"
 [functions.stripe-webhook]
 verify_jwt = false
 
-[functions.setup-stripe-webhook]
-verify_jwt = false
-
 [functions.generate-alt-text]
 verify_jwt = false
 

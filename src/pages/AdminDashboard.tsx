@@ -486,6 +486,19 @@ const AdminDashboard = () => {
   };
 
   const SUBSCRIPTION_LABELS: Record<string, string> = {
+    // Current price IDs (from src/lib/products.ts)
+    [PRODUCTS.abo2ans.price_id]: "Abo 2 ans",
+    [PRODUCTS.abo1an.price_id]: "Abo 1 an",
+    [PRODUCTS.abo6mois.price_id]: "Abo 6 mois",
+    // Product IDs (in case subscription_type stores product_id)
+    [PRODUCTS.abo2ans.product_id]: "Abo 2 ans",
+    [PRODUCTS.abo1an.product_id]: "Abo 1 an",
+    [PRODUCTS.abo6mois.product_id]: "Abo 6 mois",
+    // Internal keys
+    "abo-2-ans": "Abo 2 ans",
+    "abo-1-an": "Abo 1 an",
+    "abo-6-mois": "Abo 6 mois",
+    // Legacy / historical price IDs
     "price_1T11hVKbRd4yKDMHHCpMLRc3": "Abo 2 ans",
     "price_1T11hkKbRd4yKDMH6WlS54AH": "Abo 1 an",
     "price_1T11i1KbRd4yKDMHppfC8rE9": "Abo 6 mois",

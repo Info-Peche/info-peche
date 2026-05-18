@@ -433,6 +433,14 @@ const AdminDashboard = () => {
     const id = String(item?.id || "");
     const priceId = String(item?.price_id || "");
 
+    // Renewal items injected by stripe-webhook
+    if (id.startsWith("renewal-")) {
+      if (id === "renewal-6m") return "Renouvellement abo 6 mois";
+      if (id === "renewal-1y") return "Renouvellement abo 1 an";
+      if (id === "renewal-2y") return "Renouvellement abo 2 ans";
+      return name || "Renouvellement abonnement";
+    }
+
     const issueNum = item?.issue_number || name.match(/Info\s+Pêche\s+(\d+)/i)?.[1] || name.match(/N°?\s*(\d+)/)?.[1] || "";
 
     const product = Object.values(PRODUCTS).find(
@@ -486,14 +494,31 @@ const AdminDashboard = () => {
   };
 
   const SUBSCRIPTION_LABELS: Record<string, string> = {
+    // Current price IDs (from src/lib/products.ts)
+    [PRODUCTS.abo2ans.price_id]: "Abo 2 ans",
+    [PRODUCTS.abo1an.price_id]: "Abo 1 an",
+    [PRODUCTS.abo6mois.price_id]: "Abo 6 mois",
+    // Product IDs (in case subscription_type stores product_id)
+    [PRODUCTS.abo2ans.product_id]: "Abo 2 ans",
+    [PRODUCTS.abo1an.product_id]: "Abo 1 an",
+    [PRODUCTS.abo6mois.product_id]: "Abo 6 mois",
+    // Internal keys
+    "abo-2-ans": "Abo 2 ans",
+    "abo-1-an": "Abo 1 an",
+    "abo-6-mois": "Abo 6 mois",
+    // Legacy / historical price IDs
     "price_1T11hVKbRd4yKDMHHCpMLRc3": "Abo 2 ans",
-    "price_1T11hkKbRd4yKDMH6WlS54AH": "Abo 1 an",
     "price_1T11i1KbRd4yKDMHppfC8rE9": "Abo 6 mois",
   };
 
   const getFormulaLabel = (order: Order) => {
     const productItems = getOrderProductItems(order);
     const itemCount = productItems.length;
+
+    // Renewal orders: always show the renewal label
+    if (order.order_type === "subscription_renewal" && productItems.length > 0) {
+      return getItemLabel(productItems[0]);
+    }
 
     if (itemCount > 1) {
       return "Commandes multiples";

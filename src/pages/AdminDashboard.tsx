@@ -515,6 +515,11 @@ const AdminDashboard = () => {
     const productItems = getOrderProductItems(order);
     const itemCount = productItems.length;
 
+    // Renewal orders: always show the renewal label
+    if (order.order_type === "subscription_renewal" && productItems.length > 0) {
+      return getItemLabel(productItems[0]);
+    }
+
     if (itemCount > 1) {
       return "Commandes multiples";
     }

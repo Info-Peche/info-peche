@@ -1,49 +1,61 @@
-## Objectif
+## Contexte
 
-Recaler la date de renouvellement Stripe **et** la `subscription_end_date` côté DB pour les **105 clients du Google Sheet** (sauf `gianna5652@gmail.com` et `gregory.gobin44@orange.fr`), en se basant sur la **vraie date de 1ʳᵉ commande** (pas le doublon de migration du 10 mai).
+L'offre **« abonnement 6 mois / 3 numéros » à 14,50 €** est facturée par erreur **tous les mois** au lieu d'une fois tous les 6 mois.
 
-## Ce que j'ai vérifié
+Le produit Stripe `prod_Tyzh45p7SqdgGh` a 2 prix :
+- ❌ `price_1T11i1KbRd4yKDMHppfC8rE9` — 14,50 € **/ mois** (utilisé à tort)
+- ✅ `price_1TVbcZKbRd4yKDMHu80N9Mif` — 14,50 € **/ 6 mois** (le bon)
 
-1. **Le sheet contient 107 lignes** (~105 emails uniques), à filtrer (-2 exclus).
-2. **L'email de rappel J-15 / J-1** (`subscription-renewal-reminders`) lit la date dans `orders.subscription_end_date` et **ne mentionne PAS d'essai gratuit** — wording actuel : *« sera automatiquement reconduit le {date} »*. ✅
-3. **Mais** : `orders.subscription_end_date` est parfois faux (= date du doublon migration). Donc il **faut aussi mettre à jour la DB** sinon le rappel partira à la mauvaise date.
-4. **Stripe n'enverra pas d'email "fin d'essai"** par défaut (les emails de fin de trial ne sont actifs que si activés explicitement dans le dashboard Stripe). À confirmer avant lancement, je vérifie ce paramètre côté Stripe en dry-run.
+**3 abonnements actifs sont à corriger** :
 
-## Étapes
+| Sub | Customer | Action |
+|---|---|---|
+| `sub_1TOjDQKbRd4yKDMHnxEIocGc` | `cus_UNUAHk9wt0HxTG` | switch price + recaler renouvellement |
+| `sub_1TNDpkKbRd4yKDMHOlhvOoaE` | `cus_ULvh1HZ4lZBRot` (Christian Duvivier) | idem |
+| `sub_1TEHayKbRd4yKDMHl8hG6JTm` | `cus_UCgxwUf5416uwD` | idem |
 
-### 1. Créer une edge function `bulk-fix-renewal-anchor`
+**Décisions validées :**
+- Cadence cible : **1 fois tous les 6 mois**
+- Pas de remboursement des cycles déjà perçus à tort (on ne corrige que le futur)
 
-Pour chaque email du sheet (sauf les 2 exclus), elle va :
-- Trouver le client Stripe + sa sub active/trialing
-- Lister ses factures, **identifier la 1ʳᵉ facture `subscription_create` payée** (la légitime, pas le `subscription_update` du 10 mai 2026)
-- Calculer `target_date = date_première_facture + 2 ans`
-- En mode `dry_run` : ne rien faire, juste produire un tableau `email | sub_id | first_invoice_date | current_renewal | target_date | orders_db_date | action`
-- En mode réel : `subscriptions.update` avec `trial_end = target`, `proration_behavior: 'none'`, `cancel_at: null` **+** `UPDATE orders SET subscription_end_date = target WHERE email = ... AND is_recurring = true AND payment_status = 'paid'`
+## Étape 1 — Corriger le code (cause racine)
 
-### 2. Lancer `bulk-fix-renewal-anchor` en **dry-run** d'abord
+Identifier où `price_1T11i1KbRd4yKDMHppfC8rE9` est référencé (probablement `create-checkout` ou un mapping de products côté front) et le remplacer par `price_1TVbcZKbRd4yKDMHu80N9Mif`. Comme ça, **plus aucun nouveau client ne sera créé sur le mauvais prix**.
 
-Je te livre un CSV/tableau récapitulatif des 105 clients :
-- ✅ Cas standards (1 sub trouvée, 1ʳᵉ facture identifiée clairement)
-- ⚠️ Cas ambigus (plusieurs subs, plusieurs `subscription_create`, déjà au bon anchor, etc.) → tu valides au cas par cas
+## Étape 2 — Créer une edge function `fix-monthly-to-biannual`
 
-### 3. Une fois le dry-run validé, exécution réelle
+Pour chacune des 3 subs existantes, elle va :
 
-Lot par lot (10–20 clients par appel pour éviter timeout), avec log détaillé.
+1. **Switcher l'item de subscription** vers le bon price (6 mois) :
+   ```
+   stripe.subscriptions.update(sub_id, {
+     items: [{ id: <si_xxx>, price: 'price_1TVbcZKbRd4yKDMHu80N9Mif', deleted: false },
+             { id: <si_xxx_old>, deleted: true }],
+     proration_behavior: 'none',           // pas de facture immédiate
+     trial_end: <sub.created + 6 mois>,    // recale la prochaine facturation
+     cancel_at: null
+   })
+   ```
+2. Si `sub.created + 6 mois` est déjà passé (peu probable, sub la plus vieille = ~5 mois) → fallback à `now() + 6 mois`.
+3. **Mettre à jour `orders.subscription_end_date`** dans la DB pour ces 3 emails, sinon les rappels J-15/J-1 partiront à la mauvaise date.
 
-### 4. Vérification post-traitement
+Mode `dry_run: true` d'abord (affiche email | sub_id | created | nouvelle date renouvellement | action), puis exécution réelle après validation.
 
-- Re-query Stripe pour 5 clients témoins
-- `SELECT email, subscription_end_date FROM orders WHERE email IN (...)` pour vérifier la DB
-- Confirmer que le cron `subscription-renewal-reminders` enverra bien les rappels J-15 aux bonnes dates
+## Étape 3 — Vérification
 
-## Questions / points de vigilance
+- Re-query Stripe : les 3 subs doivent être sur `price_1TVbcZ…`, `current_period_end` ≈ created + 6 mois.
+- SELECT en DB : `subscription_end_date` mis à jour.
+- Confirmer qu'aucune nouvelle facture mensuelle ne partira (la prochaine sera dans 6 mois après création).
 
-- **Stripe trial-end emails** : je vérifie au moment du dry-run si `subscription.trial_settings.end_behavior` ou les notifications Stripe trial sont activées. Si oui, il faudra utiliser une autre approche (`billing_cycle_anchor` à la place de `trial_end`) pour éviter de leur envoyer "votre essai gratuit se termine".
-- **2 emails exclus** : `gianna5652@gmail.com` et `gregory.gobin44@orange.fr` — ne seront ni listés ni modifiés.
-- **Aucun remboursement** déclenché — uniquement le repositionnement de date.
+## Détails techniques
+
+- **Pas de mention « essai gratuit »** : `trial_end` n'envoie pas d'email Stripe si les notifications trial ne sont pas activées dans le dashboard (déjà vérifié pour le bulk renewal). Le client ne reçoit donc rien de Stripe.
+- **Idempotent** : si la sub est déjà sur le bon price, ne fait rien.
+- **Pas de remboursement** : le `proration_behavior: 'none'` garantit qu'aucune facture immédiate ni crédit n'est généré.
 
 ## Livrables
 
-1. Edge function `bulk-fix-renewal-anchor` (avec `dry_run`, `email_filter`, `exclude_emails`)
-2. Tableau récap dry-run pour validation
-3. Exécution réelle après ton "go"
+1. Patch du code (replace `price_1T11i1…` → `price_1TVbcZ…`)
+2. Edge function `fix-monthly-to-biannual` (avec `dry_run`)
+3. Dry-run pour validation → exécution réelle après ton « go »
+4. Récap final (Stripe + DB)

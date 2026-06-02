@@ -1,24 +1,30 @@
-## Objectif
+## Problème
 
-Optimiser le SEO de la page `/boutique` et mettre à jour le title.
+GSC voit, dans le HTML statique de `/boutique`, une balise `<link rel="canonical" href="https://www.info-peche.fr">` qui pointe vers la home. Google considère donc `/boutique` comme un doublon de `/` et ne l'indexe pas. La canonique correcte est bien réécrite par `usePageSeo` côté client, mais Googlebot ne l'a pas exécutée lors du crawl du 31 mai.
 
-## Modifications dans `src/pages/Shop.tsx`
+## Correctif
 
-Enrichir l'appel à `usePageSeo` :
+**Fichier `index.html`** — supprimer la ligne 27 :
 
-- **title** : `Boutique - Tous vos magazines de pêche dans votre format préféré : abonnement, papier, numérique !`
-- **description** : reformulée (< 160 caractères) avec mots-clés (abonnement, papier, numérique, anciens numéros, pêche au coup)
-- **canonical** : `/boutique` (déjà présent — confirmé)
-- **ogType** : `website`
-- **ogImage** : visuel de couverture représentatif (logo Info Pêche ou cover du numéro en cours)
-- **jsonLd** : ajout d'un schéma `BreadcrumbList` (Accueil → Boutique) + `CollectionPage` listant la boutique comme catalogue de magazines
+```html
+<link rel="canonical" href="https://www.info-peche.fr" />
+```
 
-## Vérifications SEO complémentaires
+Chaque page définit déjà sa propre canonique :
+- `Index.tsx` → `useCanonical("/")`
+- `Shop.tsx` → `usePageSeo({ canonical: "/boutique", ... })`
+- autres pages → idem via `usePageSeo` / `useCanonical`
 
-- Confirmer qu'il n'y a qu'un seul `<h1>` sur la page (actuellement « Retrouvez tous les anciens magazines » — OK)
-- Vérifier que les images des couvertures ont bien un `alt` descriptif (déjà OK : `alt={issue.title}`)
-- Le `<link rel="canonical">` est géré par `usePageSeo` → pas de doublon avec `index.html`
+Plus aucune canonique statique = plus de conflit ni de canonique erronée vue par Googlebot au premier crawl.
 
-## Notes
+## Aucune autre modification
 
-Aucune modification de logique métier ni de structure visuelle. Uniquement les balises `<head>` et JSON-LD de la page Boutique.
+- Le sitemap edge function contient déjà `/boutique` ✅
+- `robots.txt` autorise déjà le crawl ✅
+- Pas besoin de toucher au code de Shop.tsx (déjà bien configuré)
+
+## Après déploiement
+
+1. Publier la modif.
+2. Dans GSC → inspecter `https://www.info-peche.fr/boutique` → **Demander une indexation**.
+3. Recrawl visible sous quelques jours.

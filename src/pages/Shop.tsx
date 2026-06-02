@@ -306,9 +306,29 @@ const ShopContent = () => {
 
 const Shop = () => {
   usePageSeo({
-    title: "Boutique — Anciens numéros Info Pêche | Pêche au coup",
-    description: "Retrouvez tous les anciens numéros du magazine Info Pêche en version papier ou numérique. Commandez vos numéros préférés de pêche au coup.",
+    title: "Boutique - Tous vos magazines de pêche dans votre format préféré : abonnement, papier, numérique !",
+    description: "Magazines Info Pêche : abonnement, anciens numéros papier ou version numérique. Choisissez votre format et progressez en pêche au coup.",
     canonical: "/boutique",
+    ogType: "website",
+    ogImage: "https://www.info-peche.fr/images/info-peche-logo.png",
+    jsonLd: [
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Accueil", item: "https://www.info-peche.fr/" },
+          { "@type": "ListItem", position: 2, name: "Boutique", item: "https://www.info-peche.fr/boutique" },
+        ],
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        name: "Boutique Info Pêche",
+        description: "Catalogue des magazines Info Pêche : abonnements, anciens numéros papier et numériques.",
+        url: "https://www.info-peche.fr/boutique",
+        isPartOf: { "@type": "WebSite", name: "Info Pêche", url: "https://www.info-peche.fr" },
+      },
+    ],
   });
   return (
     <div className="min-h-screen bg-background">

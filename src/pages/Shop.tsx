@@ -114,10 +114,11 @@ const ShopContent = () => {
             Boutique
           </span>
           <h1 className="text-4xl md:text-5xl font-serif font-bold text-foreground mb-4">
-            Retrouvez tous les anciens magazines
+            Retrouvez vos magazines préférés
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-10">
-            Chaque magazine est une mine d'informations pour progresser. Choisissez votre format préféré.
+            Choisissez votre format favori : abonnement, papier, numérique.<br />
+            Votre magazine de pêche partout avec vous !
           </p>
 
           {/* Split toggle */}

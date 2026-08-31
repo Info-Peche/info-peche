@@ -16,12 +16,19 @@ const MagazineFanVisual = ({ count, className = "", showBadge = true }: Magazine
       const { data } = await supabase
         .from("digital_issues")
         .select("cover_image, issue_number")
-        .not("cover_image", "is", null)
-        .order("issue_number", { ascending: false })
-        .limit(12);
+        .not("cover_image", "is", null);
 
       if (data) {
-        const urls = data.map((d) => d.cover_image!).filter(Boolean);
+        // Sort numerically by issue number (text sort would rank "99" before "103")
+        const extractNumber = (value: string) => {
+          const n = parseInt((value || "").replace(/[^0-9]/g, ""), 10);
+          return Number.isNaN(n) ? 0 : n;
+        };
+        const urls = data
+          .filter((d) => d.cover_image)
+          .sort((a, b) => extractNumber(b.issue_number) - extractNumber(a.issue_number))
+          .map((d) => d.cover_image!);
+        if (urls.length === 0) return;
         const result: string[] = [];
         for (let i = 0; i < count; i++) {
           result.push(urls[i % urls.length]);

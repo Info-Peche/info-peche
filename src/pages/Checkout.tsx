@@ -412,7 +412,7 @@ const CheckoutContent = () => {
                   <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 mb-4">
                     <p className="text-xs font-bold text-primary mb-1">💳 Paiement en 4× disponible</p>
                     <p className="text-xs text-muted-foreground">
-                      4 × {(48 / 4).toFixed(2)}€ — proposé à l'étape suivante via Stripe
+                      4 × {(52 / 4).toFixed(2)}€ — proposé à l'étape suivante via Stripe
                     </p>
                   </div>
                 )}

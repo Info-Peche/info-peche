@@ -14,9 +14,12 @@ const logStep = (step: string, details?: any) => {
 
 const SUBSCRIPTION_LABELS: Record<string, string> = {
   "price_1T11hVKbRd4yKDMHHCpMLRc3": "Abonnement 2 ans",
+  "price_1UWy4hKbRd4yKDMHCCGoBQbu": "Abonnement 2 ans",
   "price_1TValJKbRd4yKDMHmg0axQkG": "Abonnement 2 ans",
   "price_1T11hkKbRd4yKDMH6WlS54AH": "Abonnement 1 an",
+  "price_1UWy4gKbRd4yKDMHP7r4UPTe": "Abonnement 1 an",
   "price_1T11i1KbRd4yKDMHppfC8rE9": "Abonnement 6 mois",
+  "price_1UWy4bKbRd4yKDMHgmcIN06n": "Abonnement 6 mois",
   "price_1TVbcZKbRd4yKDMHu80N9Mif": "Abonnement 6 mois",
 };
 
@@ -81,6 +84,14 @@ serve(async (req) => {
       for (const order of orders) {
         const customerName = `${order.first_name} ${order.last_name}`.trim();
         const subLabel = SUBSCRIPTION_LABELS[order.subscription_type || ""] || "Abonnement";
+        const NEW_AMOUNTS: Record<string, string> = {
+          "Abonnement 6 mois": "16,50 €",
+          "Abonnement 1 an": "29,90 €",
+          "Abonnement 2 ans": "52 €",
+        };
+        const t = order.subscription_type || "";
+        const newAmount = NEW_AMOUNTS[subLabel]
+          || (t.includes("6") ? NEW_AMOUNTS["Abonnement 6 mois"] : t.includes("1-an") || t === "1an" ? NEW_AMOUNTS["Abonnement 1 an"] : t.includes("2") ? NEW_AMOUNTS["Abonnement 2 ans"] : "");
         const endDate = new Date(order.subscription_end_date!).toLocaleDateString("fr-FR", {
           day: "numeric",
           month: "long",
@@ -110,7 +121,12 @@ serve(async (req) => {
                 <p style="margin: 4px 0; color: #555; font-family: 'Inter', Arial, sans-serif;">📦 Formule : ${subLabel}</p>
                 <p style="margin: 4px 0; color: #555; font-family: 'Inter', Arial, sans-serif;">💳 Moyen de paiement : ${paymentMethod}</p>
                 <p style="margin: 4px 0; color: #555; font-family: 'Inter', Arial, sans-serif;">📅 Date de renouvellement : ${endDate}</p>
+                ${newAmount ? `<p style="margin: 4px 0; color: #555; font-family: 'Inter', Arial, sans-serif;">💶 Montant du renouvellement : ${newAmount}</p>` : ""}
               </div>
+              ${newAmount ? `<p style="color: #555; line-height: 1.8; font-size: 15px; font-family: 'Inter', Arial, sans-serif;">
+                Depuis le 1er novembre 2026, nos tarifs d'abonnement ont évolué afin de faire face à la hausse des coûts d'impression et d'envoi postal.
+                Votre ${subLabel} sera donc renouvelé au tarif de <strong>${newAmount}</strong>, livraison toujours offerte.
+              </p>` : ""}
               <p style="color: #555; line-height: 1.8; font-size: 15px; font-family: 'Inter', Arial, sans-serif;">
                 Le montant sera prélevé automatiquement sur votre ${paymentMethod}. 
                 Si vous souhaitez modifier ou annuler votre abonnement, contactez-nous 

@@ -36,7 +36,7 @@ const PricingCards = () => {
     highlight: false,
     icon: Zap,
     badge: null,
-    pricePerIssue: "4,83€",
+    pricePerIssue: "5,50€",
     ctaLabel: "Découvrir",
     accentClass: "from-blue-500/10 to-blue-600/5",
     iconBg: "bg-blue-500/10 text-blue-600",
@@ -47,7 +47,7 @@ const PricingCards = () => {
     highlight: false,
     icon: Star,
     badge: "Populaire",
-    pricePerIssue: "4,42€",
+    pricePerIssue: "4,98€",
     ctaLabel: "S'abonner 1 an",
     accentClass: "from-amber-500/10 to-amber-600/5",
     iconBg: "bg-amber-500/10 text-amber-600",
@@ -58,7 +58,7 @@ const PricingCards = () => {
     highlight: true,
     icon: Crown,
     badge: "Meilleure offre",
-    pricePerIssue: "4,00€",
+    pricePerIssue: "4,33€",
     ctaLabel: "S'abonner 2 ans",
     accentClass: "from-primary/15 to-primary/5",
     iconBg: "bg-primary/10 text-primary",
@@ -191,7 +191,7 @@ const PricingCards = () => {
                   <div className="mb-3 md:mb-5 pb-3 md:pb-4 border-b border-border">
                     <div className="flex items-end gap-1">
                       <span className={`text-2xl md:text-4xl font-serif font-bold tracking-tight ${product.highlight ? "text-primary" : "text-foreground"}`}>
-                        {product.price}€
+                        {product.price.toLocaleString("fr-FR", { minimumFractionDigits: Number.isInteger(product.price) ? 0 : 2 })}€
                       </span>
                       {isSubscription &&
                       <span className="text-sm text-muted-foreground mb-1">/ {product.interval}</span>
@@ -204,7 +204,7 @@ const PricingCards = () => {
                     }
                     {product.id === "abo-2-ans" &&
                     <Badge variant="outline" className="mt-2 text-[10px] border-primary/30 text-primary font-bold">
-                        💳 ou 4 × 12€ sans frais
+                        💳 ou 4 × 13€ sans frais
                       </Badge>
                     }
                   </div>

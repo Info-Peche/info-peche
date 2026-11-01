@@ -56,8 +56,11 @@ type DigitalAccessEntry = {
 
 const SUBSCRIPTION_LABELS: Record<string, string> = {
   "price_1T11hVKbRd4yKDMHHCpMLRc3": "Abo 2 ans",
+  "price_1UWy4hKbRd4yKDMHCCGoBQbu": "Abo 2 ans",
   "price_1T11hkKbRd4yKDMH6WlS54AH": "Abo 1 an",
+  "price_1UWy4gKbRd4yKDMHP7r4UPTe": "Abo 1 an",
   "price_1T11i1KbRd4yKDMHppfC8rE9": "Abo 6 mois",
+  "price_1UWy4bKbRd4yKDMHgmcIN06n": "Abo 6 mois",
   "abo-2-ans": "Abo 2 ans",
   "abo-1-an": "Abo 1 an",
   "abo-6-mois": "Abo 6 mois",
@@ -67,6 +70,9 @@ const SUBSCRIPTION_DURATIONS: Record<string, number> = {
   "price_1T11hVKbRd4yKDMHHCpMLRc3": 24,
   "price_1T11hkKbRd4yKDMH6WlS54AH": 12,
   "price_1T11i1KbRd4yKDMHppfC8rE9": 6,
+  "price_1UWy4hKbRd4yKDMHCCGoBQbu": 24,
+  "price_1UWy4gKbRd4yKDMHP7r4UPTe": 12,
+  "price_1UWy4bKbRd4yKDMHgmcIN06n": 6,
   "abo-2-ans": 24,
   "abo-1-an": 12,
   "abo-6-mois": 6,

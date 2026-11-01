@@ -508,7 +508,10 @@ const AdminDashboard = () => {
     "abo-6-mois": "Abo 6 mois",
     // Legacy / historical price IDs
     "price_1T11hVKbRd4yKDMHHCpMLRc3": "Abo 2 ans",
+    "price_1TValJKbRd4yKDMHmg0axQkG": "Abo 2 ans",
+    "price_1T11hkKbRd4yKDMH6WlS54AH": "Abo 1 an",
     "price_1T11i1KbRd4yKDMHppfC8rE9": "Abo 6 mois",
+    "price_1TVbcZKbRd4yKDMHu80N9Mif": "Abo 6 mois",
   };
 
   const getFormulaLabel = (order: Order) => {

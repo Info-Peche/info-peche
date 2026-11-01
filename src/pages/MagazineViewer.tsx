@@ -520,7 +520,7 @@ const MagazineViewerContent = () => {
                   <Crown className="w-6 h-6 text-primary mx-auto mb-2" />
                   <h4 className="text-white font-bold text-sm mb-1">Abonnement 2 ans</h4>
                   <p className="text-primary font-serif font-bold text-2xl mb-1">{PRODUCTS.abo2ans.price}€</p>
-                  <p className="text-white/50 text-[11px] mb-3">Papier livré + numérique illimité · 4×12€</p>
+                  <p className="text-white/50 text-[11px] mb-3">Papier livré + numérique illimité · 4×13€</p>
                   <ul className="text-left space-y-1.5 mb-4">
                     <li className="flex items-center gap-2 text-white/80 text-xs">
                       <Check className="w-3 h-3 text-primary shrink-0" />

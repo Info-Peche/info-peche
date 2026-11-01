@@ -3,8 +3,8 @@ export const PRODUCTS = {
   abo2ans: {
     id: "abo-2-ans",
     name: "Abonnement 2 ans",
-    price: 48,
-    price_id: "price_1TValJKbRd4yKDMHmg0axQkG",
+    price: 52,
+    price_id: "price_1UWy4hKbRd4yKDMHCCGoBQbu",
     product_id: "prod_Tyzgq3QeYl52IS",
     mode: "subscription" as const,
     interval: "2 ans",
@@ -20,8 +20,8 @@ export const PRODUCTS = {
   abo1an: {
     id: "abo-1-an",
     name: "Abonnement 1 an",
-    price: 26.5,
-    price_id: "price_1T11hkKbRd4yKDMH6WlS54AH",
+    price: 29.9,
+    price_id: "price_1UWy4gKbRd4yKDMHP7r4UPTe",
     product_id: "prod_Tyzho0muIqVKsX",
     mode: "subscription" as const,
     interval: "1 an",
@@ -35,8 +35,8 @@ export const PRODUCTS = {
   abo6mois: {
     id: "abo-6-mois",
     name: "Abonnement 6 mois",
-    price: 14.5,
-    price_id: "price_1TVbcZKbRd4yKDMHu80N9Mif",
+    price: 16.5,
+    price_id: "price_1UWy4bKbRd4yKDMHgmcIN06n",
     product_id: "prod_Tyzh45p7SqdgGh",
     mode: "subscription" as const,
     interval: "6 mois",

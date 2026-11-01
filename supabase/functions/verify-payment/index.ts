@@ -17,9 +17,12 @@ const ADMIN_EMAIL = "jeanfrancois.darnet@info-peche.fr";
 
 const SUBSCRIPTION_LABELS: Record<string, string> = {
   "price_1T11hVKbRd4yKDMHHCpMLRc3": "Abonnement 2 ans",
+  "price_1UWy4hKbRd4yKDMHCCGoBQbu": "Abonnement 2 ans",
   "price_1TValJKbRd4yKDMHmg0axQkG": "Abonnement 2 ans",
   "price_1T11hkKbRd4yKDMH6WlS54AH": "Abonnement 1 an",
+  "price_1UWy4gKbRd4yKDMHP7r4UPTe": "Abonnement 1 an",
   "price_1T11i1KbRd4yKDMHppfC8rE9": "Abonnement 6 mois",
+  "price_1UWy4bKbRd4yKDMHgmcIN06n": "Abonnement 6 mois",
   "price_1TVbcZKbRd4yKDMHu80N9Mif": "Abonnement 6 mois",
 };
 

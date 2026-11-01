@@ -16,13 +16,16 @@ const log = (step: string, details?: unknown) => {
 const RENEWAL_MAP: Record<string, { id: string; name: string; subType: string }> = {
   // 6 months
   "price_1TVbcZKbRd4yKDMHu80N9Mif": { id: "renewal-6m", name: "Renouvellement abo 6 mois", subType: "abo-6-mois" },
+  "price_1UWy4bKbRd4yKDMHgmcIN06n": { id: "renewal-6m", name: "Renouvellement abo 6 mois", subType: "abo-6-mois" },
   "price_1T11i1KbRd4yKDMHppfC8rE9": { id: "renewal-6m", name: "Renouvellement abo 6 mois", subType: "abo-6-mois" },
   "prod_Tyzh45p7SqdgGh": { id: "renewal-6m", name: "Renouvellement abo 6 mois", subType: "abo-6-mois" },
   // 1 year
   "price_1T11hkKbRd4yKDMH6WlS54AH": { id: "renewal-1y", name: "Renouvellement abo 1 an", subType: "abo-1-an" },
+  "price_1UWy4gKbRd4yKDMHP7r4UPTe": { id: "renewal-1y", name: "Renouvellement abo 1 an", subType: "abo-1-an" },
   "prod_Tyzho0muIqVKsX": { id: "renewal-1y", name: "Renouvellement abo 1 an", subType: "abo-1-an" },
   // 2 years
   "price_1TValJKbRd4yKDMHmg0axQkG": { id: "renewal-2y", name: "Renouvellement abo 2 ans", subType: "abo-2-ans" },
+  "price_1UWy4hKbRd4yKDMHCCGoBQbu": { id: "renewal-2y", name: "Renouvellement abo 2 ans", subType: "abo-2-ans" },
   "price_1T11hVKbRd4yKDMHHCpMLRc3": { id: "renewal-2y", name: "Renouvellement abo 2 ans", subType: "abo-2-ans" },
   "prod_Tyzgq3QeYl52IS": { id: "renewal-2y", name: "Renouvellement abo 2 ans", subType: "abo-2-ans" },
 };

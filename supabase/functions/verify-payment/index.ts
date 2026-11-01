@@ -30,9 +30,12 @@ const SUBSCRIPTION_LABELS: Record<string, string> = {
 const SUBSCRIPTION_DURATION_MONTHS: Record<string, number> = {
   "price_1T11hVKbRd4yKDMHHCpMLRc3": 24,  // 2 ans
   "price_1TValJKbRd4yKDMHmg0axQkG": 24,  // 2 ans (nouveau, recurring 2 ans)
+  "price_1UWy4hKbRd4yKDMHCCGoBQbu": 24,  // 2 ans 52€
   "price_1T11hkKbRd4yKDMH6WlS54AH": 12,  // 1 an
+  "price_1UWy4gKbRd4yKDMHP7r4UPTe": 12,  // 1 an 29,90€
   "price_1T11i1KbRd4yKDMHppfC8rE9": 6,   // 6 mois
   "price_1TVbcZKbRd4yKDMHu80N9Mif": 6,   // 6 mois (nouveau, recurring 6 mois)
+  "price_1UWy4bKbRd4yKDMHgmcIN06n": 6,   // 6 mois 16,50€
 };
 
 // Enrich line item name with issue number if applicable

@@ -123,10 +123,6 @@ serve(async (req) => {
                 <p style="margin: 4px 0; color: #555; font-family: 'Inter', Arial, sans-serif;">📅 Date de renouvellement : ${endDate}</p>
                 ${newAmount ? `<p style="margin: 4px 0; color: #555; font-family: 'Inter', Arial, sans-serif;">💶 Montant du renouvellement : ${newAmount}</p>` : ""}
               </div>
-              ${newAmount ? `<p style="color: #555; line-height: 1.8; font-size: 15px; font-family: 'Inter', Arial, sans-serif;">
-                Depuis le 1er novembre 2026, nos tarifs d'abonnement ont évolué afin de faire face à la hausse des coûts d'impression et d'envoi postal.
-                Votre ${subLabel} sera donc renouvelé au tarif de <strong>${newAmount}</strong>, livraison toujours offerte.
-              </p>` : ""}
               <p style="color: #555; line-height: 1.8; font-size: 15px; font-family: 'Inter', Arial, sans-serif;">
                 Le montant sera prélevé automatiquement sur votre ${paymentMethod}. 
                 Si vous souhaitez modifier ou annuler votre abonnement, contactez-nous 

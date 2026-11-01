@@ -11,6 +11,7 @@ const corsHeaders = {
 const FULL_ACCESS_TYPES = [
   "2ans", "abo-2-ans", "Abonnement 2 ans",
   "price_1T11hVKbRd4yKDMHHCpMLRc3",
+  "price_1UWy4hKbRd4yKDMHCCGoBQbu",
   "prod_Tyzgq3QeYl52IS",
 ];
 

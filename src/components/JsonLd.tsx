@@ -30,7 +30,7 @@ const JsonLd = () => {
       {
         "@type": "Offer",
         name: "Abonnement 6 mois",
-        price: "14.50",
+        price: "16.50",
         priceCurrency: "EUR",
         availability: "https://schema.org/InStock",
         url: "https://www.info-peche.fr/#abonnements",
@@ -38,7 +38,7 @@ const JsonLd = () => {
       {
         "@type": "Offer",
         name: "Abonnement 1 an",
-        price: "26.50",
+        price: "29.90",
         priceCurrency: "EUR",
         availability: "https://schema.org/InStock",
         url: "https://www.info-peche.fr/#abonnements",
@@ -46,7 +46,7 @@ const JsonLd = () => {
       {
         "@type": "Offer",
         name: "Abonnement 2 ans",
-        price: "48.00",
+        price: "52.00",
         priceCurrency: "EUR",
         availability: "https://schema.org/InStock",
         url: "https://www.info-peche.fr/#abonnements",
@@ -82,7 +82,7 @@ const JsonLd = () => {
         name: "Combien coûte l'abonnement Info Pêche ?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "L'abonnement papier + numérique est à 14,50 € pour 6 mois (3 numéros), 26,50 € pour 1 an (6 numéros) ou 48 € pour 2 ans (12 numéros). Le magazine est bimestriel.",
+          text: "L'abonnement papier + numérique est à 16,50 € pour 6 mois (3 numéros), 29,90 € pour 1 an (6 numéros) ou 52 € pour 2 ans (12 numéros). Le magazine est bimestriel.",
         },
       },
       {

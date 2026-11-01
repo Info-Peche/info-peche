@@ -511,6 +511,7 @@ const AdminDashboard = () => {
     "price_1UWy4hKbRd4yKDMHCCGoBQbu": "Abo 2 ans",
     "price_1T11i1KbRd4yKDMHppfC8rE9": "Abo 6 mois",
     "price_1UWy4bKbRd4yKDMHgmcIN06n": "Abo 6 mois",
+    "price_1UWy4gKbRd4yKDMHP7r4UPTe": "Abo 1 an",
   };
 
   const getFormulaLabel = (order: Order) => {

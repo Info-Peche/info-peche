@@ -14,7 +14,7 @@ export const PRODUCTS = {
       "Accès illimité à TOUS les numéros en ligne",
       "Paiement en 4× sans frais",
       "Articles premium en ligne (blog abonnés)",
-      "−40% vs. achat au numéro",
+      "−33% vs. achat au numéro",
     ],
   },
   abo1an: {
@@ -25,11 +25,11 @@ export const PRODUCTS = {
     product_id: "prod_Tyzho0muIqVKsX",
     mode: "subscription" as const,
     interval: "1 an",
-    description: "6 numéros livrés · −30% vs. achat au numéro",
+    description: "6 numéros livrés · −23% vs. achat au numéro",
     features: [
       "6 numéros livrés chez vous",
       "Articles premium en ligne (blog abonnés)",
-      "−30% vs. achat au numéro",
+      "−23% vs. achat au numéro",
     ],
   },
   abo6mois: {
